@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Configurations>Debug;Release;Debug_NoPolyscope</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_NoPolyscope|AnyCPU'">
+    <DefineConstants>$(DefineConstants);NOPOLYSCOPE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="2.88.8" />
+    <PackageReference Include="SkiaSharp.Extended" Version="2.0.0" />
+    <PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DerivativeCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
+    <ProjectReference Include="..\..\DerivativeEngine\GSNodeGraphCodeNodesLibrary\GSNodeGraphCodeNodesLibrary.csproj" />
+    <ProjectReference Include="..\..\DerivativeEngine\GSNodeGraphCoreLibrary\GSNodeGraphCoreLibrary.csproj" />
+    <ProjectReference Include="..\..\DerivativeEngine\GSNodeGraphGeometryLibrary\GSNodeGraphGeometryLibrary.csproj" />
+    <ProjectReference Include="..\..\DerivativeEngine\GSNodeGraph\GSNodeGraph.csproj" />
+    <ProjectReference Include="..\..\DerivativeEngine\GSPythonNodesLibrary\GSPythonNodesLibrary.csproj" />
+    <ProjectReference Include="..\..\DerivativeEngine\GSPythonUtils\GSPythonUtils.csproj" />
+    <ProjectReference Include="..\..\geometry3Sharp\geometry3Sharp.csproj" />
+    <ProjectReference Include="..\GSUI\GSUI.csproj" />
+  </ItemGroup>
+
+</Project>

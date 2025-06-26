@@ -1,0 +1,183 @@
+﻿using g3;
+using Gradientspace.UI;
+using SkiaSharp;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GSNodeEditor
+{
+    public class SelectionManager : IHotkeyTarget, IDisposable
+    {
+        public NodeGraphViewport GraphViewport { get; init; }
+        public NodeGraphView GraphView { get { return GraphViewport.CurrentGraphView; } }
+
+        protected List<int> SelectedNodes = new List<int>();
+
+        public SelectionManager(NodeGraphViewport viewport)
+        {
+            GraphViewport = viewport;
+
+            SystemKeyboardRouter.Instance.PushHotkeyTarget(this);
+        }
+
+        public void Dispose()
+        {
+            SystemKeyboardRouter.Instance.PopHotkeyTarget(this);
+        }
+
+
+        public void Select(int NodeID, bool bReplace)
+        {
+            if (bReplace) {
+                SelectedNodes.Clear();
+                SelectedNodes.Add(NodeID);
+            }
+            else
+            {
+                if (SelectedNodes.Contains(NodeID) == false)
+                    SelectedNodes.Add(NodeID);
+            }
+        }
+
+        public void Deselect(int NodeID)
+        {
+            if (SelectedNodes.Contains(NodeID))
+                SelectedNodes.Remove(NodeID);
+        }
+
+        public void ClearSelection()
+        {
+            SelectedNodes.Clear();
+        }
+
+        public bool HasSelection { get { return SelectedNodes.Count > 0; } }
+
+        public bool IsSelected(int NodeID) {  return SelectedNodes.Contains(NodeID); }
+
+        public IEnumerable<int> CurrentSelection { get { return SelectedNodes; } }
+
+        public List<NodeWidget> FindSelectedWidgets()
+        {
+            List<NodeWidget> result = new List<NodeWidget>();
+            for (int i = 0; i < SelectedNodes.Count; ++i)
+            {
+                NodeWidget? found = GraphView.FindNode(SelectedNodes[i]);
+                if (found != null) result.Add(found);
+            }
+            return result;
+        }
+
+
+        enum ELassoSelectionModes
+        {
+            None,
+            Rectangle,
+            Freeform
+        }
+        ELassoSelectionModes ActiveLassoMode = ELassoSelectionModes.None;
+        // these points will be in viewport space
+        List<Vector2f> LassoPoints = new List<Vector2f>();
+        int LassoModifyMode = 0;  // 0 = replace, 1 = add, 2 = subtract
+
+        public void BeginMarqueeSelection(in InputDeviceState deviceState)
+        {
+            ActiveLassoMode = ELassoSelectionModes.Rectangle;
+            LassoPoints.Add(deviceState.CurrentPosition);
+            LassoPoints.Add(deviceState.CurrentPosition);
+            LassoModifyMode = 0;
+        }
+        public void UpdateMarqueeSelection(in InputDeviceState deviceState)
+        {
+            LassoPoints[1] = deviceState.CurrentPosition;
+
+            if (deviceState.ShiftButton.bDown)      LassoModifyMode = 1;
+            else if (deviceState.CtrlButton.bDown)  LassoModifyMode = 2;
+            else                                    LassoModifyMode = 0;
+
+            Debug.Assert(ActiveLassoMode != ELassoSelectionModes.None);
+        }
+        public void CompleteMarqueeSelection()
+        {
+            Debug.Assert(ActiveLassoMode != ELassoSelectionModes.None);
+
+            AxisAlignedBox2f LassoBox = new AxisAlignedBox2f(LassoPoints[0]);
+            LassoBox.Contain(LassoPoints[1]);
+
+            if (LassoModifyMode == 0)
+                SelectedNodes.Clear();
+
+            foreach (NodeWidget widget in GraphView.NodeWidgets)
+            {
+                AxisAlignedBox2f NodeBounds = widget.GetActiveView()?.BoundsQuery(widget.GetAnchor()) ?? AxisAlignedBox2f.Empty;
+                if ( LassoBox.Intersects(NodeBounds) )
+                {
+                    if (LassoModifyMode == 2) {
+                        SelectedNodes.Remove(widget.GraphNodeIdentifier);
+                    } else {
+                        if (SelectedNodes.Contains(widget.GraphNodeIdentifier) == false) SelectedNodes.Add(widget.GraphNodeIdentifier);
+                    }
+                }
+            }
+
+            ActiveLassoMode = ELassoSelectionModes.None;
+            LassoPoints.Clear();
+        }
+
+
+
+
+        public void DrawViewport(SKCanvas Canvas)
+        {
+            SKPaint LinePaint = new SKPaint { Color = SKColors.Goldenrod, StrokeWidth = 3, IsStroke = true };
+
+            foreach (int nodeID in SelectedNodes)
+            {
+                NodeWidget? Widget = GraphView.FindNode(nodeID);
+                AxisAlignedBox2f NodeBounds = Widget?.GetActiveView()?.BoundsQuery(Widget.GetAnchor()) ?? AxisAlignedBox2f.Empty;
+                if ( NodeBounds.Area > 0 ) 
+                {
+                    Canvas.DrawRect(Conversion.ToSkia(NodeBounds), LinePaint);
+                }
+            }
+        }
+
+
+        public void DrawUI(SKCanvas Canvas)
+        {
+            if (ActiveLassoMode == ELassoSelectionModes.Rectangle)
+            {
+                SKColor LassoColor = SKColors.White;
+                SKPaint LassoLinePaint = new SKPaint { Color = LassoColor, StrokeWidth = 1, IsStroke = true };
+
+                AxisAlignedBox2f LassoRect = new AxisAlignedBox2f(GraphViewport.TransformViewportToUI(LassoPoints[0]));
+                LassoRect.Contain(GraphViewport.TransformViewportToUI(LassoPoints[1]));
+                Canvas.DrawRect(Conversion.ToSkia(LassoRect), LassoLinePaint);
+            }
+        }
+
+
+
+        public bool OnKeyChordUpdated(in KeyChord ActiveChord)
+        {
+            if (ActiveChord.IsSingleSpecialKey(KeyNames.Delete))
+            {
+                if (HasSelection) {
+                    List<NodeWidget> widgets = FindSelectedWidgets();
+                    GraphViewport.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                        foreach (NodeWidget widget in widgets)
+                            Editor.RemoveNode(widget);
+                    });
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+    }
+
+}

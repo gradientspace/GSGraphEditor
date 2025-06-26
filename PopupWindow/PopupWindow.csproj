@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="2.88.8" />
+    <PackageReference Include="Vanara.Core" Version="4.0.2" />
+    <PackageReference Include="Vanara.PInvoke.ComDlg32" Version="4.0.2" />
+    <PackageReference Include="Vanara.PInvoke.DwmApi" Version="4.0.2" />
+    <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GSNodeEditor\GSNodeEditor.csproj" />
+    <ProjectReference Include="..\GSUI\GSUI.csproj" />
+  </ItemGroup>
+
+</Project>
