@@ -130,6 +130,11 @@ namespace GSNodeEditor
 		}
 
 
+		[GSConfigValue]
+		public static bool LoadLastGraphOnStartup = false;
+
+
+
 		// below actually implements very general automatic field/property serialization and
 		// probably should be generalized outside this class...
 

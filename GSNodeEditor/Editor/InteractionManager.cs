@@ -25,7 +25,10 @@ namespace GSNodeEditor
         NewNodePopupDialog? ActiveNewNodePopupDialog;
         SimpleWidgetSource ActivePopupMenuWidgetSet;
 
-        Action? PendingNextFrameAction = null;
+        Action? PendingNextFrameAction {
+            get;
+            set;
+        } = null;
 
         InputBehaviorSet InteractionBehaviors = new InputBehaviorSet();
         InputBehaviorCollectionSet ViewportInteractionSets = new InputBehaviorCollectionSet();
@@ -557,13 +560,18 @@ namespace GSNodeEditor
                 }
             }
 
-            if ( interactionState == EInteractionState.NoInteraction && PendingNextFrameAction != null )
-            {
-                PendingNextFrameAction();
-                PendingNextFrameAction = null;
-            }
-        }
+            //ProcessNextFrameActions();
+		}
 
+
+        public void ProcessNextFrameActions()
+        {
+			if (interactionState == EInteractionState.NoInteraction && PendingNextFrameAction != null)
+			{
+				PendingNextFrameAction();
+				PendingNextFrameAction = null;
+			}
+		}
 
 
 

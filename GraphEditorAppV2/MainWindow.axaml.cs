@@ -1,0 +1,203 @@
+using Avalonia.Controls;
+using Avalonia.Dialogs;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using GSNodeEditor;
+using System;
+using System.ComponentModel.Design;
+using System.Diagnostics.Tracing;
+using System.Windows.Input;
+
+using Avalonia.Platform.Storage;
+using System.Collections.Generic;
+using Gradientspace.NodeGraph;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using Gradientspace.UI;
+using System.IO;
+using Avalonia.Threading;
+using GSPython;
+
+
+namespace GraphEditorAppV2;
+
+
+public class ActionCommand : ICommand
+{
+	private readonly Predicate<object?> _canExecute;
+	private readonly Action<object?> _execute;
+
+	public ActionCommand(Predicate<object?> canExecute, Action<object?> execute) {
+		_canExecute = canExecute;
+		_execute = execute;
+	}
+
+	// what is this for??
+	// https://blog.postsharp.net/wpf-command
+	//   "This event occurs when changes occur that affect whether or not the command should execute."
+	//   (should just be an internal event that never fires??)
+	public event EventHandler? CanExecuteChanged {
+		add { } // => CommandManager.RequerySuggested += value;
+		remove { } // => CommandManager.RequerySuggested -= value;
+	}
+
+	public bool CanExecute(object? parameter)
+	{
+		return _canExecute(parameter);
+	}
+
+	public void Execute(object? parameter)
+	{
+		_execute(parameter);
+	}
+}
+
+
+
+public partial class MainWindow : Window
+{
+    public MainWindow()
+    {
+        InitializeComponent();
+
+		Canvas.SetLeft(myButton, 10);
+		Canvas.SetTop(myButton, 900);
+
+		RegisterGlobalKeyBindings();
+
+		this.Loaded += MainWindow_Loaded;
+	}
+
+	protected override void OnClosing(WindowClosingEventArgs e)
+	{
+		// tbd do this at app level?
+		PythonSetup.PythonShutdown();
+		base.OnClosing(e);
+	}
+
+	private void MainWindow_Loaded(object? sender, RoutedEventArgs e)
+	{
+		PythonSetup.InitializePython();
+
+		SkiaView.InitializeGraph();
+		SkiaView.ActiveViewport.SetActiveHostAPI(
+			new GraphEditorHostImpl(this));
+		GlobalGraphOutput.OnGraphOutputUpdated += GlobalGraphOutput_OnGraphOutputUpdated;
+		LogTextArea.Text += "\r\n"; // ugh
+
+		SkiaView.Focus(NavigationMethod.Pointer);
+
+		Option_LoadLastOnStartup.IsChecked = NodeEditorConfig.LoadLastGraphOnStartup;
+		Option_EnableGraphDebug.IsChecked = DebugManager.GlobalEnableGraphDebugging;
+
+		UpdateRecentFilesMenu();
+		if (NodeEditorConfig.LoadLastGraphOnStartup)
+			TryLoadGraphFromPath( NodeEditorConfig.EnumerateRecentFiles().FirstOrDefault() );
+	}
+
+	private void GlobalGraphOutput_OnGraphOutputUpdated(string? appendedLine, EGraphOutputType OutputType)
+	{
+		Dispatcher.UIThread.InvokeAsync(() => {
+			LogTextArea.Text += appendedLine + "\r\n";
+		});
+	}
+
+	private void UpdateRecentFilesMenu()
+	{
+		var MakeItem = (string path) => {
+			Avalonia.Controls.MenuItem TmpItem = new() { Header = path };
+			TmpItem.Click += (object? sender, RoutedEventArgs e) => { TryLoadGraphFromPath(path); };
+			return TmpItem;
+		};
+		RecentFilesMenu.Items.Clear();
+		foreach (string path in NodeEditorConfig.EnumerateRecentFiles())
+			RecentFilesMenu.Items.Add(MakeItem(path));
+	}
+
+
+	private void RegisterGlobalKeyBindings()
+	{
+		// this seems to pre-empt any lower-level handling of space key...breaks text entry!
+		//KeyBinding binding = new KeyBinding();
+		//binding.Gesture = new KeyGesture(Key.Space);
+		//binding.Command = new ActionCommand(
+		//	(o) => { return true; },
+		//	(o) => { RunGraphEvaluationCommand(); });
+		//KeyBindings.Add(binding);
+	}
+	private void RunGraphEvaluationCommand()
+	{
+		SkiaView.ActiveViewport.RunGraphEvaluation();
+	}
+
+
+	// add tab to a tab control
+	//public void MainThing_ClickHandler(object sender, RoutedEventArgs args)
+	//{
+	//	TabItem newItem = new TabItem();
+	//	newItem.Header = "Meep";
+	//	MyTabControl.Items.Add(newItem);
+	//}
+
+	private void New_OnClick(object? sender, RoutedEventArgs e)
+	{
+		SkiaView.ActiveViewport.TryNewExecutionGraph();
+		SkiaView.Focus(NavigationMethod.Pointer);
+	}
+	private void Open_OnClick(object? sender, RoutedEventArgs e)
+	{
+		if (SkiaView.ActiveViewport.TryOpen())
+			UpdateRecentFilesMenu();
+		SkiaView.Focus(NavigationMethod.Pointer);
+	}
+	private void Save_OnClick(object? sender, RoutedEventArgs e)
+	{
+		if (SkiaView.ActiveViewport.TrySave())
+			UpdateRecentFilesMenu();
+		SkiaView.Focus(NavigationMethod.Pointer);
+	}
+	private void SaveAs_OnClick(object? sender, RoutedEventArgs e)
+	{
+		if (SkiaView.ActiveViewport.TrySaveAs())
+			UpdateRecentFilesMenu();
+		SkiaView.Focus(NavigationMethod.Pointer);
+	}
+	private void TryLoadGraphFromPath(string? path)
+	{
+		if (path != null && File.Exists(path) )
+			SkiaView.ActiveViewport.OpenGraphFile(path);
+	}
+
+	private void GraphDebugging_OnToggle(object? sender, RoutedEventArgs e)
+	{
+		DebugManager.GlobalEnableGraphDebugging = !DebugManager.GlobalEnableGraphDebugging;
+		Option_EnableGraphDebug.IsChecked = DebugManager.GlobalEnableGraphDebugging;
+	}
+	private void LoadLastOnStartup_OnToggle(object? sender, RoutedEventArgs e)
+	{
+		NodeEditorConfig.LoadLastGraphOnStartup = !NodeEditorConfig.LoadLastGraphOnStartup;
+		Option_LoadLastOnStartup.IsChecked = NodeEditorConfig.LoadLastGraphOnStartup;
+		NodeEditorConfig.SaveConfig();
+	}
+
+
+	protected override void OnTextInput(TextInputEventArgs e)
+	{
+		// handle space-to-evaluate hotkey at window level so that it works even if skia page does not have focus
+		// (todo: figure out cleaner way to handle that as we will want other hotkeys...)
+		if (e.Text == " ")
+		{
+			e.Handled = true;
+			RunGraphEvaluationCommand();
+		}
+		base.OnTextInput(e);
+	}
+
+	//protected override void OnKeyUp(KeyEventArgs e)
+	//{
+	//	if (e.Key == Key.Space) {
+	//		RunGraphEvaluationCommand();
+	//	}
+	//}
+	
+}

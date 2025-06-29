@@ -148,7 +148,11 @@ namespace Gradientspace.UI
         {
             return NumKeys == 1 && KeySequence[0].KeyName == specialKey;
         }
-        public bool IsChord2(KeyNames modifierKey, char Character)
+		public bool IsSingleCharacterKey(char Character)
+		{
+			return NumKeys == 1 && KeySequence[0].Character == Character;
+		}
+		public bool IsChord2(KeyNames modifierKey, char Character)
         {
             return NumKeys == 2 && KeySequence[0].KeyName == modifierKey && KeySequence[1].Character == Character;
         }
@@ -206,8 +210,8 @@ namespace Gradientspace.UI
 
 
         // temporary hack for sending hotkeys...
-        public delegate void NewPressedKeyEventHandler(KeyboardRouter sender, KeyState[] NewKeyChord);
-        public event NewPressedKeyEventHandler? OnNewPressedKey;
+        public Func<KeyboardRouter, KeyState[], bool>? OnNewPressedKeyFunc = null;
+
 
         // this event is emitted on a ctrl+c text-copy, if some text was extracted from current text-entry/etc
         public delegate void TextCopiedEventHandler(KeyboardRouter sender, string NewCopiedText);
@@ -238,23 +242,24 @@ namespace Gradientspace.UI
 
         bool bWaitForAllKeysUpPending = false;
 
-        public virtual void OnRawKeyDown(KeyState keyState)
+        public virtual bool OnRawKeyDown(KeyState keyState)
         {
             // ignore unknown keys
-            if (keyState.KeyType == KeyType.UnknownKey) return;
+            if (keyState.KeyType == KeyType.UnknownKey) 
+                return false;
 
             // try to fix up if we got into invalid state somehow
             if (bWaitForAllKeysUpPending && ActivePressedKeys.Count == 0)
                 bWaitForAllKeysUpPending = false;
 
             if (bWaitForAllKeysUpPending)
-                return;
+                return true;
 
             // if no chord is in progress, allow raw keyinput targets to see this event
             if ( ActivePressedKeys.Count == 0 ) {
                 foreach (IRawKeyInputTarget rawTarget in rawKeyInputTargets) {
                     if ( rawTarget.OnKeyPress(keyState) )
-                        return;
+                        return true;
                 }
             }
 
@@ -291,12 +296,17 @@ namespace Gradientspace.UI
                         activeTextTarget.OnSelectAll();
                         bWaitForAllKeysUpPending = true;
                         bConsumed = true;
+                    } else if ( currentChord.IsSingleSpecialKey(KeyNames.Enter) ||
+                                currentChord.IsSingleSpecialKey(KeyNames.Escape) )
+                    {
+                        // if enter or escape were pressed, we may want this key but will handle in KeyUp
+                        bConsumed = true;
                     }
                     else
                         bConsumed = AppendKeyDownToFocusTarget(keyState);
                 }
                 if (bConsumed)      // wait for pending?
-                    return;
+                    return true;
 
                 // check if anything in the active hotkey stack wants to consume the current key chord
                 if (activeHotkeyStack.Count > 0)
@@ -314,23 +324,26 @@ namespace Gradientspace.UI
                 if ( bConsumed )
                 {
                     bWaitForAllKeysUpPending = true;
-                    return;
+                    return true;
                 }
 
-                OnNewPressedKey?.Invoke(this, ActivePressedKeys.ToArray());
+                if (OnNewPressedKeyFunc != null && OnNewPressedKeyFunc(this, ActivePressedKeys.ToArray()) == true)
+                    return true;
             }
-        }
+			return false;
+		}
 
 
-        public virtual void OnRawKeyUp(KeyState keyState)
+		public virtual bool OnRawKeyUp(KeyState keyState)
         {
-            if (keyState.KeyType == KeyType.UnknownKey) return;
+            if (keyState.KeyType == KeyType.UnknownKey) 
+                return false;
 
             // if no chord is in progress, allow raw keyinput targets to see this event
             if ( ActivePressedKeys.Count == 0 ) {
                 foreach (IRawKeyInputTarget rawTarget in rawKeyInputTargets) {
                     if ( rawTarget.OnKeyRelease(keyState) )
-                        return;
+                        return true;
                 }
             }
 
@@ -348,6 +361,16 @@ namespace Gradientspace.UI
             if (bWaitForAllKeysUpPending && ActivePressedKeys.Count == 0) {
                 bWaitForAllKeysUpPending = false;
             }
+
+            // Hack for now...if no keys are pressed and we released Escape or Enter, 
+            // forward to OnCharacter which handles this correctly(ish)
+            if (ActivePressedKeys.Count == 0)
+            {
+                if (keyState.KeyName == KeyNames.Escape || keyState.KeyName == KeyNames.Enter)
+                    return OnCharacter(keyState);
+            }
+
+            return false;
         }
 
 
@@ -405,10 +428,11 @@ namespace Gradientspace.UI
                 activeTextTarget = null;
             }
         }
-        protected virtual void AppendCharacterToFocusTarget(KeyState keyState)
+        protected virtual bool AppendCharacterToFocusTarget(KeyState keyState)
         {
             if (activeTextTarget != null) 
-                activeTextTarget.OnNextKey(keyState);
+                return activeTextTarget.OnNextKey(keyState);
+            return false;
         }
         protected virtual bool AppendKeyDownToFocusTarget(KeyState keyState)
         {
@@ -423,29 +447,40 @@ namespace Gradientspace.UI
 
 
 
-        public virtual void OnCharacter(KeyState keyState)
+        public virtual bool OnCharacter(KeyState keyState)
         {
-            if (activeTextTarget == null) return;
+            if (activeTextTarget == null) 
+                return false;
 
             if (keyState.IsCharacterKey) {
-                AppendCharacterToFocusTarget(keyState);
+                return AppendCharacterToFocusTarget(keyState);
             }
-            else if (keyState.KeyName == KeyNames.Escape) {
+
+            // handle escape and enter here...??
+
+            if (keyState.KeyName == KeyNames.Escape) 
+            {
                 if (activeTextTarget.TryHandleTextEntryHotkey(keyState) == false)
                 {
                     activeTextTarget.OnEndFocus(ITextEntryFocusTarget.EndFocusType.Cancel);
                     activeTextTarget = null;
-                }
-            } else if ( keyState.KeyName == KeyNames.Enter) {
+                    return true;        // ??
+				} else
+					return true;        // ??
+			} else if ( keyState.KeyName == KeyNames.Enter) 
+            {
                 if (activeTextTarget.TryHandleTextEntryHotkey(keyState) == false)
                 {
                     activeTextTarget.OnEndFocus(ITextEntryFocusTarget.EndFocusType.Commit);
                     activeTextTarget = null;
-                }
-            } else {
+                    return true;        // ??
+				} else
+                    return true;        // ??
+			} else {
                 // key is not a character...cannot append to string so we will just ignore it
                 //AppendCharacterToFocusTarget(keyState);
             }
+            return false;
         }
 
 

@@ -58,6 +58,5 @@ namespace GSNodeEditor
 
         public static WatchableSetting<bool> EnableGridSnapping = new WatchableSetting<bool>(true);
         public static WatchableSetting<int> GridSnappingSize = new WatchableSetting<int>(10);
-
     }
 }

@@ -44,8 +44,9 @@ namespace GSNodeEditor
         public void Initialize()
         {
             DebugManager.GlobalEnableGraphDebugging = true;
+            GlobalGraphOutput.SetCurrentOutput(new DefaultGraphOutputImpl());
 
-            System.Console.WriteLine($"Default User Files Path is {NodeEditorConfig.DefaultUserFilesPath}");
+			GlobalGraphOutput.AppendLine($"Default User Files Path is {NodeEditorConfig.DefaultUserFilesPath}", EGraphOutputType.Logging);
 
             viewportUI = new NodeEditorViewportUI(this);
 
@@ -77,13 +78,14 @@ namespace GSNodeEditor
 
             RebuildGraphView();
 
-            RunGraphEvaluation();
+            //RunGraphEvaluation();
 
             ViewportTranslation = Vector2f.Zero;
-            ViewportScale = 1.5f;
-            UIScale = 1.5f;
+            ViewportScale = 1.0f;
+            UIScale = 1.0f;
 
-            SystemKeyboardRouter.Instance.OnNewPressedKey += KeyboardRouter_OnNewPressedKey;
+            // possibly figure out how to remove this...
+            SystemKeyboardRouter.Instance.OnNewPressedKeyFunc = KeyboardRouter_OnNewPressedKey;
             SystemKeyboardRouter.Instance.PushHotkeyTarget(this);
 
             TooltipManager.Instance.OnTooltipDrawUpdatePending += Instance_OnTooltipDrawUpdatePending;
@@ -253,7 +255,8 @@ namespace GSNodeEditor
             {
                 InteractionManager.OnPointerHoverMove(LastDeviceState);
             }
-        }
+			HostAPI?.RequestRepaint();
+		}
 
         public void OnPointerDown(InputDeviceState newState)
         {
@@ -277,6 +280,8 @@ namespace GSNodeEditor
             if (bCaptured)
                 SystemKeyboardRouter.Instance.OnChangeWindowFocus(true);
 
+            HostAPI?.RequestRepaint();
+
             // do we care if we did not capture??
         }
 
@@ -287,7 +292,8 @@ namespace GSNodeEditor
             if (InteractionManager.IsCapturingInput)
             {
                 InteractionManager.OnPointerUp(LastDeviceState);
-            }
+				HostAPI?.RequestRepaint();
+			}
         }
 
         public void OnWheel(InputDeviceState newState)
@@ -300,7 +306,9 @@ namespace GSNodeEditor
             Vector2f PrevCursorPosInNew = TransformViewportToWindow(CurLocalCursorPos);
             Vector2f Delta = (newState.CurrentPosition - PrevCursorPosInNew);
             ViewportTranslation += Delta;
-        }
+
+			HostAPI?.RequestRepaint();
+		}
 
 
         public void OnEndFocus()
@@ -310,7 +318,9 @@ namespace GSNodeEditor
                 InteractionManager.OnAbortInteraction();
             }
             SystemKeyboardRouter.Instance.OnChangeWindowFocus(true);
-        }
+
+			HostAPI?.RequestRepaint();
+		}
         public void OnBeginFocus()
         {
             if (InteractionManager.IsCapturingInput)
@@ -318,7 +328,9 @@ namespace GSNodeEditor
                 InteractionManager.OnAbortInteraction();
             }
             SystemKeyboardRouter.Instance.OnChangeWindowFocus(true);
-        }
+
+			HostAPI?.RequestRepaint();
+		}
 
 
         protected void UpdateWindowTitle()
@@ -342,7 +354,8 @@ namespace GSNodeEditor
         {
             CurrentGraphIsSaved = false;
             UpdateWindowTitle();
-        }
+			HostAPI?.RequestRepaint();
+		}
 
 
         const string DefaultExtension = "json";
@@ -382,30 +395,38 @@ namespace GSNodeEditor
             {
                 TryOpen();
                 return true;
-            }
+            } 
 
-            return false;
+			return false;
         }
 
-        private void KeyboardRouter_OnNewPressedKey(KeyboardRouter sender, KeyState[] NewKeyChord)
+        private bool KeyboardRouter_OnNewPressedKey(KeyboardRouter sender, KeyState[] NewKeyChord)
         {
             if (NewKeyChord.Length == 1 && NewKeyChord[0].IsCharacterKey && NewKeyChord[0].Character == ' ')
             {
                 // TODO why are we getting here when this is the case??
                 if (sender.HasTextEntryFocusTarget)
-                    return;
-
-                Debug.WriteLine("Launching Graph Evaluation...");
-                // this runs in background-ish...
-                RunGraphEvaluation();
-
-                // TODO currently cannot do this because our UE nodes have no way to know if TCP connection is done
-                // sending data, need to implement bidirectional communication
-                //GC.Collect();
+                    return false;
+                HigherLevelRunGraphEvaluationTemp();
+                return true;
             }
 
+            return false;
         }
-        static bool ShowCompactMode = false;
+
+        private void HigherLevelRunGraphEvaluationTemp()
+        {
+			Debug.WriteLine("Launching Graph Evaluation...");
+			// this runs in background-ish...
+			RunGraphEvaluation();
+
+			// TODO currently cannot do this because our UE nodes have no way to know if TCP connection is done
+			// sending data, need to implement bidirectional communication
+			//GC.Collect();
+		}
+
+
+		static bool ShowCompactMode = false;
 
 		// IGraphEditorActions interface method
 		public bool TrySaveAs()
@@ -444,7 +465,7 @@ namespace GSNodeEditor
 		// IGraphEditorActions interface method
 		public bool TrySave()
         {
-            if (CurrentGraphFilePath.Length == 0 || File.Exists(CurrentGraphFilePath) == false)
+            if (CanSaveCurrentGraph == false)
                 return TrySaveAs();
 
 			SaveGraphToFile(CurrentGraphFilePath, EnableAutoSaveBackups);
@@ -459,13 +480,27 @@ namespace GSNodeEditor
             string InitialPath = NodeEditorConfig.GetActiveSaveLoadPath();
 			if (HostAPI != null && HostAPI.ShowBlockingOpenFileDialog(DefaultExtension, DefaultFileFilter, DefaultFileName, InitialPath, out string SelectedFilename))
 			{
-				if (LoadGraphFromFile(SelectedFilename))
-				{
-					CurrentGraphIsSaved = true;
-					UpdateCurrentFilePath(SelectedFilename);
+                if (OpenGraphFile(SelectedFilename))
                     return true;
-				}
 			}
+			return false;
+		}
+
+        //! returns false if graph is unsaved, ie must do Save-As
+        public bool CanSaveCurrentGraph { 
+            get { return CurrentGraphFilePath.Length > 0 && File.Exists(CurrentGraphFilePath); } 
+        }
+
+		public bool OpenGraphFile(string Filename)
+        {
+			if (LoadGraphFromFile(Filename))
+			{
+				CurrentGraphIsSaved = true;
+				UpdateCurrentFilePath(Filename);
+                GlobalGraphOutput.AppendLine($"Loaded Graph from {Filename}", EGraphOutputType.Logging);
+				return true;
+			}
+			GlobalGraphOutput.AppendLine($"Failed to load Graph from {Filename}", EGraphOutputType.Logging);
 			return false;
 		}
 
@@ -504,7 +539,7 @@ namespace GSNodeEditor
 
 				}
             } catch (Exception e) {
-                System.Console.WriteLine("ERROR SAVING GRAPH to {0} : {1}", Filename, e.Message);
+                GlobalGraphOutput.AppendError($"ERROR SAVING GRAPH to {Filename} : {e.Message}");
             }
         }
 
@@ -531,11 +566,23 @@ namespace GSNodeEditor
 					return true;
                 }
             } catch (Exception e) {
-                System.Console.WriteLine("ERROR SAVING LOADING GRAPH FROM {0} : {1}: ", Filename, e.Message);
+                GlobalGraphOutput.AppendError($"ERROR SAVING LOADING GRAPH FROM {Filename} : {e.Message}");
             }
             return false;
         }
 
+
+
+        public void PreDraw()
+        {
+			widgetScene.UpdateScene();
+			widgetScene.UpdateLayout(styleCache);
+			CurrentGraphView.UpdateLayout();
+		}
+        public void PostDraw()
+        {
+            InteractionManager.ProcessNextFrameActions();
+        }
 
         public void Repaint(SKCanvas ViewportCanvas)
         {
@@ -549,9 +596,9 @@ namespace GSNodeEditor
             SKMatrix CameraTransformMatrix = SKMatrix.Concat(ViewportTranslationMatrix, ViewportScaleMatrix);
             ViewportCanvas.SetMatrix(SKMatrix.Concat(InitialMatrix, CameraTransformMatrix));
 
-            widgetScene.UpdateScene();
-            widgetScene.UpdateLayout(styleCache);
-            CurrentGraphView.UpdateLayout();
+            //widgetScene.UpdateScene();
+            //widgetScene.UpdateLayout(styleCache);
+            //CurrentGraphView.UpdateLayout();
 
             selectionManager.DrawViewport(ViewportCanvas);
 
@@ -626,7 +673,7 @@ namespace GSNodeEditor
         }
 
 
-        protected bool InGraphEvaluation = false;
+        public bool InGraphEvaluation { get; private set; } = false;
         
         public async void RunGraphEvaluation()
         {
@@ -641,7 +688,10 @@ namespace GSNodeEditor
             List<Tuple<string, NodeBase?>> Errors = new List<Tuple<string, NodeBase?>>();
             ExecutionGraphEvaluator.EvaluationErrorEvent errorEvent = (string Error, NodeBase? ErrorAtNode) => Errors.Add(new(Error, ErrorAtNode));
 
-            Task<bool> GraphExecTask = Task.Run(() =>
+            // invalidate before launching graph
+            HostAPI?.RequestRepaint();
+
+			Task<bool> GraphExecTask = Task.Run(() =>
             {
                 if (UsingDataFlowGraphEvaluator != null)
                 {

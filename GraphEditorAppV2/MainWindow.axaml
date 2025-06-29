@@ -1,0 +1,76 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:pages="using:GraphEditorAppV2"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="GraphEditorAppV2.MainWindow"
+        Title="GraphEditorAppV2"
+		x:Name="MainAppWindow">
+
+		<!--<Window.KeyBindings>
+			<KeyBinding Gesture="F3" Command="{Binding MyCommand}" />
+		</Window.KeyBindings>-->
+
+
+		<SplitView PanePlacement="Right" IsPaneOpen="False" DisplayMode="CompactOverlay" CompactPaneLength="20">
+
+		<Grid>
+			<pages:CustomSkiaPage Name="SkiaView" />
+			<DockPanel>
+				<Menu DockPanel.Dock="Top">
+					<MenuItem Header="_File">
+						<MenuItem Header="_New" Click="New_OnClick" />
+						<Separator/>
+						<MenuItem Header="_Open..." Click="Open_OnClick" />
+						<MenuItem Header="_Save" Click="Save_OnClick"/>
+						<MenuItem Header="_Save As..." Click="SaveAs_OnClick"/>
+						<Separator/>
+						<MenuItem Header="Recent Files..." Name="RecentFilesMenu"/>
+						<Separator/>
+						<MenuItem Header="_Exit"/>
+					</MenuItem>
+					<MenuItem Header="Settings">
+						<CheckBox Name="Option_LoadLastOnStartup" Click="LoadLastOnStartup_OnToggle">Load Last Graph On Startup</CheckBox>
+						<Separator/>
+						<CheckBox Name="Option_EnableGraphDebug" Click="GraphDebugging_OnToggle">Enable Graph Debug</CheckBox>
+					</MenuItem>
+					<MenuItem Header="_Edit">
+						<MenuItem Header="Copy"/>
+						<MenuItem Header="Paste"/>
+					</MenuItem>
+				</Menu>
+
+				<Border DockPanel.Dock="Bottom" Background="#CCCCCC" BorderBrush="Black" BorderThickness="2" Margin="0">
+					<DockPanel Margin="5" Height="150">
+
+						<Panel Margin="3" DockPanel.Dock="Top">
+							<TextBlock HorizontalAlignment="Left" FontWeight="Bold">Log</TextBlock>
+							<Button HorizontalAlignment="Right" Content="Clear" Padding="1" Focusable="False" />
+						</Panel>
+
+						<Border Background="#FFFFFF">
+							<ScrollViewer>
+								<SelectableTextBlock Name="LogTextArea">
+									Welcome to Derivative Graph Editor!
+								</SelectableTextBlock>
+							</ScrollViewer>
+						</Border>
+					</DockPanel>
+				</Border>
+
+					<TextBlock/>
+			</DockPanel>
+			<Canvas Name="MyCanvas">
+				<Button Name="myButton" Content="Movable Button"/>
+			</Canvas>
+		</Grid>
+
+			<SplitView.Pane>
+				[
+			</SplitView.Pane>
+				
+			
+		</SplitView>
+
+	</Window>

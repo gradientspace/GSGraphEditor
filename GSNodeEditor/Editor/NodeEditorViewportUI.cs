@@ -65,7 +65,8 @@ namespace GSNodeEditor
 			SaveAsButton.OnClicked += SaveAsButton_OnClicked;
 			widgets.AddRootWidget(SaveAsButton);
 
-			widgetScene.AddSource(widgets);
+			// disable toolbar for now
+			//widgetScene.AddSource(widgets);
         }
 
         public WidgetScene WidgetScene { get { return widgetScene; } }

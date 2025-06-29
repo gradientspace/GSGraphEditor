@@ -373,15 +373,15 @@ namespace Gradientspace.UI
                     foreach (Widget childWidget in rootWidget.EnumerateChildWidgets(true))
                     {
                         InputCaptureRequest captureRequest = childWidget.InputBehavior?.CheckForHover(deviceState) ?? InputCaptureRequest.None;
-						if (captureRequest != InputCaptureRequest.None)
-							captureRequest.ZDepth = childWidget.GetActiveView().LastDrawOrderIndex;
+                        if (captureRequest != InputCaptureRequest.None)
+                            captureRequest.ZDepth = childWidget.GetActiveView()?.LastDrawOrderIndex ?? 0;
 						BestRequest = BestRequest.SelectCapture(captureRequest);
                     }
 
                     {
                         InputCaptureRequest captureRequest = rootWidget.InputBehavior?.CheckForHover(deviceState) ?? InputCaptureRequest.None;
-						if (captureRequest != InputCaptureRequest.None)
-							captureRequest.ZDepth = rootWidget.GetActiveView().LastDrawOrderIndex;
+                        if (captureRequest != InputCaptureRequest.None)
+                            captureRequest.ZDepth = rootWidget.GetActiveView()?.LastDrawOrderIndex ?? 0;
 						BestRequest = BestRequest.SelectCapture(captureRequest);
                     }
                 }
@@ -403,14 +403,14 @@ namespace Gradientspace.UI
                     {
                         InputCaptureRequest captureRequest = childWidget.InputBehavior?.CheckForCapture(deviceState) ?? InputCaptureRequest.None;
                         if (captureRequest != InputCaptureRequest.None)
-                            captureRequest.ZDepth = childWidget.GetActiveView().LastDrawOrderIndex;
+                            captureRequest.ZDepth = childWidget.GetActiveView()?.LastDrawOrderIndex ?? 0;
 						BestRequest = BestRequest.SelectCapture(captureRequest);
                     }
 
                     {
                         InputCaptureRequest captureRequest = rootWidget.InputBehavior?.CheckForCapture(deviceState) ?? InputCaptureRequest.None;
-						if (captureRequest != InputCaptureRequest.None)
-							captureRequest.ZDepth = rootWidget.GetActiveView().LastDrawOrderIndex;
+                        if (captureRequest != InputCaptureRequest.None)
+                            captureRequest.ZDepth = rootWidget.GetActiveView()?.LastDrawOrderIndex ?? 0;
 						BestRequest = BestRequest.SelectCapture(captureRequest);
                     }
                 }

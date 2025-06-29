@@ -266,7 +266,9 @@ namespace PopupWindow
                         ViewportBuffer.UpdateSize(PaintRect.Width, PaintRect.Height);
                         if (ViewportBuffer.IsValid)
                         {
+                            GraphView.PreDraw();
                             GraphView.Repaint(ViewportBuffer.Canvas!);
+                            GraphView.PostDraw();
 
 
                             BITMAPINFO bmi = new BITMAPINFO(ViewportBuffer.Width, -ViewportBuffer.Height);
