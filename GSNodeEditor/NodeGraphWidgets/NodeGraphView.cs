@@ -376,6 +376,7 @@ namespace GSNodeEditor
         }
 
 
+        public void DebugDraw(SKCanvas Canvas, Vector2d CursorPosition)
         {
             // temp - draw line to nearest-point on each sequence curve
 			//foreach (ConnectionView Connection in SequenceConnections)
