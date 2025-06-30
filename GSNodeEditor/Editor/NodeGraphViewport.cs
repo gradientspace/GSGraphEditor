@@ -214,7 +214,6 @@ namespace GSNodeEditor
             LastDeviceState = newState;
         }
 
-
         public Vector2f TransformViewportToWindow(Vector2f DevicePoint)
         {
             return DevicePoint * ViewportScale + ViewportTranslation;
@@ -603,7 +602,8 @@ namespace GSNodeEditor
             selectionManager.DrawViewport(ViewportCanvas);
 
             CurrentGraphView.Draw(ViewportCanvas);
-            widgetScene.Draw(styleCache, ViewportCanvas);
+            CurrentGraphView.DebugDraw(ViewportCanvas, InteractionManager.GetDeviceStateInSpace(InteractionManager.EInteractionSpace.GraphViewport).CurrentPosition );
+			widgetScene.Draw(styleCache, ViewportCanvas);
 
             InteractionManager.Draw(ViewportCanvas);
 

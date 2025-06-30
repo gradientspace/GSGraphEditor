@@ -376,6 +376,14 @@ namespace GSNodeEditor
         }
 
 
+        {
+            // temp - draw line to nearest-point on each sequence curve
+			//foreach (ConnectionView Connection in SequenceConnections)
+			//{
+			//	Vector2d NearestPt = SkiaUtil.SkiaCubicNearestPoint(Connection.StartPoint, Connection.StartTangentPoint, Connection.EndTangentPoint, Connection.EndPoint, CursorPosition);
+			//	Canvas.DrawLine(Conversion.ToSkia(CursorPosition), Conversion.ToSkia(NearestPt), DataConnectionErrorCurvePaint);
+			//}
+		}
 
         protected void DrawConnectionError(SKCanvas Canvas, ConnectionView Connection)
         {

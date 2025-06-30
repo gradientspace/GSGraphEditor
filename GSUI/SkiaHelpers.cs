@@ -71,6 +71,32 @@ namespace Gradientspace.UI
 			float y = mt3 * a.y + 3 * mt2 * t * ta.y + 3 * mt * t2 * tb.y + t3 * b.y;
 			return new Vector2f(x, y);
 		}
+
+
+        // basic nearest-point query...should improve this to take a max-distance, check bbox first, etc
+        // (maybe custom version for hit-query?)
+        public static Vector2d SkiaCubicNearestPoint(Vector2f a, Vector2f ta, Vector2f tb, Vector2f b, Vector2d Point)
+        {
+            // todo make this adaptive somehow...do a subdivision-based method that checks error??
+            int Steps = 10;
+            Vector2d LastPos = a;
+            double MinDistSqr = double.MaxValue;
+            Vector2d NearestPt = a;
+            for ( int k = 1; k <= Steps; ++k )
+            {
+				Vector2d NextPos = (k == Steps) ? b : SkiaCubicPoint(a, ta, tb, b, (float)k / (float)Steps);
+
+                double DistSqr = Segment2d.FastDistanceSquared(ref LastPos, ref NextPos, ref Point);
+                if ( DistSqr < MinDistSqr )
+                {
+                    MinDistSqr = DistSqr;
+					NearestPt = new Segment2d(LastPos, NextPos).NearestPoint(Point);
+                }
+
+                LastPos = NextPos;
+            }
+            return NearestPt;
+        }
 	}
 
 }
