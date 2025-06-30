@@ -31,7 +31,7 @@ namespace GSNodeEditor
 
         public CodeFunctionNodeWidget(NodeGraphView graphView, INodeInfo node) : base(graphView, node)
         {
-            Debug.Assert(node.Node is CodeFunctionNode);
+            Debug.Assert(node.Node is INodeWithInlineCode);
 			CodeNodeAPI = (INodeWithInlineCode)node.Node;
 
 			CodeNodeAPI.OnCompileStatusUpdate += CodeNode_OnCompileStatusUpdate;

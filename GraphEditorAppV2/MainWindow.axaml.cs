@@ -17,6 +17,8 @@ using Gradientspace.UI;
 using System.IO;
 using Avalonia.Threading;
 using GSPython;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 
 
 namespace GraphEditorAppV2;
@@ -139,6 +141,12 @@ public partial class MainWindow : Window
 	//	MyTabControl.Items.Add(newItem);
 	//}
 
+	private void Exit_OnClick(object? sender, RoutedEventArgs e)
+	{
+		if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopApp)
+			desktopApp.Shutdown();
+		// otherwise on mobile??
+	}
 	private void New_OnClick(object? sender, RoutedEventArgs e)
 	{
 		SkiaView.ActiveViewport.TryNewExecutionGraph();

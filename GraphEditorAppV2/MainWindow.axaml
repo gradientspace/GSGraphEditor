@@ -28,7 +28,7 @@
 						<Separator/>
 						<MenuItem Header="Recent Files..." Name="RecentFilesMenu"/>
 						<Separator/>
-						<MenuItem Header="_Exit"/>
+						<MenuItem Header="_Exit" Click="Exit_OnClick"/>
 					</MenuItem>
 					<MenuItem Header="Settings">
 						<CheckBox Name="Option_LoadLastOnStartup" Click="LoadLastOnStartup_OnToggle">Load Last Graph On Startup</CheckBox>
@@ -51,7 +51,7 @@
 
 						<Border Background="#FFFFFF">
 							<ScrollViewer>
-								<SelectableTextBlock Name="LogTextArea">
+								<SelectableTextBlock Name="LogTextArea" Margin="3">
 									Welcome to Derivative Graph Editor!
 								</SelectableTextBlock>
 							</ScrollViewer>
