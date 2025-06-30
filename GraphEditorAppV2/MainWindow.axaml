@@ -15,8 +15,12 @@
 
 		<SplitView PanePlacement="Right" IsPaneOpen="False" DisplayMode="CompactOverlay" CompactPaneLength="20">
 
+		<!-- full-viewport grid panel. If no row/column specified, then each child is a full size layer -->
 		<Grid>
+			<!-- full-viewport skia panel  -->
 			<pages:CustomSkiaPage Name="SkiaView" />
+			
+			<!-- full-viewport DockPanel, used to dock menu at top, log area at bottom -->
 			<DockPanel>
 				<Menu DockPanel.Dock="Top">
 					<MenuItem Header="_File">
@@ -41,16 +45,18 @@
 					</MenuItem>
 				</Menu>
 
-				<Border DockPanel.Dock="Bottom" Background="#CCCCCC" BorderBrush="Black" BorderThickness="2" Margin="0">
-					<DockPanel Margin="5" Height="150">
-
+				<Border DockPanel.Dock="Bottom" Background="#CCCCCC" BorderBrush="Black" BorderThickness="2" Margin="0" Height="150">
+					<DockPanel Margin="5">
 						<Panel Margin="3" DockPanel.Dock="Top">
-							<TextBlock HorizontalAlignment="Left" FontWeight="Bold">Log</TextBlock>
-							<Button HorizontalAlignment="Right" Content="Clear" Padding="1" Focusable="False" />
+							<StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Spacing="5">
+								<Button Content="Output" Padding="5,0" Focusable="False" Click="SetLogFilter_Output" />
+								<Button Content="Log" Padding="5,0" Focusable="False" Click="SetLogFilter_All" />
+							</StackPanel>
+							<Button HorizontalAlignment="Right" Content="Clear" Padding="5,0" Focusable="False" Click="ClearLog_OnClick" />
 						</Panel>
 
 						<Border Background="#FFFFFF">
-							<ScrollViewer>
+							<ScrollViewer Name="LogTextAreaScrollView">
 								<SelectableTextBlock Name="LogTextArea" Margin="3">
 									Welcome to Derivative Graph Editor!
 								</SelectableTextBlock>
@@ -59,16 +65,20 @@
 					</DockPanel>
 				</Border>
 
-					<TextBlock/>
+				<Panel/> <!-- last item in DockPanel fills the rest of the space... -->
 			</DockPanel>
+			
+			<!--- temporary... -->
 			<Canvas Name="MyCanvas">
 				<Button Name="myButton" Content="Movable Button"/>
 			</Canvas>
+			
 		</Grid>
 
-			<SplitView.Pane>
-				[
-			</SplitView.Pane>
+		<!--- rhs panel, no content yet -->
+		<SplitView.Pane>
+			[
+		</SplitView.Pane>
 				
 			
 		</SplitView>

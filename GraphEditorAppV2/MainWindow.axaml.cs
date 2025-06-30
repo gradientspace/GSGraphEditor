@@ -19,6 +19,8 @@ using Avalonia.Threading;
 using GSPython;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Shapes;
+using System.Text;
 
 
 namespace GraphEditorAppV2;
@@ -97,11 +99,51 @@ public partial class MainWindow : Window
 			TryLoadGraphFromPath( NodeEditorConfig.EnumerateRecentFiles().FirstOrDefault() );
 	}
 
+
+	private bool bActiveLogFilterOutput = false;
+
 	private void GlobalGraphOutput_OnGraphOutputUpdated(string? appendedLine, EGraphOutputType OutputType)
 	{
 		Dispatcher.UIThread.InvokeAsync(() => {
+			if (bActiveLogFilterOutput && OutputType != EGraphOutputType.User)
+				return;
 			LogTextArea.Text += appendedLine + "\r\n";
+			LogTextAreaScrollView.ScrollToEnd();
 		});
+	}
+	private void UpdateLogWindow()
+	{
+		Dispatcher.UIThread.InvokeAsync(() => {
+
+			// TODO figure out a way to do this more generically...
+			StringBuilder stringBuilder = new StringBuilder();
+			if ( GlobalGraphOutput.GetCurrentOutput() is DefaultGraphOutputImpl output )
+			{
+				foreach ( var lineTuple in output.EnumerateLines()) {
+					if (bActiveLogFilterOutput && lineTuple.Item2 != EGraphOutputType.User)
+						continue;
+					stringBuilder.AppendLine(lineTuple.Item1);
+				}
+			}
+			LogTextArea.Text = stringBuilder.ToString();
+
+			LogTextAreaScrollView.ScrollToEnd();
+		});
+	}
+	private void SetLogFilter_Output(object? sender, RoutedEventArgs e)
+	{
+		bActiveLogFilterOutput = true;
+		UpdateLogWindow();
+	}
+	private void SetLogFilter_All(object? sender, RoutedEventArgs e)
+	{
+		bActiveLogFilterOutput = false;
+		UpdateLogWindow();
+	}
+	private void ClearLog_OnClick(object? sender, RoutedEventArgs e)
+	{
+		GlobalGraphOutput.Clear();
+		UpdateLogWindow();
 	}
 
 	private void UpdateRecentFilesMenu()
