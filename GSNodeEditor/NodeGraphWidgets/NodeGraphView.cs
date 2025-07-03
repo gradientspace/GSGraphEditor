@@ -222,9 +222,16 @@ namespace GSNodeEditor
                 SequenceConnections.Find(c => c.ConnectionInfo == connectionInfo);
         }
 
+		public ConnectionView? FindConnectionByID(int ConnectionID)
+		{
+            EConnectionType connectionType = ConnectionView.GetConnectionTypeFromID(ConnectionID);
+			return (connectionType == EConnectionType.Data) ?
+				DataConnections.Find(c => c.ConnectionID == ConnectionID) :
+				SequenceConnections.Find(c => c.ConnectionID == ConnectionID);
+		}
 
 
-        public bool RemoveConnection(IConnectionInfo connectionInfo)
+		public bool RemoveConnection(IConnectionInfo connectionInfo)
         {
             List<ConnectionView> UseList = (connectionInfo.ConnectionType == EConnectionType.Data) ? DataConnections : SequenceConnections;
             int FoundIndex = UseList.FindIndex(c => c.ConnectionInfo == connectionInfo);
@@ -347,10 +354,15 @@ namespace GSNodeEditor
 
         public void UpdateLayout()
         {
-            foreach (ConnectionView Connection in DataConnections)
+            int DrawOrderIndex = 1;
+            foreach (ConnectionView Connection in DataConnections) {
                 Connection.UpdateLayout(ConnectionTangentLen);
-            foreach (ConnectionView Connection in SequenceConnections)
+                Connection.DrawOrderIndex = DrawOrderIndex++;
+            }
+			foreach (ConnectionView Connection in SequenceConnections) { 
                 Connection.UpdateLayout(ConnectionTangentLen);
+                Connection.DrawOrderIndex = DrawOrderIndex++;
+            }
         }
 
         public void Draw(SKCanvas Canvas)
@@ -398,7 +410,37 @@ namespace GSNodeEditor
 		}
 
 
-        public IEnumerable<NodeWidget> EnumerateNodes(Predicate<NodeWidget>? Filter = null)
+		public ConnectionView? ConnectionHitTest(Vector2d CursorPosition, out WidgetHitResult hitResult, Predicate<ConnectionView>? PredicateFunc = null)
+		{
+            double MaxHitDist = 5;      // temp...
+            ConnectionView? Nearest = null;
+			foreach (ConnectionView Connection in DataConnections) {
+                if (PredicateFunc != null && PredicateFunc(Connection) == false)
+                    continue;
+                if ( SkiaUtil.SkiaCubicHitTest(Connection.StartPoint, Connection.StartTangentPoint, Connection.EndTangentPoint, Connection.EndPoint, 
+                        CursorPosition, out double Distance, MaxHitDist) ) {
+                    Nearest = Connection;
+                    MaxHitDist = Distance;
+				}
+			}
+            foreach (ConnectionView Connection in SequenceConnections) {
+				if (PredicateFunc != null && PredicateFunc(Connection) == false)
+					continue;
+				if ( SkiaUtil.SkiaCubicHitTest(Connection.StartPoint, Connection.StartTangentPoint, Connection.EndTangentPoint, Connection.EndPoint, 
+                        CursorPosition, out double Distance, MaxHitDist) ) {
+                    Nearest = Connection;
+                    MaxHitDist = Distance;
+				}
+            }
+            hitResult = (Nearest != null) ? new WidgetHitResult(Nearest, Nearest.DrawOrderIndex + 1000) : new WidgetHitResult();
+            return Nearest;
+		}
+
+
+
+
+
+		public IEnumerable<NodeWidget> EnumerateNodes(Predicate<NodeWidget>? Filter = null)
         {
             if (Filter == null) {
                 foreach (NodeWidget w in Nodes)

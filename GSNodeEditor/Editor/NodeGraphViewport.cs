@@ -372,7 +372,7 @@ namespace GSNodeEditor
             if (ActiveChord.IsSingleSpecialKey(KeyNames.Delete))
             {
                 if ( SelectionManager.HasSelection ) {
-                    List<NodeWidget> widgets = SelectionManager.FindSelectedWidgets();
+                    List<NodeWidget> widgets = SelectionManager.FindSelectedNodeWidgets();
                     ExecuteGraphEdit((NodeGraphEditor Editor) => {
                         foreach ( NodeWidget widget in widgets)
                             Editor.RemoveNode(widget);

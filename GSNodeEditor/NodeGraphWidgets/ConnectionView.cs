@@ -9,9 +9,23 @@ using SkiaSharp;
 
 namespace GSNodeEditor
 {
-    public class ConnectionView
+	/**
+     * ConnectionView is the visual/widget-level representation of a graph connection.
+     * However note that it is *not* a Widget / WidgetView itself.
+     * 
+     * Currently the ConnectionViews are owned by the NodeGraphView...
+     */
+	public class ConnectionView
     {
         public IConnectionInfo ConnectionInfo { get; private set; }
+
+		// IConnectionInfo does not have it's own ID like INodeInfo does. 
+        // So we create our own, which is used for transient things like graph selection.
+        // !! However note that this ID does not persist between graph save/load!!!
+		public int ConnectionID { get; private set; }
+
+        // renderer sets this draw order (kinda hacky)
+        public int DrawOrderIndex { get; set; } = 0;
 
         // this state is updated by the NodeGraphView by querying the NodeGraph
         public EConnectionState ConnectionState { get; set; } = EConnectionState.OK;
@@ -25,9 +39,16 @@ namespace GSNodeEditor
             get { return FromNode != null && ToNode != null && FromPin >= -1 && ToPin >= -1; }
         }
 
+        private static int ConnectionIDGenerator = 1;
+        private const int SequenceIDOffset = 1000000;
+
         public bool InitializeFromConnection(IConnectionInfo connectionInfo, NodeGraphView Graph)
         {
-            ConnectionInfo = connectionInfo;
+            ConnectionID = Interlocked.Increment(ref ConnectionIDGenerator);
+            if (connectionInfo.ConnectionType == EConnectionType.Sequence)
+                ConnectionID += SequenceIDOffset;
+
+			ConnectionInfo = connectionInfo;
             NodeWidget? FoundFrom = Graph.FindNode(connectionInfo.FromNodeIdentifier);
             NodeWidget? FoundTo = Graph.FindNode(connectionInfo.ToNodeIdentifier);
             if (FoundFrom != null && FoundTo != null)
@@ -100,6 +121,12 @@ namespace GSNodeEditor
 
             StartTangentPoint = StartPoint + UseTangentLen * Vector2f.AxisX;
             EndTangentPoint = EndPoint - UseTangentLen * Vector2f.AxisX;
+        }
+
+
+        public static EConnectionType GetConnectionTypeFromID(int ConnectionID)
+        {
+            return (ConnectionID > SequenceIDOffset) ? EConnectionType.Sequence : EConnectionType.Data;
         }
     }
 }

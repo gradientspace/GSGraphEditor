@@ -16,6 +16,7 @@ namespace GSNodeEditor
         public NodeGraphView GraphView { get { return GraphViewport.CurrentGraphView; } }
 
         protected List<int> SelectedNodes = new List<int>();
+        protected List<int> SelectedConnections = new List<int>();
 
         public SelectionManager(NodeGraphViewport viewport)
         {
@@ -30,11 +31,13 @@ namespace GSNodeEditor
         }
 
 
-        public void Select(int NodeID, bool bReplace)
+        public void SelectNode(int NodeID, bool bReplace)
         {
-            if (bReplace) {
+            if (bReplace) 
+            {
                 SelectedNodes.Clear();
-                SelectedNodes.Add(NodeID);
+				SelectedConnections.Clear();
+				SelectedNodes.Add(NodeID);
             }
             else
             {
@@ -43,24 +46,53 @@ namespace GSNodeEditor
             }
         }
 
-        public void Deselect(int NodeID)
+        public void DeselectNode(int NodeID)
         {
             if (SelectedNodes.Contains(NodeID))
                 SelectedNodes.Remove(NodeID);
         }
 
-        public void ClearSelection()
+
+		public void SelectConnection(int ConnectionID, bool bReplace)
+		{
+			if (bReplace)
+			{
+				SelectedConnections.Clear();
+                SelectedNodes.Clear();
+				SelectedConnections.Add(ConnectionID);
+			} 
+            else
+			{
+				if (SelectedConnections.Contains(ConnectionID) == false)
+					SelectedConnections.Add(ConnectionID);
+			}
+		}
+
+		public void DeselectConnection(int ConnectionID)
+		{
+			if (SelectedConnections.Contains(ConnectionID))
+				SelectedConnections.Remove(ConnectionID);
+		}
+
+
+		public void ClearSelection()
         {
             SelectedNodes.Clear();
+            SelectedConnections.Clear();
         }
 
-        public bool HasSelection { get { return SelectedNodes.Count > 0; } }
+		public bool HasNodeSelection { get { return SelectedNodes.Count > 0; } }
+		public bool HasConnectionSelection { get { return SelectedConnections.Count > 0; } }
+		public bool HasSelection { get { return SelectedNodes.Count > 0 || SelectedConnections.Count > 0; } }
 
-        public bool IsSelected(int NodeID) {  return SelectedNodes.Contains(NodeID); }
+        public bool IsSelectedNode(int NodeID) {  return SelectedNodes.Contains(NodeID); }
+		public bool IsSelectedConnection(int ConnectionID) { return SelectedConnections.Contains(ConnectionID); }
 
-        public IEnumerable<int> CurrentSelection { get { return SelectedNodes; } }
+		public IEnumerable<int> CurrentNodeSelection { get { return SelectedNodes; } }
+		public IEnumerable<int> CurrentConnectionSelection { get { return SelectedConnections; } }
 
-        public List<NodeWidget> FindSelectedWidgets()
+
+		public List<NodeWidget> FindSelectedNodeWidgets()
         {
             List<NodeWidget> result = new List<NodeWidget>();
             for (int i = 0; i < SelectedNodes.Count; ++i)
@@ -143,6 +175,18 @@ namespace GSNodeEditor
                     Canvas.DrawRect(Conversion.ToSkia(NodeBounds), LinePaint);
                 }
             }
+
+            LinePaint.StrokeWidth = 8;
+			foreach (int connectionID in SelectedConnections)
+            {
+                ConnectionView? Connection = GraphView.FindConnectionByID(connectionID);
+                if (Connection == null) 
+                    continue;
+				SKPath Curve = new SKPath();
+				Curve.MoveTo(Conversion.ToSkia(Connection.StartPoint));
+				Curve.CubicTo(Conversion.ToSkia(Connection.StartTangentPoint), Conversion.ToSkia(Connection.EndTangentPoint), Conversion.ToSkia(Connection.EndPoint));
+				Canvas.DrawPath(Curve, LinePaint);
+			}
         }
 
 
@@ -165,13 +209,24 @@ namespace GSNodeEditor
         {
             if (ActiveChord.IsSingleSpecialKey(KeyNames.Delete))
             {
-                if (HasSelection) {
-                    List<NodeWidget> widgets = FindSelectedWidgets();
+                if (HasNodeSelection) {
+                    List<NodeWidget> widgets = FindSelectedNodeWidgets();
                     GraphViewport.ExecuteGraphEdit((NodeGraphEditor Editor) => {
                         foreach (NodeWidget widget in widgets)
                             Editor.RemoveNode(widget);
                     });
                     return true;
+                } 
+                else if (HasConnectionSelection)
+                {
+                    foreach (int ConnectionID in SelectedConnections) {
+						ConnectionView? Connection = GraphView.FindConnectionByID(ConnectionID);
+                        if (Connection != null) {
+                            GraphViewport.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                                Editor.RemoveConnection(Connection.ConnectionInfo);
+                            });
+						}
+					}
                 }
             }
 

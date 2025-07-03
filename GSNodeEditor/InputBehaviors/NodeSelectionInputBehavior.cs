@@ -25,15 +25,36 @@ namespace GSNodeEditor
                 (Widget w) => { return w is NodeWidget; });
             return (bHit) ? (hitResult.HitWidget as NodeWidget) : null;
         }
+        private ConnectionView? ConnectionHitTest(in InputDeviceState deviceState)
+        {
+            // todo can do type filtering here via predicate
+            ConnectionView? hitConnection = SelectionManager.GraphViewport.CurrentGraphView.ConnectionHitTest(deviceState.CurrentPosition, 
+                out WidgetHitResult hitResult, null);
+            return hitConnection;
+		}
 
         public override bool WantClickOrDragCapture(in InputDeviceState deviceState, out float CaptureDepth)
         {
             CaptureDepth = Depth;
-            if (!deviceState.IsLeftButtonPress) return false;
+            if (!deviceState.IsLeftButtonPress) 
+                return false;
+
             NodeWidget? hitWidget = NodeHitTest(deviceState);
-            // needs to be "behind" widgets...
-            CaptureDepth = (hitWidget != null) ? -50 : -100;
-            return true;
+            if (hitWidget != null) {
+                CaptureDepth = -50;
+                return true;
+            }
+
+            ConnectionView? hitConnection = ConnectionHitTest(deviceState);
+            if (hitConnection != null)
+            {
+                CaptureDepth = -75;
+                return true;
+            }
+
+			// needs to be "behind" widgets...
+			CaptureDepth = -100;
+            return true;        // start marquee select...
         }
 
         public override void OnClicked(in InputDeviceState deviceState)
@@ -44,14 +65,27 @@ namespace GSNodeEditor
             if (hitWidget != null)
             {
                 if ( deviceState.ShiftButton.bDown )
-                    SelectionManager.Select(hitWidget.GraphNodeIdentifier, false);
+                    SelectionManager.SelectNode(hitWidget.GraphNodeIdentifier, false);
                 else if (deviceState.CtrlButton.bDown)
-                    SelectionManager.Deselect(hitWidget.GraphNodeIdentifier);
+                    SelectionManager.DeselectNode(hitWidget.GraphNodeIdentifier);
                 else 
-                    SelectionManager.Select(hitWidget.GraphNodeIdentifier, true);
+                    SelectionManager.SelectNode(hitWidget.GraphNodeIdentifier, true);
+                return;
             }
-            else
-                SelectionManager.ClearSelection();
+
+            ConnectionView? hitConnection = ConnectionHitTest(deviceState);
+            if (hitConnection != null)
+            {
+				if (deviceState.ShiftButton.bDown)
+					SelectionManager.SelectConnection(hitConnection.ConnectionID, false);
+				else if (deviceState.CtrlButton.bDown)
+					SelectionManager.DeselectConnection(hitConnection.ConnectionID);
+				else
+					SelectionManager.SelectConnection(hitConnection.ConnectionID, true);
+				return;
+			}
+
+            SelectionManager.ClearSelection();
         }
 
 
@@ -79,7 +113,7 @@ namespace GSNodeEditor
             NodeWidget? hitWidget = NodeHitTest(deviceState);
             if (hitWidget != null )
             {
-                bool bIsSelected = SelectionManager.IsSelected(hitWidget.GraphNodeIdentifier);
+                bool bIsSelected = SelectionManager.IsSelectedNode(hitWidget.GraphNodeIdentifier);
                 if ( bIsSelected == false )
                 {
                     DragInteraction = EDragInteractionTypes.DragSingleWidget;
@@ -88,7 +122,7 @@ namespace GSNodeEditor
                 }
                 else
                 {
-                    foreach (int NodeID in SelectionManager.CurrentSelection)
+                    foreach (int NodeID in SelectionManager.CurrentNodeSelection)
                     {
                         NodeWidget? widget = SelectionManager.GraphView.FindNode(NodeID);
                         if ( widget != null )
