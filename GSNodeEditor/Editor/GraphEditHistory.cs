@@ -113,10 +113,12 @@ namespace GSNodeEditor
             {  return (NewChangeSequence != null); }
         }
 
-        public void AppendChange(IGraphEditChange change)
+        public void AppendChange(IGraphEditChange? change)
         {
-            Debug.Assert(InActiveChanges && NewChangeSequence != null);
-            NewChangeSequence.Changes.Add(change);
+            if (change != null) {
+                Debug.Assert(InActiveChanges && NewChangeSequence != null);
+                NewChangeSequence.Changes.Add(change);
+            }
         }
 
         public void EndChanges()

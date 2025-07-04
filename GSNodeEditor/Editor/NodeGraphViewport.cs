@@ -679,7 +679,7 @@ namespace GSNodeEditor
         // INodeGraphEditManager impl
         public void ExecuteGraphEdit(Action<NodeGraphEditor> EditFunc)
         {
-            GraphEditor.BeginGraphEdits();
+            GraphEditor.BeginGraphEdits(this.History);
             EditFunc(GraphEditor);
             GraphEditor.EndGraphEdits();
 

@@ -26,7 +26,9 @@ namespace GSNodeEditor
             bool bReplaceExisting,
             bool bTryAutoConnectionSequence)
         {
-            // handle placeholder node replacement. Not clear if this still needs to be in a BaseGraphEditor subclass...
+            // if a data connection is made to a placeholder node, we need to remove the placeholder node 
+            // and replace it with a non-placeholder instance first
+            // Not clear if this still needs to be in a BaseGraphEditor subclass...
             if (connectionType == EConnectionType.Data && ToNode.IsPlaceholderNode) {
                 AddPlaceholderConnection(FromNode, FromNodePin, ToNode, ToNodePin, bTryAutoConnectionSequence);
                 return;
@@ -46,12 +48,19 @@ namespace GSNodeEditor
 
             bool bCanReplace = PlaceholderNode.GetPlaceholderReplacementNodeInfo(inputInfo.InputName, incomingType,
                 out Type replacementNodeClassType, out string replacementInputName, out Action<INode, GraphDataType>? replacementNodeInitializer);
-            NodeType? NewNodeType = bCanReplace ? DefaultNodeLibrary.Instance.FindNodeType(replacementNodeClassType) : null;
-            if (NewNodeType != null)
+            NodeType? ReplacementNodeType = bCanReplace ? DefaultNodeLibrary.Instance.FindNodeType(replacementNodeClassType) : null;
+            if (ReplacementNodeType != null)
             {
+                // remove existing placeholder node
                 this.RemoveNode(ToNode);
-                NodeWidget newNodeWidget = this.AddNodeOfType(NewNodeType, ToNode.Position);
-                replacementNodeInitializer?.Invoke(newNodeWidget.ParentNode!, incomingType);
+
+                // create new replacement node
+                NodeWidget newNodeWidget = this.AddNodeOfType(ReplacementNodeType, ToNode.Position,
+                    (INodeInfo newNodeInfo) => {
+                        replacementNodeInitializer?.Invoke(newNodeInfo.Node!, incomingType);
+                    });
+
+                // find the new pin on the replacement node and add the new connection
                 ToNodePin = newNodeWidget.FindInputPinIndexByName(replacementInputName);
                 AddConnection(FromNode, FromNodePin, newNodeWidget, ToNodePin, EConnectionType.Data, false, bTryAutoConnectionSequence);
             }

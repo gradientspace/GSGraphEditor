@@ -3,9 +3,8 @@
 Bugs
 ===================
 
--can't repeatedly ctrl+z because consuming the chord triggers bWaitForAllKeysUpPending. Need to not wait for ctrl/shift/alt.
 -ClutchKeyInputBehavior is broken by selection support. Need to add handling for InputBehavior Priority.
-
+-CustomDataItem API should be moved from NodeBase to INode
 
 
 ===================
