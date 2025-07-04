@@ -73,6 +73,9 @@ namespace Gradientspace.UI
         public bool IsKnownKey {  get { return KeyType != KeyType.UnknownKey; } }
         public bool IsFunctionalKey {  get { return KeyType == KeyType.FunctionalKey; } }
         public bool IsCharacterKey { get { return KeyType == KeyType.CharacterKey; } }
+        public bool IsModifierKey { 
+            get { return KeyName == KeyNames.Alt || KeyName == KeyNames.Ctrl || KeyName == KeyNames.Shift; } 
+        }
 
         public static KeyState Unknown = new KeyState(KeyType.UnknownKey, KeyNames.Unnamed);
         public static KeyState Escape = new KeyState(KeyType.FunctionalKey, KeyNames.Escape);
@@ -166,23 +169,32 @@ namespace Gradientspace.UI
 			return "[invalid]";
 		}
 
-		public bool IsSingleSpecialKey(KeyNames specialKey)
+		public readonly bool IsSingleSpecialKey(KeyNames specialKey)
         {
             return NumKeys == 1 && KeySequence[0].KeyName == specialKey;
         }
-		public bool IsSingleCharacterKey(char Character)
+		public readonly bool IsSingleCharacterKey(char Character)
 		{
 			return NumKeys == 1 && KeySequence[0].Character == Character;
 		}
-		public bool IsChord2(KeyNames modifierKey, char Character)
+		public readonly bool IsChord2(KeyNames modifierKey, char Character)
         {
             return NumKeys == 2 && KeySequence[0].KeyName == modifierKey && KeySequence[1].Character == Character;
         }
-        public bool IsChord3(KeyNames modifierKey1, KeyNames modifierKey2, char Character, bool bUnordered = true)
+        public readonly bool IsChord3(KeyNames modifierKey1, KeyNames modifierKey2, char Character, bool bUnordered = true)
         {
             return NumKeys == 3 
                 && ((KeySequence[0].KeyName == modifierKey1 && KeySequence[1].KeyName == modifierKey2) || (KeySequence[0].KeyName == modifierKey2 && KeySequence[1].KeyName == modifierKey1))
                 && KeySequence[2].Character == Character;
+        }
+
+        public readonly bool ContainsNonModifierKeys {
+            get {
+                for (int k = 0; k < NumKeys; ++k)
+                    if (KeySequence[k].IsModifierKey == false)
+                        return true;
+                return false;
+            }
         }
     }
 
@@ -265,6 +277,7 @@ namespace Gradientspace.UI
 
 
         bool bWaitForAllKeysUpPending = false;
+        bool bWaitForAllNonModifiersReleased = false;
 
 
         public virtual bool OnRawKeyDown(KeyState keyState)
@@ -274,12 +287,22 @@ namespace Gradientspace.UI
                 return false;
 
             // try to fix up if we got into invalid state somehow
-            if (bWaitForAllKeysUpPending && ActivePressedKeys.Count == 0)
-                bWaitForAllKeysUpPending = false;
+            if (ActivePressedKeys.Count == 0 && (bWaitForAllKeysUpPending || bWaitForAllNonModifiersReleased))
+				bWaitForAllKeysUpPending = bWaitForAllNonModifiersReleased = false;
+
+            // if we are waiting for all keys to be released, consume the key and but do nothing
             if (bWaitForAllKeysUpPending)
                 return true;
 
+            // if we are waiting for modifiers to be released, and the current chord still contains
+            // modifiers, and the new key is not a modifier, consume it and do nothing
+            if (bWaitForAllNonModifiersReleased 
+                && GetCurrentKeyChord().ContainsNonModifierKeys
+                && (keyState.IsModifierKey == false) )
+                return true;
+
             // if no chord is in progress, allow raw keyinput targets to see this event
+            // (note this is basically for hacks and should never be being used...)
             if ( ActivePressedKeys.Count == 0 ) {
                 foreach (IRawKeyInputTarget rawTarget in rawKeyInputTargets) {
                     if ( rawTarget.OnKeyPress(keyState) )
@@ -291,15 +314,15 @@ namespace Gradientspace.UI
 				}
             }
 
+            // ignore repeats
             int DownIndex = ActivePressedKeys.FindIndex(k => k.IsSameKey(keyState));
             if (DownIndex < 0 )
             {
+                // add new pressed key to active-key sequence
                 ActivePressedKeys.Add(keyState);
                 KeyChord currentChord = GetCurrentKeyChord();
                 if (DebugPrint)
                     Debug.WriteLine($"[KeyboardRouter.OnRawKeyDown()] new chord is {currentChord} ");
-
-                bool bConsumed = false;
 
                 // If there is an active focused text-entry target, it may want to consume various text-editing keys.
                 // Eg delete, backspace, arrows, etc. We have to give it a chance to handle this before we
@@ -307,11 +330,13 @@ namespace Gradientspace.UI
                 // TODO: possibly more complex chords should circumvent this? ie if we have ctrl+ or alt+ ...
                 if (activeTextTarget != null)
                 {
-                    if (currentChord.IsChord2(KeyNames.Ctrl, 'V'))
+					bool bConsumed = false;
+
+					if (currentChord.IsChord2(KeyNames.Ctrl, 'V'))
                     {
                         if (LastClipboardText.Length > 0)
                             activeTextTarget.OnPasteText(LastClipboardText);
-                        bWaitForAllKeysUpPending = true;
+						bWaitForAllNonModifiersReleased = true;
                         bConsumed = true;
                     } 
                     else if (currentChord.IsChord2(KeyNames.Ctrl, 'C')) {
@@ -319,17 +344,17 @@ namespace Gradientspace.UI
                             LastClipboardText = CopiedText;
                             OnTextCopied?.Invoke(this, CopiedText);
                         }
-                        bWaitForAllKeysUpPending = true;
+						bWaitForAllNonModifiersReleased = true;
                         bConsumed = true;
                     }
                     else if (currentChord.IsChord2(KeyNames.Ctrl, 'A')) {
                         activeTextTarget.OnSelectAll();
-                        bWaitForAllKeysUpPending = true;
+						bWaitForAllNonModifiersReleased = true;
                         bConsumed = true;
-                    } else if ( currentChord.IsSingleSpecialKey(KeyNames.Enter) ||
-                                currentChord.IsSingleSpecialKey(KeyNames.Escape) )
+                    } else if ( 
+                        currentChord.IsSingleSpecialKey(KeyNames.Enter) || currentChord.IsSingleSpecialKey(KeyNames.Escape) )
                     {
-                        // if enter or escape were pressed, we may want this key but will handle in KeyUp
+                        // if enter or escape were pressed, we may want this key but will handle in KeyUp (??)
                         bConsumed = true;
                     }
                     else
@@ -338,30 +363,30 @@ namespace Gradientspace.UI
                         if (bConsumed && DebugPrint)
 							Debug.WriteLine($"  Key {keyState} consumed by {activeTextTarget}");
 					}
-                }
-                if (bConsumed)      // wait for pending?
-                    return true;
 
-                // check if anything in the active hotkey stack wants to consume the current key chord
-                if (activeHotkeyStack.Count > 0)
-                {
-                    for ( int i = 0; i < activeHotkeyStack.Count; ++i )
-                    {
-                        if (activeHotkeyStack[i].OnKeyChordUpdated(currentChord))
-                        {
+					// If they key was consumed by the activeTextTarget, we are done.
+                    // Possibly need to wait for all keys up now? Or modifiers-released?
+                    // block above should maybe be moved to a separate function...
+					if (bConsumed) {
+						return true;
+					}
+
+				}
+
+				// check if anything in the active hotkey stack wants to consume the current key chord
+				if (activeHotkeyStack.Count > 0) {
+                    for ( int i = 0; i < activeHotkeyStack.Count; ++i ) {
+                        if (activeHotkeyStack[i].OnKeyChordUpdated(currentChord)) {
                             if (DebugPrint)
                                 Debug.WriteLine($"  Chord consumed by {activeHotkeyStack[i]}");
 
-							bConsumed = true;
-                            break;
+                            // once a chord is consumed, we want to wait for the non-modifier keys
+                            // to be released. We have to allow modifiers to stay down to support
+                            // things like repeat-undo, repeat-paste, etc
+                            bWaitForAllNonModifiersReleased = true;
+                            return true;
                         }
                     }
-                }
-                // if something consumed it, we are done
-                if ( bConsumed )
-                {
-                    bWaitForAllKeysUpPending = true;
-                    return true;
                 }
 
                 if (OnNewPressedKeyFunc != null && OnNewPressedKeyFunc(this, ActivePressedKeys.ToArray()) == true)
@@ -397,9 +422,13 @@ namespace Gradientspace.UI
 					Debug.WriteLine($"[KeyboardRouter.OnRawKeyUp()] new chord is {GetCurrentKeyChord()} ");
 			}
 
-            if (bWaitForAllKeysUpPending && ActivePressedKeys.Count == 0) {
+            // if chord no longer contains any non-modifiers, we can release this filter
+			if (bWaitForAllNonModifiersReleased && GetCurrentKeyChord().ContainsNonModifierKeys == false)
+				bWaitForAllNonModifiersReleased = false;
+
+            // if chord is empty we can release all-keys-up filter
+			if (bWaitForAllKeysUpPending && ActivePressedKeys.Count == 0) 
                 bWaitForAllKeysUpPending = false;
-            }
 
             // Hack for now...if no keys are pressed and we released Escape or Enter, 
             // forward to OnCharacter which handles this correctly(ish)
@@ -539,6 +568,7 @@ namespace Gradientspace.UI
                 ActivePressedKeys.Clear();
 
             bWaitForAllKeysUpPending = false;
+            bWaitForAllNonModifiersReleased = false;
         }
 
 
