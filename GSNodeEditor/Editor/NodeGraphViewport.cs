@@ -35,11 +35,13 @@ namespace GSNodeEditor
         protected ExecutionGraphEvaluator? UsingExecutionGraphEvaluator = null;
         protected List<NodeBase> CurrentErrorStateNodes = new List<NodeBase>();
 
+        // maybe some of these should be owned by some intermediate data structure not tied explicitly to the Viewport??
         public NodeGraphView CurrentGraphView;
         public InteractionManager InteractionManager;
         protected BaseGraphEditor GraphEditor;
+		protected GraphEditHistory EditHistory;
 
-        protected EditorHostAPI? HostAPI;
+		protected EditorHostAPI? HostAPI;
 
         public void Initialize()
         {
@@ -139,6 +141,7 @@ namespace GSNodeEditor
             //GraphEditor = new NodeGraphEditor(CurrentGraphView, CurrentGraph);
             GraphEditor = new BaseGraphEditor(CurrentGraphView);
             CurrentGraphView.ActiveEditManager = new(this);
+			EditHistory = new GraphEditHistory();
 		}
 
 
@@ -204,6 +207,7 @@ namespace GSNodeEditor
         public float UIScale { get; set; }
         public NodeEditorViewportUI ViewportUI { get { return viewportUI; } }
         public SelectionManager SelectionManager{ get { return selectionManager; } }
+        public GraphEditHistory History { get { return EditHistory; } }
 
 
 
@@ -394,7 +398,17 @@ namespace GSNodeEditor
             {
                 TryOpen();
                 return true;
-            } 
+            }
+            else if (ActiveChord.IsChord2(KeyNames.Ctrl, 'Z'))
+            {
+                History.TryStepBackward();
+                return true;
+            }
+            else if (ActiveChord.IsChord2(KeyNames.Ctrl, 'Y'))
+            {
+                History.TryStepForward();
+                return true;
+            }               
 
 			return false;
         }

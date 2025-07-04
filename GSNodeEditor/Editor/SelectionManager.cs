@@ -31,7 +31,18 @@ namespace GSNodeEditor
         }
 
 
-        public void SelectNode(int NodeID, bool bReplace)
+        public void BeginTrackedSelectionChanges(string? changeName)
+        {
+			GraphViewport.History.BeginChanges("Marquee Select");
+			BeginChange();
+		}
+		public void EndTrackedSelectionChanges()
+		{
+            EndChange();
+            GraphViewport.History.EndChanges();
+		}
+
+		public void SelectNode(int NodeID, bool bReplace)
         {
             if (bReplace) 
             {
@@ -117,6 +128,9 @@ namespace GSNodeEditor
 
         public void BeginMarqueeSelection(in InputDeviceState deviceState)
         {
+            GraphViewport.History.BeginChanges("Marquee Select");
+            BeginChange();
+
             ActiveLassoMode = ELassoSelectionModes.Rectangle;
             LassoPoints.Add(deviceState.CurrentPosition);
             LassoPoints.Add(deviceState.CurrentPosition);
@@ -157,7 +171,10 @@ namespace GSNodeEditor
 
             ActiveLassoMode = ELassoSelectionModes.None;
             LassoPoints.Clear();
-        }
+
+			EndChange();
+			GraphViewport.History.EndChanges();
+		}
 
 
 
@@ -233,6 +250,65 @@ namespace GSNodeEditor
             return false;
         }
 
-    }
+
+
+        internal void UpdateSelectionOnUndoRedo(List<int>? NewNodes, List<int>? NewConnections)
+        {
+            SelectedNodes.Clear();
+            if (NewNodes != null)
+                SelectedNodes.AddRange(NewNodes);
+            SelectedConnections.Clear();
+            if (NewConnections != null)
+                SelectedConnections.AddRange(NewConnections);
+		}
+
+        protected SelectionManagerSelectionChange? ActiveChange = null;
+        protected virtual void BeginChange()
+        {
+			Debug.Assert(ActiveChange == null);
+			ActiveChange = new SelectionManagerSelectionChange();
+            ActiveChange.Init(this, SelectedNodes, SelectedConnections);
+        }
+        protected virtual void EndChange()
+        {
+            Debug.Assert(ActiveChange != null);
+            ActiveChange.Complete(SelectedNodes, SelectedConnections);
+            GraphViewport.History.AppendChange(ActiveChange);
+            ActiveChange = null;
+		}
+	}
+
+
+    public class SelectionManagerSelectionChange : BaseGraphEditChange
+    {
+        // todo optimize storage for small # of items (most frequent case)
+        public List<int>? PrevNodes = null, NewNodes = null;
+        public List<int>? PrevConnections = null, NewConnections = null;
+
+        public SelectionManager? SelectionManager = null;
+
+        public void Init(SelectionManager Manager, List<int> InitialNodes, List<int> InitialConnections)
+        {
+            SelectionManager = Manager;
+			PrevNodes = (InitialNodes.Count > 0) ? new List<int>(InitialNodes) : null;
+			PrevConnections = (InitialConnections.Count > 0) ? new List<int>(InitialConnections) : null;
+		}
+        public void Complete(List<int> FinalNodes, List<int> FinalConnections)
+        {
+            NewNodes = (FinalNodes.Count > 0) ? new List<int>(FinalNodes) : null;
+            NewConnections = (FinalConnections.Count > 0) ? new List<int>(FinalConnections) : null;
+        }
+
+		public override void Apply()
+		{
+            Debug.Assert(SelectionManager != null);
+            SelectionManager?.UpdateSelectionOnUndoRedo(NewNodes, NewConnections);
+		}
+		public override void Revert()
+		{
+			Debug.Assert(SelectionManager != null);
+            SelectionManager?.UpdateSelectionOnUndoRedo(PrevNodes, PrevConnections);
+		}
+	}
 
 }

@@ -2,6 +2,7 @@
 using Gradientspace.UI;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -61,6 +62,8 @@ namespace GSNodeEditor
         {
             base.OnClicked(deviceState);
 
+            SelectionManager.BeginTrackedSelectionChanges("Selection");
+
             NodeWidget? hitWidget = NodeHitTest(deviceState);
             if (hitWidget != null)
             {
@@ -70,10 +73,9 @@ namespace GSNodeEditor
                     SelectionManager.DeselectNode(hitWidget.GraphNodeIdentifier);
                 else 
                     SelectionManager.SelectNode(hitWidget.GraphNodeIdentifier, true);
-                return;
             }
 
-            ConnectionView? hitConnection = ConnectionHitTest(deviceState);
+            ConnectionView? hitConnection = (hitWidget == null) ? ConnectionHitTest(deviceState) : null;
             if (hitConnection != null)
             {
 				if (deviceState.ShiftButton.bDown)
@@ -82,11 +84,13 @@ namespace GSNodeEditor
 					SelectionManager.DeselectConnection(hitConnection.ConnectionID);
 				else
 					SelectionManager.SelectConnection(hitConnection.ConnectionID, true);
-				return;
 			}
 
-            SelectionManager.ClearSelection();
-        }
+            if (hitWidget == null && hitConnection == null)
+                SelectionManager.ClearSelection();
+
+			SelectionManager.EndTrackedSelectionChanges();
+		}
 
 
         enum EDragInteractionTypes
@@ -103,7 +107,9 @@ namespace GSNodeEditor
         List<NodeWidget> ActiveNodes = new List<NodeWidget>();
         List<Vector2f> InitialNodePositions = new List<Vector2f>();
 
-        public override void OnBeginDrag(in InputDeviceState deviceState)
+        NodeSetPositionChanges? ActiveChange = null;
+
+		public override void OnBeginDrag(in InputDeviceState deviceState)
         {
             base.OnBeginDrag(deviceState);
             InitialCursorPosition = deviceState.CurrentPosition;
@@ -134,6 +140,11 @@ namespace GSNodeEditor
                     if (ActiveNodes.Count > 0)
                         DragInteraction = EDragInteractionTypes.DragSelectedWidgets;
                 }
+
+                SelectionManager.GraphViewport.History.BeginChanges("Move Nodes");
+                Debug.Assert(ActiveChange == null);
+                ActiveChange = new NodeSetPositionChanges();
+                ActiveChange.Init(ActiveNodes);
             }
             else
             {
@@ -167,7 +178,16 @@ namespace GSNodeEditor
         }
         public override void OnEndDrag(in InputDeviceState deviceState)
         {
-            if (DragInteraction == EDragInteractionTypes.DragMarquee) {
+            if (DragInteraction == EDragInteractionTypes.DragSingleWidget || DragInteraction == EDragInteractionTypes.DragSelectedWidgets)
+            {
+                Debug.Assert(ActiveChange != null);
+                ActiveChange.Complete();
+                SelectionManager.GraphViewport.History.AppendChange(ActiveChange);
+                ActiveChange = null;
+				SelectionManager.GraphViewport.History.EndChanges();
+            }
+            else if (DragInteraction == EDragInteractionTypes.DragMarquee)
+            {
                 SelectionManager.UpdateMarqueeSelection(deviceState);
                 SelectionManager.CompleteMarqueeSelection();
             }
@@ -179,7 +199,39 @@ namespace GSNodeEditor
             base.OnEndDrag(deviceState);
         }
 
-
-
     }
+
+
+
+
+    public class NodeSetPositionChanges : BaseGraphEditChange
+    {
+        (NodeWidget?, Vector2f, Vector2f)[]? PositionChanges;
+
+        public void Init(List<NodeWidget> Nodes)
+        {
+            PositionChanges = new (NodeWidget?, Vector2f, Vector2f)[Nodes.Count];
+            for ( int i = 0; i < Nodes.Count; ++i)
+                PositionChanges[i] = new(Nodes[i], Nodes[i].Position, Nodes[i].Position);
+        }
+        public void Complete()
+        {
+            Debug.Assert(PositionChanges != null);
+            for (int i = 0; i < PositionChanges.Length; ++i)
+                PositionChanges[i] = new(PositionChanges[i].Item1, PositionChanges[i].Item2, PositionChanges[i].Item1!.Position);
+		}
+		public override void Apply()
+		{
+			Debug.Assert(PositionChanges != null);
+            foreach (var tuple in PositionChanges)
+                tuple.Item1!.Position = tuple.Item3;
+		}
+		public override void Revert()
+		{
+			Debug.Assert(PositionChanges != null);
+			foreach (var tuple in PositionChanges)
+				tuple.Item1!.Position = tuple.Item2;
+		}
+	}
+
 }
