@@ -1,5 +1,6 @@
 ﻿using SkiaSharp;
 using g3;
+using System.Numerics;
 
 namespace Gradientspace.UI
 {
@@ -100,6 +101,14 @@ namespace Gradientspace.UI
 
         public static bool SkiaCubicHitTest(Vector2f a, Vector2f ta, Vector2f tb, Vector2f b, Vector2d Point, out double Distance, in double HitDistance )
         {
+			Distance = double.MaxValue;
+
+            // check bounding box
+            AxisAlignedBox2d Bounds = SkiaCubicBounds(a, ta, tb, b);
+            Bounds.Expand(HitDistance);
+            if (!Bounds.Contains(Point))
+                return false;
+
             Vector2d NearestPt = SkiaCubicNearestPoint(a, ta, tb, b, Point);
             double DistSqr = NearestPt.DistanceSquared(Point);
             if ( DistSqr < HitDistance*HitDistance )
@@ -107,9 +116,18 @@ namespace Gradientspace.UI
                 Distance = Math.Sqrt(DistSqr);
                 return true;
             }
-            Distance = double.MaxValue;
 			return false;
-        }
+		}
+
+
+        public static AxisAlignedBox2d SkiaCubicBounds(Vector2f a, Vector2f ta, Vector2f tb, Vector2f b)
+        {
+            // This is bounds of convex hull, which is not very good. 
+            // see better option in eg https://stackoverflow.com/questions/24809978/calculating-the-bounding-box-of-cubic-bezier-curve
+			AxisAlignedBox2d Bounds = new AxisAlignedBox2d(a, b);
+			Bounds.Contain(ta); Bounds.Contain(tb);
+            return Bounds;
+		}
 	}
 
 }

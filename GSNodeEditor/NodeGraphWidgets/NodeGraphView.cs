@@ -385,7 +385,11 @@ namespace GSNodeEditor
             Curve.MoveTo(Conversion.ToSkia(Connection.StartPoint));
             Curve.CubicTo(Conversion.ToSkia(Connection.StartTangentPoint), Conversion.ToSkia(Connection.EndTangentPoint), Conversion.ToSkia(Connection.EndPoint));
             Canvas.DrawPath(Curve, UsePaint);
-        }
+
+            // draw bounding box (debug)
+            //AxisAlignedBox2d bounds = SkiaUtil.SkiaCubicBounds(Connection.StartPoint, Connection.StartTangentPoint, Connection.EndTangentPoint, Connection.EndPoint);
+            //Canvas.DrawRect((float)bounds.Min.x, (float)bounds.Min.y, (float)bounds.Width, (float)bounds.Height, new SKPaint() { Color = SKColors.Black, StrokeWidth = 1, IsStroke = true });
+		}
 
 
         public void DebugDraw(SKCanvas Canvas, Vector2d CursorPosition)
