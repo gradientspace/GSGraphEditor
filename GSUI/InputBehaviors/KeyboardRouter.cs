@@ -53,7 +53,17 @@ namespace Gradientspace.UI
             Character = character;
         }
 
-        public bool IsSameKey(KeyState other)
+		public override readonly string ToString()
+		{
+            if (KeyType == KeyType.CharacterKey)
+                return $"\'{Character}\'";
+            else if (KeyType == KeyType.FunctionalKey)
+                return $"{KeyName}";
+            else
+                return "(unknown)";
+		}
+
+		public bool IsSameKey(KeyState other)
         {
             if (KeyType == KeyType.CharacterKey) return other.KeyType == KeyType.CharacterKey && Character == other.Character;
             else if (KeyType == KeyType.FunctionalKey) return other.KeyType == KeyType.FunctionalKey && KeyName == other.KeyName;
@@ -144,7 +154,19 @@ namespace Gradientspace.UI
         {
         }
 
-        public bool IsSingleSpecialKey(KeyNames specialKey)
+		public override readonly string ToString()
+		{
+            switch (NumKeys)
+            {
+                case 0: return "[no keys]";
+                case 1: return $"[ {KeySequence[0]} ]";
+                case 2: return $"[ {KeySequence[0]}, {KeySequence[1]} ]";
+				case 3: return $"[ {KeySequence[0]}, {KeySequence[1]}, {KeySequence[2]} ]";
+			}
+			return "[invalid]";
+		}
+
+		public bool IsSingleSpecialKey(KeyNames specialKey)
         {
             return NumKeys == 1 && KeySequence[0].KeyName == specialKey;
         }
@@ -206,6 +228,8 @@ namespace Gradientspace.UI
     {
         public KeyboardRouter() { }
 
+        public bool DebugPrint = false;
+
         List<KeyState> ActivePressedKeys = new List<KeyState>();
 
 
@@ -242,6 +266,7 @@ namespace Gradientspace.UI
 
         bool bWaitForAllKeysUpPending = false;
 
+
         public virtual bool OnRawKeyDown(KeyState keyState)
         {
             // ignore unknown keys
@@ -251,7 +276,6 @@ namespace Gradientspace.UI
             // try to fix up if we got into invalid state somehow
             if (bWaitForAllKeysUpPending && ActivePressedKeys.Count == 0)
                 bWaitForAllKeysUpPending = false;
-
             if (bWaitForAllKeysUpPending)
                 return true;
 
@@ -259,8 +283,12 @@ namespace Gradientspace.UI
             if ( ActivePressedKeys.Count == 0 ) {
                 foreach (IRawKeyInputTarget rawTarget in rawKeyInputTargets) {
                     if ( rawTarget.OnKeyPress(keyState) )
-                        return true;
-                }
+                    {
+                        if (DebugPrint)
+							Debug.WriteLine($"  Key {keyState} consumed by {rawTarget}  (no chord in progress)");
+						return true;
+					}
+				}
             }
 
             int DownIndex = ActivePressedKeys.FindIndex(k => k.IsSameKey(keyState));
@@ -268,6 +296,8 @@ namespace Gradientspace.UI
             {
                 ActivePressedKeys.Add(keyState);
                 KeyChord currentChord = GetCurrentKeyChord();
+                if (DebugPrint)
+                    Debug.WriteLine($"[KeyboardRouter.OnRawKeyDown()] new chord is {currentChord} ");
 
                 bool bConsumed = false;
 
@@ -303,7 +333,11 @@ namespace Gradientspace.UI
                         bConsumed = true;
                     }
                     else
+                    { 
                         bConsumed = AppendKeyDownToFocusTarget(keyState);
+                        if (bConsumed && DebugPrint)
+							Debug.WriteLine($"  Key {keyState} consumed by {activeTextTarget}");
+					}
                 }
                 if (bConsumed)      // wait for pending?
                     return true;
@@ -315,7 +349,10 @@ namespace Gradientspace.UI
                     {
                         if (activeHotkeyStack[i].OnKeyChordUpdated(currentChord))
                         {
-                            bConsumed = true;
+                            if (DebugPrint)
+                                Debug.WriteLine($"  Chord consumed by {activeHotkeyStack[i]}");
+
+							bConsumed = true;
                             break;
                         }
                     }
@@ -356,7 +393,9 @@ namespace Gradientspace.UI
             if (DownIndex >= 0)
             {
                 ActivePressedKeys.RemoveAt(DownIndex);
-            }
+				if (DebugPrint)
+					Debug.WriteLine($"[KeyboardRouter.OnRawKeyUp()] new chord is {GetCurrentKeyChord()} ");
+			}
 
             if (bWaitForAllKeysUpPending && ActivePressedKeys.Count == 0) {
                 bWaitForAllKeysUpPending = false;
@@ -453,7 +492,10 @@ namespace Gradientspace.UI
                 return false;
 
             if (keyState.IsCharacterKey) {
-                return AppendCharacterToFocusTarget(keyState);
+                bool bConsumed = AppendCharacterToFocusTarget(keyState);
+                if ( bConsumed && DebugPrint )
+					Debug.WriteLine($"  Key {keyState} consumed by {activeTextTarget}");
+                return bConsumed;
             }
 
             // handle escape and enter here...??
@@ -467,7 +509,8 @@ namespace Gradientspace.UI
                     return true;        // ??
 				} else
 					return true;        // ??
-			} else if ( keyState.KeyName == KeyNames.Enter) 
+			} 
+            else if ( keyState.KeyName == KeyNames.Enter) 
             {
                 if (activeTextTarget.TryHandleTextEntryHotkey(keyState) == false)
                 {
@@ -500,7 +543,7 @@ namespace Gradientspace.UI
 
 
 
-        protected string LastClipboardText = "";
+		protected string LastClipboardText = "";
         public virtual void SetCurrentSystemClipboardText(string Text)
         {
             LastClipboardText = Text;

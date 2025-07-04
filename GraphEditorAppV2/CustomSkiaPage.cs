@@ -268,6 +268,16 @@ namespace GraphEditorAppV2
 		// key even forwarding
 		//
 
+		protected string? ToKeyString(KeyEventArgs e)
+		{
+			if (e.KeySymbol != null)
+				return e.KeySymbol;
+			string s = e.Key.ToString();
+			if (Char.IsAsciiLetterOrDigit(s[0]))
+				return s;
+			return null;
+		}
+
 		protected override void OnKeyDown(KeyEventArgs e)
 		{
 			if (e.Key == Key.LeftCtrl) {
@@ -278,7 +288,9 @@ namespace GraphEditorAppV2
 				RawDeviceState.AltButton.SetPressed();
 			}
 
-			KeyState keyState = ConvertToKeyState(e.Key, e.KeySymbol, RawDeviceState);
+			KeyState keyState = ConvertToKeyState(e.Key, ToKeyString(e), RawDeviceState);
+			//Debug.WriteLine($"[OnKeyDown] {keyState}");
+
 			if (keyState.IsKnownKey)
 				e.Handled = SystemKeyboardRouter.Instance.OnRawKeyDown(keyState);
 
@@ -295,7 +307,9 @@ namespace GraphEditorAppV2
 				RawDeviceState.AltButton.SetReleased();
 			}
 
-			KeyState keyState = ConvertToKeyState(e.Key, e.KeySymbol, RawDeviceState);
+			KeyState keyState = ConvertToKeyState(e.Key, ToKeyString(e), RawDeviceState);
+			//Debug.WriteLine($"[OnKeyUp] {keyState}");
+
 			if (keyState.IsKnownKey)
 				e.Handled = SystemKeyboardRouter.Instance.OnRawKeyUp(keyState);
 
@@ -308,6 +322,8 @@ namespace GraphEditorAppV2
 			if (e.Text != null)
 			{
 				KeyState keyState = KeyState.MakeKeyStateFromCharacter(e.Text[0], RawDeviceState);
+				//Debug.WriteLine($"[OnTextInput] {keyState}");
+
 				if (keyState.IsKnownKey)
 					e.Handled = SystemKeyboardRouter.Instance.OnCharacter(keyState);
 			}
