@@ -27,5 +27,25 @@ namespace GSNodeEditor
             return TypeUtils.TypeToString(DataType.DataType);
         }
 
-    }
+
+        protected NodeGraphView? FindParentGraphView()
+        {
+            Widget? curParent = parentWidget;
+            while (curParent != null)
+            {
+                if (curParent is NodeWidget nodeWidget)
+                    return nodeWidget.ParentGraphWidget;
+                else
+                    curParent = curParent.ParentWidget;
+			}
+            return null;
+        }
+        protected NodeGraphView FindParentGraphViewChecked()
+        {
+            NodeGraphView? found = FindParentGraphView();
+            System.Diagnostics.Debug.Assert(found != null);
+            return found;
+        }
+
+	}
 }

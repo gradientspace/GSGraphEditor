@@ -184,6 +184,7 @@ namespace GSNodeEditor
             return false;
         }
 
+        // called when a node's pins change, eg inputs/outputs added/removed or type changes
         protected virtual void OnNodeModified(NodeBase node)
         {
             NodeWidget? FoundWidget = FindNode(node);
@@ -308,7 +309,6 @@ namespace GSNodeEditor
 			foreach (ConnectionView c in SequenceConnections)
 				c.ConnectionState = SourceGraph!.GetConnectionState(c.ConnectionInfo);
 		}
-
 
 
 		public bool HaveHoverHit

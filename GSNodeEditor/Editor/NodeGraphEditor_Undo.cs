@@ -81,6 +81,22 @@ namespace GSNodeEditor
 				remove_connection_internal(change.Connection);
 		}
 
+
+		internal void ApplyChange(NodeConstantValueChange change, bool bApply)
+		{
+			if (bApply)
+				Graph.SetNodeConstantValue(change.NodeIdentifier, change.ToValue.InputName, change.ToValue.Value);
+			else
+				Graph.SetNodeConstantValue(change.NodeIdentifier, change.ToValue.InputName, change.FromValue.Value);
+
+			// AAAAHHH forcing full node rebuild here because we currently do not have a way
+			// to just update the values on the inline widgets. Forcing call to PinWidget.UpdateInlineInfo()
+			// does not currently work because the function only builds new input widgets, and possibly will
+			// not work for 
+			if (Graph.FindNodeFromIdentifier(change.NodeIdentifier).Node is NodeBase baseNode)
+				baseNode.PublishNodeModifiedNotification();
+		}
+
 	}
 
 
@@ -135,5 +151,30 @@ namespace GSNodeEditor
 			GraphEditor?.ApplyChange(this, bIsRemove ? true : false);
 		}
 	}
+
+
+	public class NodeConstantValueChange : BaseNodeGraphEditorChange
+	{
+		public int NodeIdentifier;
+		public SerializationUtil.InputConstant FromValue;
+		public SerializationUtil.InputConstant ToValue;
+
+		public NodeConstantValueChange(NodeGraphEditor editor, int nodeIdentifier, SerializationUtil.InputConstant fromValue, SerializationUtil.InputConstant toValue)
+		{
+			Name = "Edit Constant";
+			this.GraphEditor = editor;
+			this.NodeIdentifier = nodeIdentifier;
+			this.FromValue = fromValue;
+			this.ToValue = toValue;
+		}
+
+		public override void Apply() {
+			GraphEditor?.ApplyChange(this, true);
+		}
+		public override void Revert() {
+			GraphEditor?.ApplyChange(this, false);
+		}
+	}
+
 
 }

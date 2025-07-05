@@ -133,6 +133,7 @@ namespace GSNodeEditor
 				IGraphEditChange? minChange = NewChangeSequence.Simplify();
 				NewChangeSequence = null;
                 if ( minChange != null ) {
+                    System.Diagnostics.Debug.WriteLine("[History] Pushed change " + minChange.Name + " // " + minChange.Description);
 					Changes.Add(minChange);
                     CurrentStateIndex = Changes.Count;
                 }

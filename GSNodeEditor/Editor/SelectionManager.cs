@@ -15,6 +15,7 @@ namespace GSNodeEditor
         public NodeGraphViewport GraphViewport { get; init; }
         public NodeGraphView GraphView { get { return GraphViewport.CurrentGraphView; } }
 
+        // todo these should probably be HashSet, no?
         protected List<int> SelectedNodes = new List<int>();
         protected List<int> SelectedConnections = new List<int>();
 
@@ -31,9 +32,9 @@ namespace GSNodeEditor
         }
 
 
-        public void BeginTrackedSelectionChanges(string? changeName)
+        public void BeginTrackedSelectionChanges(string changeName = "Edit Selection")
         {
-			GraphViewport.History.BeginChanges("Marquee Select");
+			GraphViewport.History.BeginChanges(changeName);
 			BeginChange();
 		}
 		public void EndTrackedSelectionChanges()
@@ -273,7 +274,8 @@ namespace GSNodeEditor
         {
             Debug.Assert(ActiveChange != null);
             ActiveChange.Complete(SelectedNodes, SelectedConnections);
-            GraphViewport.History.AppendChange(ActiveChange);
+            if (ActiveChange.IsNoOp() == false)
+                GraphViewport.History.AppendChange(ActiveChange);
             ActiveChange = null;
 		}
 	}
@@ -281,7 +283,7 @@ namespace GSNodeEditor
 
     public class SelectionManagerSelectionChange : BaseGraphEditChange
     {
-        // todo optimize storage for small # of items (most frequent case)
+        // todo optimize storage for small # of items (most frequent case)   (and use arrays?)
         public List<int>? PrevNodes = null, NewNodes = null;
         public List<int>? PrevConnections = null, NewConnections = null;
 
@@ -297,6 +299,28 @@ namespace GSNodeEditor
         {
             NewNodes = (FinalNodes.Count > 0) ? new List<int>(FinalNodes) : null;
             NewConnections = (FinalConnections.Count > 0) ? new List<int>(FinalConnections) : null;
+        }
+
+        // todo this should move to some utility thing somewhere...
+        private static bool is_same_list(List<int>? List1, List<int>? List2)
+        {
+            bool null1 = (List1 == null), null2 = (List2 == null);
+            if (null1 && null2)
+                return true;
+            if (null1 ^ null2)
+                return false;
+            // does this detect different sorts??
+            foreach ( int diff in List1!.Except<int>(List2!) )
+                return false;
+			foreach (int diff in List2!.Except<int>(List1!))
+				return false;
+            return true;
+		}
+
+        //! return true if there is no selection change
+		public bool IsNoOp()
+        {
+            return is_same_list(PrevNodes, NewNodes) && is_same_list(PrevConnections, NewConnections);
         }
 
 		public override void Apply()

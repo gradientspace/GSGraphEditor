@@ -289,49 +289,67 @@ namespace GSNodeEditor
         }
 
 
-
-        // TODO THESE SHOULD GO UP THROUGH GRAPH EDITOR TO BE UNDOABLE!
-
+        // send new constant value to graph, via GraphEditor
         private void UpdateInputFromModifiedTextEntry(INodeGraph Graph, int OwningNodeIdentifier, string newText)
         {
-            if (InlineType == EInlineWidgetType.Float) 
+            NodeGraphView? ParentView = FindParentGraphViewChecked();
+
+			if (InlineType == EInlineWidgetType.Float) 
             {
                 if ( float.TryParse(newText, out float value)) {
-                    Graph.SetNodeConstantValue(OwningNodeIdentifier, InputName, value);
+                    ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                        Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, value);
+                    });
                 }
             } 
             else if (InlineType == EInlineWidgetType.Integer) 
             {
                 if (int.TryParse(newText, out int value))
-                    Graph.SetNodeConstantValue(OwningNodeIdentifier, InputName, value);
+                    ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                        Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, value);
+                    });
             } 
             else if (InlineType == EInlineWidgetType.String ) 
             {
-                Graph.SetNodeConstantValue(OwningNodeIdentifier, InputName, newText);
+                ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                    Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, newText);
+                });
             } 
         }
         private void UpdateInputFromModifiedBoolean(INodeGraph Graph, int OwningNodeIdentifier, bool bNewValue)
         {
-            if (InlineType == EInlineWidgetType.Boolean) {
-                Graph.SetNodeConstantValue(OwningNodeIdentifier, InputName, bNewValue);
+			NodeGraphView? ParentView = FindParentGraphViewChecked();
+			if (InlineType == EInlineWidgetType.Boolean) {
+                ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                    Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, bNewValue);
+                });
             }
         }
         private void UpdateInputFromModifiedEnum(INodeGraph Graph, int OwningNodeIdentifier, object newEnumValue)
         {
-            if (InlineType == EInlineWidgetType.Enum) {
-                Graph.SetNodeConstantValue(OwningNodeIdentifier, InputName, newEnumValue);
+			NodeGraphView? ParentView = FindParentGraphViewChecked();
+			if (InlineType == EInlineWidgetType.Enum) {
+                ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                    Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, newEnumValue);
+                });
             }
         }
         private void UpdateInputFromModifiedEnumList(INodeGraph Graph, int OwningNodeIdentifier, string newEnumString)
         {
-            if (InlineType == EInlineWidgetType.EnumList) {
-                Graph.SetNodeConstantValue(OwningNodeIdentifier, InputName, new EnumOptionItem(newEnumString));
+			NodeGraphView? ParentView = FindParentGraphViewChecked();
+			if (InlineType == EInlineWidgetType.EnumList) {
+                ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                    Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, new EnumOptionItem(newEnumString));
+                });
             }
         }
         private void UpdateInputFromModifiedTypeSelector(INodeGraph Graph, int OwningNodeIdentifier, Type newType)
         {
-            if (InlineType == EInlineWidgetType.Type) {
-                Graph.SetNodeConstantValue(OwningNodeIdentifier, InputName, newType);
+			NodeGraphView? ParentView = FindParentGraphViewChecked();
+			if (InlineType == EInlineWidgetType.Type) {
+                ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                    Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, newType);
+                });
             }
         }
 

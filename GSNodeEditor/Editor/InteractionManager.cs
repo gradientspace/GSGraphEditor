@@ -2,16 +2,8 @@
 using Gradientspace.NodeGraph;
 using Gradientspace.UI;
 using SkiaSharp;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using static g3.SVGWriter;
-using static Gradientspace.NodeGraph.DataFlowGraph;
+
 
 namespace GSNodeEditor
 {
@@ -20,7 +12,7 @@ namespace GSNodeEditor
         public NodeGraphView GraphView { get; set; }
         public NodeGraphViewport GraphViewport { get; set; }
 
-        public const bool EnableCaptureDebugging = true;
+        public const bool EnableCaptureDebugging = false;
 
         NewNodePopupDialog? ActiveNewNodePopupDialog;
         SimpleWidgetSource ActivePopupMenuWidgetSet;

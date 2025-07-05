@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using static Gradientspace.NodeGraph.DataFlowGraph;
+using static Gradientspace.NodeGraph.SerializationUtil;
 
 namespace GSNodeEditor
 {
@@ -450,11 +451,47 @@ namespace GSNodeEditor
 					mark_modified_node(nodeWidget.ParentNode);
                 }
 			}
-
-
         }
 
-    }
+
+
+        // constant value edits
+
+        public virtual void SetNodeConstantValue(int NodeIdentifier, string InputName, object NewValue)
+        {
+			// TODO: currently this function is only called by NodeInputPinWidget.UpdateInputFromModifiedTextEntry(),
+			// because we have no way to signal back to the graph except by calling Node.PublishNodeModifiedNotification(),
+            // which forces a full rebuild of the node (currently what undo/redo will do - horrible!)
+
+
+			// TODO should we use SerialiationUtil.TryGetInputConstant here??
+			(object? prevValue, bool bIsPrevDefined) = Graph.GetNodeConstantValue(NodeIdentifier, InputName);
+
+            Graph.SetNodeConstantValue(NodeIdentifier, InputName, NewValue);
+
+            // fetch value again in case SetNodeConstantValue modified it in some way
+			(object? newValue, bool bIsNewDefined) = Graph.GetNodeConstantValue(NodeIdentifier, InputName);
+
+			// if update was redundant 
+			if ( (newValue == null && prevValue == null) 
+                || (newValue != null && newValue.Equals(prevValue)) )
+				return;
+
+			if (ActiveHistory != null)
+            {
+				NodeConstantValueChange change = new NodeConstantValueChange(this, NodeIdentifier, 
+                    new InputConstant() { InputName = InputName, Value = prevValue },
+					new InputConstant() { InputName = InputName, Value = NewValue }
+                );
+                ActiveHistory.AppendChange(change);
+			}
+
+            // TODO: notify graph widget somehow?
+		}
+
+
+
+	}
 
 
 }
