@@ -21,6 +21,10 @@ namespace Gradientspace.UI
             HeartbeatTimer.AutoReset = true;
             HeartbeatTimer.Elapsed += HeartbeatTimer_Elapsed;
             HeartbeatTimer.Start();
+
+            TooltipStrings = new string[25];
+            for (int i = 0; i < TooltipStrings.Length; ++i)
+                TooltipStrings[i] = String.Empty;
         }
 
         System.Timers.Timer HeartbeatTimer;
@@ -35,7 +39,7 @@ namespace Gradientspace.UI
 
 
         Widget? ActiveTooltipOwner = null;
-        string[] TooltipStrings = [string.Empty, string.Empty, string.Empty, string.Empty, string.Empty];
+        string[] TooltipStrings = [string.Empty];
         int NumCurrentStrings = 0;
         AxisAlignedBox2f TooltipOwnerBounds;
         DateTime LastUpdateTime;
@@ -58,6 +62,13 @@ namespace Gradientspace.UI
                 LastDeviceState = currentDeviceState;
                 CurrentDwellMilliseconds = 0;
                 bHoverDelayElapsed = false;
+
+                if (extendedTooltip != null) {
+                    foreach (string line in extendedTooltip) {
+						if (NumCurrentStrings < TooltipStrings.Length)
+                            TooltipStrings[NumCurrentStrings++] = line;
+					}
+                }
             }
         }
 

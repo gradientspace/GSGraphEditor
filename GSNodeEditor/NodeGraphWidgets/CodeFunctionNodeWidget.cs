@@ -3,13 +3,7 @@ using Gradientspace.NodeGraph;
 using Gradientspace.NodeGraph.CodeNodes;
 using Gradientspace.UI;
 using SkiaSharp;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices.Marshalling;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GSNodeEditor
 {
@@ -22,11 +16,31 @@ namespace GSNodeEditor
     }
 
 
+
+    public class CodeFunctionNodeButton : Button
+    {
+		public CodeFunctionNodeButton(WidgetStateStyle? customStyle = null) : base(customStyle) { }
+
+        // todo would be nice to do this w/ a custom tooltip that could show code in mono (small)...
+		public override bool GetTooltipStrings(out string? tooltip, out string[]? extendedTooltip)
+		{
+			tooltip = "[C# Code]";
+            extendedTooltip = null;
+			if (ParentWidget is CodeFunctionNodeWidget widget) {
+                string code = widget.GetCurrentSourceCode().CodeText;
+                string[] lines = code.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                extendedTooltip = lines;
+            }
+			return true;
+		}
+	}
+
+
     public class CodeFunctionNodeWidget : NodeWidget, IWidgetContentExtension, ISourceCodeProvider
     {
         public INodeWithInlineCode CodeNodeAPI { get; init; }
 
-        public Button CodeButton;
+        public CodeFunctionNodeButton CodeButton;
         public RelativeBoxAnchor CodeButtonAnchor;
 
         public CodeFunctionNodeWidget(NodeGraphView graphView, INodeInfo node) : base(graphView, node)
@@ -36,7 +50,7 @@ namespace GSNodeEditor
 
 			CodeNodeAPI.OnCompileStatusUpdate += CodeNode_OnCompileStatusUpdate;
 
-            CodeButton = new Button(CodeFunctionNodeWidget.ButtonStyle);
+            CodeButton = new CodeFunctionNodeButton(CodeFunctionNodeWidget.ButtonStyle);
             CodeButton.Dimensions = new Vector2f(20, 22);
             CodeButtonAnchor = new RelativeBoxAnchor(this.GetAnchor());
             CodeButtonAnchor.BoxPoint = BoxPoints.BottomRight;
