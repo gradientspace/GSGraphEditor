@@ -310,6 +310,7 @@ namespace Gradientspace.UI
         public TextRect FocusedTextInfo;
         public float CursorOffset;
         public float SelectionStartOffset, SelectionEndOffset;
+        public AxisAlignedBox2f LastVisibleWorldBounds;
 
         public SKPaint? LastTextPaint = null;     // hmmm not sure this is safe...
 
@@ -385,6 +386,7 @@ namespace Gradientspace.UI
             SKPaint TextPaint = StyleCache.GetCachedPaint(UseStyle, SKStyleCache.EPaintType.Text);
             LastTextPaint = TextPaint;
 
+            LastVisibleWorldBounds = PlacedBounds;
 			Canvas.DrawRect(Conversion.ToSkia(PlacedBounds), StandardPaints.BackgroundPaint);
             Vector2f TextOrigin = PlacedBounds.Min + TextInfo.TextOrigin;
 
@@ -426,9 +428,10 @@ namespace Gradientspace.UI
 
         public override bool HitTest(Vector2f QueryPoint)
         {
-            AxisAlignedBox2f WorldBounds =
-                AnchorLocation.GetAnchoredBounds(LocalBounds, DrawOrigin, GetWidget().AnchorPlacement);
-            return WorldBounds.Contains(QueryPoint);
+            //AxisAlignedBox2f WorldBounds =
+            //    AnchorLocation.GetAnchoredBounds(LocalBounds, DrawOrigin, GetWidget().AnchorPlacement);
+            //return WorldBounds.Contains(QueryPoint);
+            return LastVisibleWorldBounds.Contains(QueryPoint);
         }
 
         public override bool HitQuery(Vector2f QueryPoint, out WidgetHitResult Result)
