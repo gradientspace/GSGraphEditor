@@ -252,5 +252,21 @@ namespace Gradientspace.UI
             OnStringEditUpdate?.Invoke(this, CurrentString);
         }
 
+
+        public void SetCursorLocation(int Index)
+        {
+			ClearSelection();
+			CursorLocation = Math.Clamp(Index, 0, CurrentString.Length);
+        }
+
+        //! cursor will be placed at ToIndex - range can be inverted
+        public void SetSelectionRange(int FromIndex, int ToIndex)
+        {
+			ClearSelection();
+			CursorLocation = Math.Clamp(ToIndex, 0, CurrentString.Length);
+			SelectionStartLocation = Math.Clamp(Math.Min(FromIndex, ToIndex), 0, CurrentString.Length);
+			SelectionEndLocation = Math.Clamp(Math.Max(FromIndex, ToIndex), 0, CurrentString.Length);
+        }
+
     }
 }

@@ -18,6 +18,7 @@ namespace GSNodeEditor
 		//  - how to call BeginGraphEdits() / EndGraphEdits() ? to do process_modified_nodes(), ValidateDataConnections(), etc
 		//  - add/remove pin edits
 		//  - node value changes
+		//  - text entry field edits
 
 
 

@@ -263,24 +263,17 @@ namespace GSNodeEditor
 
         public void OnPointerDown(InputDeviceState newState)
         {
-            // There is a problem here with focus-change and search-text-type fields.
-            // For example if the keyboard focus is on a text field that is being used to
-            // dynamically filter a list (eg a popup of class names). If the user tries to
-            // click down on the popup, and we do change-focus on click-down, it will 
-            // take focus away from the textfield, which may then hide the popup, so
-            // then it cannot be clicked. However doing it after is not entirely correct
-            // either... seems like the right thing to do would be to do the capture request,
-            // and then allow the text-entry-focus to look at the new capture target and
-            // decide if it should lose focus or not? Or maybe router does this? Seems like
-            // that is the only viable way to handle clicking inside the live text entry...
-
-            //SystemKeyboardRouter.Instance.OnChangeWindowFocus(true);
-
             UpdateDeviceState(newState);
 
-            bool bCaptured = InteractionManager.OnPointerDown(LastDeviceState);
+			bool bCaptured = InteractionManager.OnPointerDown(LastDeviceState);
 
-            if (bCaptured)
+			// currently no concept of Focused widget/item :(
+            // So there is no way to know if the new capture is on the focused widget, which is desirable
+            // in many cases. For text-entry fields it is critical so we have this hack for now
+			bool bIsRepeatClickOnFocusedElement =
+                (SystemKeyboardRouter.Instance.TextEntryFocusTarget == InteractionManager.ActiveCaptureRequest.SourceObject);
+
+			if (bCaptured && bIsRepeatClickOnFocusedElement == false)
                 SystemKeyboardRouter.Instance.OnChangeWindowFocus(true);
 
             HostAPI?.RequestRepaint();

@@ -483,6 +483,7 @@ namespace Gradientspace.UI
         ITextEntryFocusTarget? activeTextTarget = null;
 
         public bool HasTextEntryFocusTarget { get { return activeTextTarget != null; } }
+        public ITextEntryFocusTarget? TextEntryFocusTarget { get { return activeTextTarget; } }
 
         public virtual void SetTextEntryFocusTarget(ITextEntryFocusTarget Target)
         {

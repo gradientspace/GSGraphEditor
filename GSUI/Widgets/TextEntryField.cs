@@ -93,8 +93,16 @@ namespace Gradientspace.UI
         }
 
 
-        //! this function can be called externally, to assign focus to the text entry field
-        public virtual void BeginStringEdit()
+		public override bool GetTooltipStrings(out string? tooltip, out string[]? extendedTooltip)
+		{
+			tooltip = Text;
+			extendedTooltip = null;
+			return true;
+		}
+
+
+		//! this function can be called externally, to assign focus to the text entry field
+		public virtual void BeginStringEdit()
         {
             ActiveStringEdit = new StringEditor(Text);
             ActiveStringEdit.SelectAll();
@@ -127,17 +135,37 @@ namespace Gradientspace.UI
         public virtual bool IsHovered { get; set; }
         public virtual bool IsCapturing { get; set; }
         protected StringEditor? ActiveStringEdit = null;
+        protected Vector2f StartCaptureLocation = Vector2f.Zero;
+        protected bool bShiftDown = false;
         public virtual void UpdateCapture(ISimpleCaptureTarget.ECaptureState State, in InputDeviceState deviceState) {
             bool bWasCapturing = IsCapturing;
             IsCapturing = (State == ISimpleCaptureTarget.ECaptureState.Begin || State == ISimpleCaptureTarget.ECaptureState.Update);
-            if ( IsCapturing == false && bWasCapturing == true )
+            if (State == ISimpleCaptureTarget.ECaptureState.Begin) {
+                StartCaptureLocation = deviceState.CurrentPosition;
+                bShiftDown = deviceState.ShiftButton.bDown;
+            }
+			if ( IsCapturing == false && bWasCapturing == true )        // released
             {
                 bool bPointerUpHit = GetActiveView()?.HitTest(deviceState.CurrentPosition) ?? false;
                 if (bPointerUpHit) {
-                    BeginStringEdit();
+                    if (IsFocused)
+                        SetSelectionRangeOrCursorLocation(StartCaptureLocation, deviceState.CurrentPosition);
+                    else
+                        BeginStringEdit();
                 }
             }
-        }
+            else if (IsFocused && State == ISimpleCaptureTarget.ECaptureState.Update)
+            {
+                // todo might need to 
+                if (bShiftDown)
+                {
+					SetSelectionRangeOrCursorLocation(deviceState.CurrentPosition, deviceState.CurrentPosition);
+					StartCaptureLocation = deviceState.CurrentPosition;
+				} else
+					SetSelectionRangeOrCursorLocation(StartCaptureLocation, deviceState.CurrentPosition);
+			}
+
+		}
         public virtual void UpdateHover(ISimpleCaptureTarget.EHoverState State, in InputDeviceState deviceState, out bool bContinueHover) 
         {
             IsHovered = (State == EHoverState.Begin || State == EHoverState.Update);
@@ -158,6 +186,20 @@ namespace Gradientspace.UI
             }
             return false;
         }
+        internal void SetSelectionRangeOrCursorLocation(Vector2f startClickLocation, Vector2f endClickLocation)
+        {
+            if (GetActiveView() is TextEntryFieldView view)
+            {
+                int startCharIndex = view?.GetCharacterIndexFromPosition(startClickLocation) ?? 0;
+                int endCharIndex = startCharIndex;
+                if ( Math.Abs(endClickLocation.x - startClickLocation.x) > 1)
+                    endCharIndex = view?.GetCharacterIndexFromPosition(endClickLocation) ?? 0;
+                if ( startCharIndex == endCharIndex )
+				    ActiveStringEdit?.SetCursorLocation(startCharIndex);
+                else
+					ActiveStringEdit?.SetSelectionRange(startCharIndex, endCharIndex);
+			}
+		}
 
         // ITextEntryFocusTarget API
 
@@ -269,6 +311,8 @@ namespace Gradientspace.UI
         public float CursorOffset;
         public float SelectionStartOffset, SelectionEndOffset;
 
+        public SKPaint? LastTextPaint = null;     // hmmm not sure this is safe...
+
         public TextEntryFieldView(TextEntryField sourceTextEntryField)
         {
             SourceTextEntry = sourceTextEntryField;
@@ -339,8 +383,9 @@ namespace Gradientspace.UI
             WidgetMargins Margins = SourceTextEntry.Style.BaseMargins;
 
             SKPaint TextPaint = StyleCache.GetCachedPaint(UseStyle, SKStyleCache.EPaintType.Text);
+            LastTextPaint = TextPaint;
 
-            Canvas.DrawRect(Conversion.ToSkia(PlacedBounds), StandardPaints.BackgroundPaint);
+			Canvas.DrawRect(Conversion.ToSkia(PlacedBounds), StandardPaints.BackgroundPaint);
             Vector2f TextOrigin = PlacedBounds.Min + TextInfo.TextOrigin;
 
 
@@ -359,6 +404,8 @@ namespace Gradientspace.UI
                 Vector2f CursorBottom = new Vector2f(TextOrigin.x + CursorOffset, PlacedBounds.Min.y + 1);
                 Vector2f CursorTop = new Vector2f(TextOrigin.x + CursorOffset, PlacedBounds.Max.y - 1);
                 // blink the cursor using this kinda hacky method...
+                // todo this should maybe be something based on an accumulation, so that we can
+                // force cursor to visible state immediately after clicks/etc
                 if ( (DateTime.Now.Ticks / 5000000) % 2  == 0 )
                     Canvas.DrawLine(Conversion.ToSkia(CursorBottom), Conversion.ToSkia(CursorTop), StandardPaints.TextPaint);
             }
@@ -394,6 +441,31 @@ namespace Gradientspace.UI
             return false;
         }
 
+
+        public int GetCharacterIndexFromPosition(Vector2f QueryPoint)
+        {
+            if (LastTextPaint == null)
+                return 0;
+
+            AxisAlignedBox2f WorldBounds = 
+                AnchorLocation.GetAnchoredBounds(LocalBounds, DrawOrigin, GetWidget().AnchorPlacement);
+            WorldBounds.Min.x += TextInfo.TextOrigin.x;
+			float LocalClickX = QueryPoint.x - WorldBounds.Min.x;
+
+            // dumb linear search. Conceivably would be better to cache this if the widget is focused?
+            // or do a binary search at least? not performance-critical though...
+            float cur_offset = 0;
+			string ShowText = SourceTextEntry.ActiveText;
+            for (int k = 1; k < ShowText.Length; ++k)
+            {
+				string substring = SourceTextEntry.ActiveText.Substring(0, k);
+				float next_offset = LastTextPaint.MeasureText(substring);
+                if (LocalClickX < (cur_offset + next_offset)*0.5 )
+                    return k-1;
+                cur_offset = next_offset;
+			}
+            return ShowText.Length;
+		}
 
     }
 }

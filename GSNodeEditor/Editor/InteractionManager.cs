@@ -84,7 +84,7 @@ namespace GSNodeEditor
 
         public EInteractionState InteractionState { get { return interactionState; } }
         public bool IsCapturingInput { get { return interactionState != EInteractionState.NoInteraction || ActiveDeviceCapture != InputCaptureRequest.None; } }
-
+        public InputCaptureRequest ActiveCaptureRequest { get { return ActiveDeviceCapture; } }
 
 
         // basic
