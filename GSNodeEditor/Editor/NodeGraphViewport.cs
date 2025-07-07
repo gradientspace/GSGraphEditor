@@ -60,6 +60,9 @@ namespace GSNodeEditor
             //NodeGraphTestingLibrary.Initialize();
             GSPythonNodesLibrary.Initialize();
 
+            // force node library to start building
+            DefaultNodeLibrary.Instance.BuildAsync();
+
 			//InlinePinWidgetSystem.Instance.RegisterProvider(
 			//    typeof(SourceCodeDataType), new SourceCodeInlinePinWidgetProvider());
 			NodeWidgetCustomizationSystem.Instance.RegisterProvider(
