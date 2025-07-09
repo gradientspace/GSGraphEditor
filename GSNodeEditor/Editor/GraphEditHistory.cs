@@ -4,92 +4,22 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Gradientspace.UI;
 
 namespace GSNodeEditor
 {
-    public interface IGraphEditChange
-    {
-        public string Name { get; }
-		public string Description { get; }
 
-		public void Apply();
-        public void Revert();
-
-        public void SetNameAndDescription(string? name = null, string? description = null) { }
-    }
-
-    public abstract class BaseGraphEditChange : IGraphEditChange
-    {
-        public string Name { get; set; } = "BaseChange";
-        public string Description { get; set; } = "";
-
-        public BaseGraphEditChange() { }
-		public BaseGraphEditChange(string? name, string? description) {
-            Name = name ?? "BaseChange";
-            Description = description ?? "";
-		}
-
-		public override string ToString()
-		{
-            return $"{Name} : {GetType().ToString()}";
-		}
-
-		public abstract void Apply();
-		public abstract void Revert();
-
-		public virtual void SetNameAndDescription(string? name = null, string? description = null) {
-            if (name != null) Name = name; 
-            if (description != null) Description = description;
-        }
-	}
-
-    public class GraphEditChangeSet : BaseGraphEditChange
+    // todo maybe should be part of Gradientspace.UI? nothing graph-specific here...
+    public class GraphEditHistory : IHistoryImplementation
 	{
-        public List<IGraphEditChange> Changes = new List<IGraphEditChange>();
-
-        public GraphEditChangeSet() { }
-        public GraphEditChangeSet(string? name, string? description) : base(name, description) { }
-		public GraphEditChangeSet(List<IGraphEditChange> changes) {
-            Changes = changes;
-        }
-
-        public override void Apply()
-        {
-			int N = Changes.Count;
-			for (int i = 0; i < N; ++i)
-				Changes[i].Apply();
-		}
-
-		public override void Revert()
-        {
-            int N = Changes.Count;
-            for (int i = N-1; i >= 0; --i)
-                Changes[i].Revert();
-		}
-
-        public IGraphEditChange? Simplify()
-        {
-            if (Changes.Count == 0)
-                return null;
-            if (Changes.Count == 1) {
-                Changes[0].SetNameAndDescription(this.Name, this.Description);
-                return Changes[0];
-			}
-            return this;
-        }
-    }
-
-
-    public class GraphEditHistory
-    {
-        List<IGraphEditChange> Changes = new List<IGraphEditChange>();
+        List<IHistoryChange> Changes = new List<IHistoryChange>();
 
         int CurrentStateIndex = 0;
 
         bool inActiveStepForward = false;
         bool inActiveStepBackward = false;
 
-		GraphEditChangeSet? NewChangeSequence = null;
+		HistoryChangeSequence? NewChangeSequence = null;
         int BeginChangesStackDepth = 0;
 
 
@@ -105,7 +35,7 @@ namespace GSNodeEditor
             if (BeginChangesStackDepth == 0)
                 Debug.Assert(NewChangeSequence == null);
             if (NewChangeSequence == null)
-                NewChangeSequence = new GraphEditChangeSet(changeName, changeDescription);
+                NewChangeSequence = new HistoryChangeSequence(changeName, changeDescription);
             BeginChangesStackDepth++;
 		}
 
@@ -113,7 +43,7 @@ namespace GSNodeEditor
             {  return (NewChangeSequence != null); }
         }
 
-        public void AppendChange(IGraphEditChange? change)
+        public void AppendChange(IHistoryChange? change)
         {
             if (change != null) {
                 Debug.Assert(InActiveChanges && NewChangeSequence != null);
@@ -130,7 +60,7 @@ namespace GSNodeEditor
             if (BeginChangesStackDepth == 0)
             {
 				Debug.Assert(NewChangeSequence != null);
-				IGraphEditChange? minChange = NewChangeSequence.Simplify();
+				IHistoryChange? minChange = NewChangeSequence.Simplify();
 				NewChangeSequence = null;
                 if ( minChange != null ) {
                     System.Diagnostics.Debug.WriteLine("[History] Pushed change " + minChange.Name + " // " + minChange.Description);

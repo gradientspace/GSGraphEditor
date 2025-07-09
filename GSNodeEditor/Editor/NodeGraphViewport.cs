@@ -144,7 +144,9 @@ namespace GSNodeEditor
             //GraphEditor = new NodeGraphEditor(CurrentGraphView, CurrentGraph);
             GraphEditor = new BaseGraphEditor(CurrentGraphView);
             CurrentGraphView.ActiveEditManager = new(this);
+
 			EditHistory = new GraphEditHistory();
+            HistorySystem.SetActiveHistory(EditHistory);
 		}
 
 

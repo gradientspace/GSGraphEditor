@@ -268,5 +268,35 @@ namespace Gradientspace.UI
 			SelectionEndLocation = Math.Clamp(Math.Max(FromIndex, ToIndex), 0, CurrentString.Length);
         }
 
-    }
+
+
+        // support for saving/restoring state   (eg for use in undo/redo)
+
+
+		public struct StringEditorState
+		{
+			public string CurrentString;
+			public int CursorLocation;
+			public int SelectionStartLocation;
+			public int SelectionEndLocation;
+		}
+
+		public StringEditorState GetCurrentState()
+		{
+			return new StringEditorState() {
+				CurrentString = CurrentString,
+				CursorLocation = CursorLocation,
+				SelectionStartLocation = SelectionStartLocation,
+				SelectionEndLocation = SelectionEndLocation
+			};
+		}
+
+		public void SetCurrentState(ref readonly StringEditorState state)
+		{
+			CurrentString = state.CurrentString;
+			CursorLocation = state.CursorLocation;
+			SelectionStartLocation = state.SelectionStartLocation;
+			SelectionEndLocation = state.SelectionEndLocation;
+		}
+	}
 }

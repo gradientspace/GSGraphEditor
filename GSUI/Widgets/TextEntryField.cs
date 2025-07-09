@@ -41,8 +41,9 @@ namespace Gradientspace.UI
         }
         public StringValidation ValidationType { get; set; } = StringValidation.None;
 
+        TextEntryFieldChange? activeChange = null;
 
-        public TextEntryField(WidgetStateStyle? customStyle = null)
+		public TextEntryField(WidgetStateStyle? customStyle = null)
         {
             Style = (customStyle != null) ? customStyle : DefaultWidgetStyles.DefaultTextFieldStyle;
 
@@ -144,25 +145,34 @@ namespace Gradientspace.UI
                 StartCaptureLocation = deviceState.CurrentPosition;
                 bShiftDown = deviceState.ShiftButton.bDown;
             }
-			if ( IsCapturing == false && bWasCapturing == true )        // released
+
+			bool bPointerHit = GetActiveView()?.HitTest(deviceState.CurrentPosition) ?? false;
+
+			if (IsFocused == false)
             {
-                bool bPointerUpHit = GetActiveView()?.HitTest(deviceState.CurrentPosition) ?? false;
-                if (bPointerUpHit) {
-                    if (IsFocused)
-                        SetSelectionRangeOrCursorLocation(StartCaptureLocation, deviceState.CurrentPosition);
-                    else
-                        BeginStringEdit();
-                }
-            }
-            else if (IsFocused && State == ISimpleCaptureTarget.ECaptureState.Update)
+                if (IsCapturing == false && bWasCapturing == true && bPointerHit)       // released w/ pointer hit
+					BeginStringEdit();
+            } 
+            else
             {
-                // todo might need to 
-                if (bShiftDown)
+				if (IsCapturing == false && bWasCapturing == true)      // isnt this State == End??
                 {
-					SetSelectionRangeOrCursorLocation(deviceState.CurrentPosition, deviceState.CurrentPosition);
-					StartCaptureLocation = deviceState.CurrentPosition;
-				} else
-					SetSelectionRangeOrCursorLocation(StartCaptureLocation, deviceState.CurrentPosition);
+                    if ( bPointerHit )
+					    SetSelectionRangeOrCursorLocation(StartCaptureLocation, deviceState.CurrentPosition);
+                    end_change();
+				} 
+                else if (State == ISimpleCaptureTarget.ECaptureState.Update)
+                {
+					if (bShiftDown) {
+						SetSelectionRangeOrCursorLocation(deviceState.CurrentPosition, deviceState.CurrentPosition);
+						StartCaptureLocation = deviceState.CurrentPosition;
+					} else
+						SetSelectionRangeOrCursorLocation(StartCaptureLocation, deviceState.CurrentPosition);
+				} 
+                else if (State == ISimpleCaptureTarget.ECaptureState.Begin )
+                {
+					begin_change();
+				}
 			}
 
 		}
@@ -190,7 +200,7 @@ namespace Gradientspace.UI
         {
             if (GetActiveView() is TextEntryFieldView view)
             {
-                int startCharIndex = view?.GetCharacterIndexFromPosition(startClickLocation) ?? 0;
+				int startCharIndex = view?.GetCharacterIndexFromPosition(startClickLocation) ?? 0;
                 int endCharIndex = startCharIndex;
                 if ( Math.Abs(endClickLocation.x - startClickLocation.x) > 1)
                     endCharIndex = view?.GetCharacterIndexFromPosition(endClickLocation) ?? 0;
@@ -211,15 +221,24 @@ namespace Gradientspace.UI
             }
 
             if (ActiveStringEdit != null) 
-                return ActiveStringEdit.OnNextKey(keyState);
+            {
+                // TODO: could we accumulate multiple text-edit key changes? annoying to have to undo every character...
+
+                begin_change();
+                bool bResult = ActiveStringEdit.OnNextKey(keyState);
+                end_change(!bResult);
+                return bResult;
+            }
             
             return false;
         }
 
         public void OnPasteText(string pasteString)
         {
-            if (ActiveStringEdit != null)
+			begin_change();
+			if (ActiveStringEdit != null)
                 ActiveStringEdit.TryPaste(pasteString);
+            end_change();
         }
 
         public bool GetCurrentSelectedText(out string text)
@@ -232,8 +251,10 @@ namespace Gradientspace.UI
 
         public void OnSelectAll()
         {
-            if (ActiveStringEdit != null)
+			begin_change();
+			if (ActiveStringEdit != null)
                 ActiveStringEdit.SelectAll();
+            end_change();
         }
 
         public void OnEndFocus(EndFocusType endType)
@@ -261,8 +282,10 @@ namespace Gradientspace.UI
             {
                 if (ActiveStringEdit != null && ActiveStringEdit.HasSelection == false)
                 {
+                    begin_change();
                     ActiveStringEdit.SelectAll();
                     ActiveStringEdit.DeleteSelection();
+                    end_change();
                     return true;
                 }
             }
@@ -296,7 +319,39 @@ namespace Gradientspace.UI
             return false;
         }
 
-    }
+
+
+        // undo/redo support
+
+        protected void begin_change()
+        {
+            Debug.Assert(activeChange == null);
+            Debug.Assert(ActiveStringEdit != null);
+            activeChange = new TextEntryFieldChange(this);
+            activeChange.FromState = ActiveStringEdit.GetCurrentState();
+
+            // do we need to BeginChanges here? seems like it can wait until end_change()...
+            HistorySystem.ActiveHistory?.BeginChanges("Edit Text");
+        }
+
+        protected void end_change(bool bCancel = false)
+        {
+            Debug.Assert(activeChange != null);
+            Debug.Assert(ActiveStringEdit != null);
+			activeChange.ToState = ActiveStringEdit.GetCurrentState();
+            // todo check for identity...
+            if (activeChange.IsNullChange == false && bCancel == false )
+                HistorySystem.ActiveHistory?.AppendChange(activeChange);
+            activeChange = null;
+			HistorySystem.ActiveHistory?.EndChanges();
+		}
+
+		internal void SetCurrentState(ref readonly StringEditor.StringEditorState state)
+		{
+            ActiveStringEdit?.SetCurrentState(in state);
+		}
+
+	}
 
 
 
@@ -470,5 +525,40 @@ namespace Gradientspace.UI
             return ShowText.Length;
 		}
 
+
     }
+
+
+
+    public class TextEntryFieldChange : BaseHistoryChange
+    {
+        public TextEntryField? TextField = null;
+		public StringEditor.StringEditorState FromState;
+		public StringEditor.StringEditorState ToState;
+
+		public TextEntryFieldChange(TextEntryField textField) : base("Edit Text", null) {
+            TextField = textField;
+        }
+
+		public override void Apply()
+        {
+            TextField?.SetCurrentState(in ToState);
+        }
+
+		public override void Revert()
+        {
+			TextField?.SetCurrentState(in FromState);
+		}
+
+        public bool IsNullChange {
+            get {
+                return (FromState.CursorLocation == ToState.CursorLocation &&
+                    FromState.SelectionStartLocation == ToState.SelectionEndLocation &&
+                    FromState.SelectionEndLocation == ToState.SelectionStartLocation &&
+                    (String.Compare(FromState.CurrentString, ToState.CurrentString) == 0));
+            }
+        }
+	}
+
+
 }

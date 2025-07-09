@@ -204,7 +204,7 @@ namespace GSNodeEditor
 
 
 
-    public class NodeSetPositionChanges : BaseGraphEditChange
+    public class NodeSetPositionChanges : BaseHistoryChange
     {
         (NodeWidget?, Vector2f, Vector2f)[]? PositionChanges;
 

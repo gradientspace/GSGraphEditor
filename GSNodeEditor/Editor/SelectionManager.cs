@@ -281,7 +281,7 @@ namespace GSNodeEditor
 	}
 
 
-    public class SelectionManagerSelectionChange : BaseGraphEditChange
+    public class SelectionManagerSelectionChange : BaseHistoryChange
     {
         // todo optimize storage for small # of items (most frequent case)   (and use arrays?)
         public List<int>? PrevNodes = null, NewNodes = null;

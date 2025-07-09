@@ -14,9 +14,9 @@ namespace GSNodeEditor
 	{
 
 		// THINGS TO DO FOR UNDO REDO
-		//  - mark_modified_node() not doing anything on _internal calls
+		//  - mark_modified_node() not doing anything on _internal calls from undo/redo system
 		//  - how to call BeginGraphEdits() / EndGraphEdits() ? to do process_modified_nodes(), ValidateDataConnections(), etc
-		//  - text entry field edits
+		//  - some way to expire textentry edit changes after it goes out of focus
 
 
 
@@ -120,7 +120,7 @@ namespace GSNodeEditor
 	}
 
 
-	public abstract class BaseNodeGraphEditorChange : BaseGraphEditChange
+	public abstract class BaseNodeGraphEditorChange : BaseHistoryChange
 	{
 		public NodeGraphEditor? GraphEditor = null;
 	}
