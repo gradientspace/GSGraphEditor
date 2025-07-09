@@ -392,18 +392,32 @@ namespace GSNodeEditor
         public virtual void AddInputPinToNode(NodeWidget nodeWidget)
         {
 			Debug.Assert(IsInGraphEdits);
-            INode_VariableInputs? variableNode = (nodeWidget.ParentNode as INode_VariableInputs);
-            if ( variableNode != null ) {
-                if (variableNode.AddInput())
-                    mark_modified_node(nodeWidget.ParentNode);
-            }
+            if (add_input_pin_to_node(nodeWidget))
+                ActiveHistory?.AppendChange(new NodeAddRemoveInputChange(this, nodeWidget.GraphNodeIdentifier, false));
         }
+        protected virtual bool add_input_pin_to_node(NodeWidget nodeWidget)
+        {
+			INode_VariableInputs? variableNode = (nodeWidget.ParentNode as INode_VariableInputs);
+			if (variableNode != null) {
+                if (variableNode.AddInput()) {
+                    mark_modified_node(nodeWidget.ParentNode);
+                    return true;
+                }
+			}
+            return false;
+		}
+
+
 
         public virtual void RemoveInputPinFromNode(NodeWidget nodeWidget)
         {
 			Debug.Assert(IsInGraphEdits);
-
-			if (nodeWidget.InputWidgets.Count <= 1) return;
+            if ( remove_input_pin_from_node(nodeWidget) )
+				ActiveHistory?.AppendChange(new NodeAddRemoveInputChange(this, nodeWidget.GraphNodeIdentifier, true));
+		}
+        protected virtual bool remove_input_pin_from_node(NodeWidget nodeWidget)
+        {
+			if (nodeWidget.InputWidgets.Count <= 1) return false;
             NodeInputPinWidget lastInput = nodeWidget.InputWidgets.Last();
             IConnectionInfo graphConnection = Graph.FindConnectionTo(nodeWidget.GraphNodeIdentifier, lastInput.InputName);
 
@@ -413,8 +427,10 @@ namespace GSNodeEditor
                     if (graphConnection.IsValid)
                         RemoveConnection(graphConnection);
                     mark_modified_node(nodeWidget.ParentNode);
+                    return true;
                 }
 			}
+            return false;
         }
 
 
@@ -422,22 +438,35 @@ namespace GSNodeEditor
         public virtual void AddOutputPinToNode(NodeWidget nodeWidget)
         {
 			Debug.Assert(IsInGraphEdits);
-
+            if (add_output_pin_to_node(nodeWidget))
+				ActiveHistory?.AppendChange(new NodeAddRemoveOutputChange(this, nodeWidget.GraphNodeIdentifier, false));
+		}
+        protected virtual bool add_output_pin_to_node(NodeWidget nodeWidget)
+        {
 			INode_VariableOutputs? variableNode = (nodeWidget.ParentNode as INode_VariableOutputs);
-            if ( variableNode != null ) {
-                if (variableNode.AddOutput())
-                    mark_modified_node(nodeWidget.ParentNode);
-            }
-        }
+			if (variableNode != null) {
+				if (variableNode.AddOutput()) { 
+					mark_modified_node(nodeWidget.ParentNode);
+                    return true;
+                }
+			}
+            return false;
+		}
+
+
 
         public virtual void RemoveOutputPinFromNode(NodeWidget nodeWidget)
         {
 			Debug.Assert(IsInGraphEdits);
-
 			if (nodeWidget.OutputWidgets.Count <= 1) return;
-            NodeOutputPinWidget lastOutput = nodeWidget.OutputWidgets.Last();
 
-            List<IConnectionInfo> Connections = new List<IConnectionInfo>();
+            if (remove_output_pin_from_node(nodeWidget))
+				ActiveHistory?.AppendChange(new NodeAddRemoveOutputChange(this, nodeWidget.GraphNodeIdentifier, true));
+		}
+        protected virtual bool remove_output_pin_from_node(NodeWidget nodeWidget)
+        {
+			NodeOutputPinWidget lastOutput = nodeWidget.OutputWidgets.Last();
+			List<IConnectionInfo> Connections = new List<IConnectionInfo>();
             if ( lastOutput.IsSequenceOutputPin )
                 Graph.FindConnectionsFrom(nodeWidget.GraphNodeIdentifier, lastOutput.OutputName, ref Connections, EConnectionType.Sequence);
             else
@@ -449,8 +478,10 @@ namespace GSNodeEditor
 					foreach (IConnectionInfo connection in Connections)
 						RemoveConnection(connection);
 					mark_modified_node(nodeWidget.ParentNode);
+                    return true;
                 }
 			}
+            return false;
         }
 
 

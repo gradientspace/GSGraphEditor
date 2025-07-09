@@ -16,8 +16,6 @@ namespace GSNodeEditor
 		// THINGS TO DO FOR UNDO REDO
 		//  - mark_modified_node() not doing anything on _internal calls
 		//  - how to call BeginGraphEdits() / EndGraphEdits() ? to do process_modified_nodes(), ValidateDataConnections(), etc
-		//  - add/remove pin edits
-		//  - node value changes
 		//  - text entry field edits
 
 
@@ -96,6 +94,27 @@ namespace GSNodeEditor
 			// not work for 
 			if (Graph.FindNodeFromIdentifier(change.NodeIdentifier).Node is NodeBase baseNode)
 				baseNode.PublishNodeModifiedNotification();
+		}
+
+
+		internal void ApplyChange(NodeAddRemoveInputChange change, bool bApply)
+		{
+			NodeWidget? foundWidget = GraphView.FindNode(change.NodeIdentifier);
+			Debug.Assert(foundWidget != null);
+			if (bApply)
+				add_input_pin_to_node(foundWidget);
+			else
+				remove_input_pin_from_node(foundWidget);
+		}
+
+		internal void ApplyChange(NodeAddRemoveOutputChange change, bool bApply)
+		{
+			NodeWidget? foundWidget = GraphView.FindNode(change.NodeIdentifier);
+			Debug.Assert(foundWidget != null);
+			if (bApply)
+				add_output_pin_to_node(foundWidget);
+			else
+				remove_output_pin_from_node(foundWidget);
 		}
 
 	}
@@ -177,5 +196,46 @@ namespace GSNodeEditor
 		}
 	}
 
+
+	public class NodeAddRemoveInputChange : BaseNodeGraphEditorChange
+	{
+		public int NodeIdentifier;
+		public bool bIsRemove = false;
+		public NodeAddRemoveInputChange(NodeGraphEditor editor, int nodeIdentifier, bool isRemove)
+		{
+			Name = (isRemove) ? "Remove Input" : "Add Input";
+			this.GraphEditor = editor;
+			NodeIdentifier = nodeIdentifier;
+			bIsRemove = isRemove;
+		}
+
+		public override void Apply() {
+			GraphEditor?.ApplyChange(this, bIsRemove ? false : true);
+		}
+		public override void Revert() {
+			GraphEditor?.ApplyChange(this, bIsRemove ? true : false);
+		}
+	}
+
+
+	public class NodeAddRemoveOutputChange : BaseNodeGraphEditorChange
+	{
+		public int NodeIdentifier;
+		public bool bIsRemove = false;
+		public NodeAddRemoveOutputChange(NodeGraphEditor editor, int nodeIdentifier, bool isRemove)
+		{
+			Name = (isRemove) ? "Remove Output" : "Add Output";
+			this.GraphEditor = editor;
+			NodeIdentifier = nodeIdentifier;
+			bIsRemove = isRemove;
+		}
+
+		public override void Apply() {
+			GraphEditor?.ApplyChange(this, bIsRemove ? false : true);
+		}
+		public override void Revert() {
+			GraphEditor?.ApplyChange(this, bIsRemove ? true : false);
+		}
+	}
 
 }

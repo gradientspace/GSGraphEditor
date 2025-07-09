@@ -26,8 +26,6 @@ Core Editor
 
 - Undo/Redo
 - Copy/Paste   (do it via temp serialize to json??)
-- Filter out spurious packages in function/library search  (eg anything System., Avalonia., etc)
-- parallel/background library search & build
 - Mac and Linux support/testing  (mainly should be path issues, eg Python)
 
 ====================
