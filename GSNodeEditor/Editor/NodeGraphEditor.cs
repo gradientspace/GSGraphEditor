@@ -38,32 +38,41 @@ namespace GSNodeEditor
 
         public void BeginGraphEdits(GraphEditHistory? UseHistory = null)
         {
-            Debug.Assert(in_graph_edits == false);
-            in_graph_edits = true;
+            begin_graph_edits_internal();
 
-            ActiveHistory = UseHistory;
+			ActiveHistory = UseHistory;
             if (ActiveHistory != null)
-                ActiveHistory.BeginChanges("Graph Edit");
+                ActiveHistory.BeginChanges( new GraphEditChangeSequence(this) );
+		}
+        protected virtual void begin_graph_edits_internal()
+        {
+			Debug.Assert(in_graph_edits == false);
+			in_graph_edits = true;
 		}
         public void EndGraphEdits()
         {
-            Debug.Assert(in_graph_edits);
+			if (ActiveHistory != null) {
+				ActiveHistory.EndChanges();
+				ActiveHistory = null;
+			}
 
-            if (ActiveHistory != null) {
-                ActiveHistory.EndChanges();
-                ActiveHistory = null;
-            }
+            end_graph_edits_internal();
+		}
+		protected virtual void end_graph_edits_internal()
+        {
+			Debug.Assert(in_graph_edits);
 
-            process_modified_nodes();
+			process_modified_nodes();
 
-            in_graph_edits = false;
+			in_graph_edits = false;
 
 			// HACK TODO
 			// re-validate all connections in graph after any edit
 			// probably this should be more granular and only check ModifiedNodes...
 			(Graph as BaseGraph)?.ValidateDataConnections();
-            GraphView.UpdateAllConnections();
+			GraphView.UpdateAllConnections();
 		}
+
         public bool IsInGraphEdits { get { return in_graph_edits; } }
 
 

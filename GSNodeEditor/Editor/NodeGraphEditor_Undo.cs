@@ -2,22 +2,25 @@
 using Gradientspace.NodeGraph;
 using Gradientspace.UI;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GSNodeEditor
 {
 	public partial class NodeGraphEditor
 	{
-
 		// THINGS TO DO FOR UNDO REDO
-		//  - mark_modified_node() not doing anything on _internal calls from undo/redo system
-		//  - how to call BeginGraphEdits() / EndGraphEdits() ? to do process_modified_nodes(), ValidateDataConnections(), etc
 		//  - some way to expire textentry edit changes after it goes out of focus
 
+
+		internal void BeginApplyGraphHistoryChanges()
+		{
+			begin_graph_edits_internal();
+		}
+
+		internal void EndApplyGraphHistoryChanges()
+		{
+			end_graph_edits_internal();
+		}
 
 
 		// construct an add/remove for a Node, saving necessary state
@@ -117,7 +120,46 @@ namespace GSNodeEditor
 				remove_output_pin_from_node(foundWidget);
 		}
 
+
 	}
+
+
+
+	public class GraphEditChangeSequence : HistoryChangeSequence
+	{
+		public NodeGraphEditor? GraphEditor = null;
+
+		public GraphEditChangeSequence(NodeGraphEditor? graphEditor) : base("Graph Edit", null)
+		{
+			GraphEditor = graphEditor;
+		}
+
+		// begin sequence / end sequence
+
+		public override void Apply()
+		{
+			GraphEditor?.BeginApplyGraphHistoryChanges();
+			base.Apply();
+			GraphEditor?.EndApplyGraphHistoryChanges();
+		}
+		public override void Revert()
+		{
+			GraphEditor?.BeginApplyGraphHistoryChanges();
+			base.Revert();
+			GraphEditor?.EndApplyGraphHistoryChanges();
+		}
+
+		public override IHistoryChange? Simplify()
+		{
+			if (Changes.Count == 0)
+				return null;
+			if (Changes.Count == 1) 
+				SetNameAndDescription(Changes[0].Name, Changes[0].Description);
+			return this;			// cannot replace w/ child edit
+		}
+	}
+
+
 
 
 	public abstract class BaseNodeGraphEditorChange : BaseHistoryChange

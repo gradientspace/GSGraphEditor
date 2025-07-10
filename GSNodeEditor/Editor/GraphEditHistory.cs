@@ -26,7 +26,7 @@ namespace GSNodeEditor
         public bool LogHistoryChanges = true;
 
 
-        public void BeginChanges(string? changeName = null, string? changeDescription = null)
+        public void BeginChanges(string? changeSetName = null, string? changeSetDescription = null)
         {
             Debug.Assert(inActiveStepBackward == false && inActiveStepForward == false);
 
@@ -35,11 +35,22 @@ namespace GSNodeEditor
             if (BeginChangesStackDepth == 0)
                 Debug.Assert(NewChangeSequence == null);
             if (NewChangeSequence == null)
-                NewChangeSequence = new HistoryChangeSequence(changeName, changeDescription);
+                NewChangeSequence = new HistoryChangeSequence(changeSetName, changeSetDescription);
             BeginChangesStackDepth++;
 		}
 
-        public bool InActiveChanges { get 
+		public void BeginChanges(HistoryChangeSequence UseChangeSet)
+        {
+			Debug.Assert(inActiveStepBackward == false && inActiveStepForward == false);
+            // todo: could we support stack of ChangeSequence to allow these to be nested?
+            Debug.Assert(BeginChangesStackDepth == 0 && NewChangeSequence == null);
+
+			Truncate();
+            NewChangeSequence = UseChangeSet;
+			BeginChangesStackDepth++;
+		}
+
+		public bool InActiveChanges { get 
             {  return (NewChangeSequence != null); }
         }
 

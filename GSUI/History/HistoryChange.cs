@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace Gradientspace.UI
 {
 
@@ -74,7 +69,7 @@ namespace Gradientspace.UI
 				Changes[i].Revert();
 		}
 
-		public IHistoryChange? Simplify()
+		public virtual IHistoryChange? Simplify()
 		{
 			if (Changes.Count == 0)
 				return null;

@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace Gradientspace.UI
 {
     public interface IHistoryImplementation
     {
-        void BeginChanges(string? changeName = null, string? changeDescription = null);
-        void AppendChange(IHistoryChange? change);
+        void BeginChanges(string? changeSetName = null, string? changeSetDescription = null);
+		void BeginChanges(HistoryChangeSequence UseChangeSet);
+		void AppendChange(IHistoryChange? change);
         bool InActiveChanges { get; }
         void EndChanges();
 
