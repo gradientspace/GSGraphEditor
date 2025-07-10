@@ -1,4 +1,5 @@
-﻿using Gradientspace.UI;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using Gradientspace.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;

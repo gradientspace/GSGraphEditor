@@ -1,3 +1,4 @@
+// Copyright Gradientspace Corp. All Rights Reserved.
 
 
 namespace GSNodeEditor

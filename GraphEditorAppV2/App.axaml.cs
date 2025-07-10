@@ -1,3 +1,4 @@
+// Copyright Gradientspace Corp. All Rights Reserved.
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;

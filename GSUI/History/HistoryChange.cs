@@ -1,4 +1,5 @@
-﻿
+// Copyright Gradientspace Corp. All Rights Reserved.
+
 namespace Gradientspace.UI
 {
 

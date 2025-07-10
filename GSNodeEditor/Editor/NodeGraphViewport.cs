@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using SkiaSharp;
 using System.Diagnostics;
 
 using g3;

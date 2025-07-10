@@ -1,4 +1,5 @@
-﻿using Avalonia;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using Avalonia;
 using System;
 
 namespace GraphEditorAppV2;

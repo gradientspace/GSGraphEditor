@@ -1,4 +1,5 @@
-﻿using g3;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using g3;
 
 namespace Gradientspace.UI
 {

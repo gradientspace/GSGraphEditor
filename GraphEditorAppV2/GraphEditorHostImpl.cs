@@ -1,4 +1,5 @@
-﻿using Avalonia.Controls;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using GSNodeEditor;

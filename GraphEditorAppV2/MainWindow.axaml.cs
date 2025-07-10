@@ -1,3 +1,4 @@
+// Copyright Gradientspace Corp. All Rights Reserved.
 using Avalonia.Controls;
 using Avalonia.Dialogs;
 using Avalonia.Input;

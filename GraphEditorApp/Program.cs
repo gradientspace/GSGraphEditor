@@ -1,4 +1,5 @@
-﻿using PopupWindow;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using PopupWindow;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;

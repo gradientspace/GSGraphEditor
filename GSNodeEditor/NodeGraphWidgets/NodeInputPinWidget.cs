@@ -1,4 +1,5 @@
-﻿using Gradientspace.UI;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using Gradientspace.UI;
 using g3;
 using Gradientspace.NodeGraph;
 using SkiaSharp;

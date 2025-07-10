@@ -1,4 +1,5 @@
-﻿using System;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Collections.Generic;
