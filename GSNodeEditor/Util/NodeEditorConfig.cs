@@ -192,6 +192,9 @@ namespace GSNodeEditor
 				}
 			}
 
+			if (File.Exists(UserConfigFilePath) == false)
+				return false;
+
 			try {  
 				using (FileStream fileStream = File.OpenRead(UserConfigFilePath))
 				{

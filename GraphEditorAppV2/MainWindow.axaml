@@ -55,7 +55,7 @@
 							<Button HorizontalAlignment="Right" Content="Clear" Padding="5,0" Focusable="False" Click="ClearLog_OnClick" />
 						</Panel>
 
-						<Border Background="#FFFFFF">
+						<Border Background="#888888">
 							<ScrollViewer Name="LogTextAreaScrollView">
 								<SelectableTextBlock Name="LogTextArea" Margin="3">
 									Welcome to Derivative Graph Editor!
