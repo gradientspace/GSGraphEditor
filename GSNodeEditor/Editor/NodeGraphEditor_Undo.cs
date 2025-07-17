@@ -11,6 +11,7 @@ namespace GSNodeEditor
 	{
 		// THINGS TO DO FOR UNDO REDO
 		//  - some way to expire textentry edit changes after it goes out of focus
+		//  - code nodes text
 
 
 		internal void BeginApplyGraphHistoryChanges()

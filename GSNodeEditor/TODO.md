@@ -25,13 +25,18 @@ Core Editor
 ==================
 
 - Undo/Redo
+    - need to expire low-level textedit changes after it goes out of focus
+    - code nodes text
 - Copy/Paste   (do it via temp serialize to json??)
-- Mac and Linux support/testing  (mainly should be path issues, eg Python)
+- Mac support (seems to be working
+- Linux support
+- open graph on drag/drop
 
 ====================
 Node Management
 ====================
 
+- comment/description attributes on nodes? or parse code-file comments?
 - collapse set of nodes to cluster
 - node commenting
 - area commenting
