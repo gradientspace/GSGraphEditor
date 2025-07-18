@@ -101,7 +101,7 @@ public partial class MainWindow : Window
 	}
 
 
-	private bool bActiveLogFilterOutput = false;
+	private bool bActiveLogFilterOutput = true;
 
 	private void GlobalGraphOutput_OnGraphOutputUpdated(string? appendedLine, EGraphOutputType OutputType)
 	{
