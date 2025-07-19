@@ -147,6 +147,9 @@ namespace GSNodeEditor
             INode node = nodeInfo.Node!;
             foreach ( INodeInputInfo inputInfo in node.EnumerateInputs() )
             {
+                if (inputInfo.IsHidden)     // don't create a widget for hidden inputs
+                    continue;
+
                 NodeInputPinWidget inputWidget = new NodeInputPinWidget(inputInfo);
                 InputWidgets.Add(inputWidget);
                 AddChildWidget(inputWidget);
