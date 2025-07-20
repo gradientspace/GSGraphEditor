@@ -581,10 +581,11 @@ namespace GSNodeEditor
             };
             ActiveNewNodePopupDialog.PopulateVariables(GraphViewport.GraphAnalysis, FromNodeAndPin);
             ActiveNewNodePopupDialog.OnGetSetVariableSelected += (NewNodePopupDialog dialog, VariablesTracker.VariableInfo varInfo, bool bSet) => {
-                Debug.WriteLine($" GETSET VARIABLE {varInfo.Name} : {bSet}");
+                OnGetSetVariableSelected(varInfo, bSet, ViewportPopupLocation, FromNodeAndPin);
             };
             ActiveNewNodePopupDialog.OnNewVariableSelected += (NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, int type) => {
-				Debug.WriteLine($" NEW VARIABLE (TYPE : {nodeAndPin?.Pin.GetDataTypeAsString() ?? "null"})");
+				// note: do not use FromNodeAndPin here, the event sends null for types that can't be used as a variable
+				OnNewVariableSelected(ViewportPopupLocation, nodeAndPin, type);
 			};
 
 			ActivePopupMenuWidgetSet.AddRootWidget(ActiveNewNodePopupDialog);
@@ -597,12 +598,47 @@ namespace GSNodeEditor
 
             //interactionState = EInteractionState.NewNodePopupMenu;
         }
+
         protected void OnNewNodePopupItemSelected(NodeType nodeType, Vector2f Location, NodeAndPin? FromNode)
         {
             PendingNextFrameAction = () => { AppendNewNodeAtLocation(nodeType, Location, FromNode); };
             DismissPopupMenu();
         }
-        protected void DismissPopupMenu()
+
+
+        protected void OnGetSetVariableSelected(VariablesTracker.VariableInfo varInfo, bool bSet, Vector2f Location, NodeAndPin? FromNode)
+        {
+            PendingNextFrameAction = () => {
+                Type useNodeType = (bSet) ? typeof(SetGlobalVariableNode) : typeof(GetGlobalVariableNode);
+                NodeWidget? NewWidget = AppendNewNodeAtLocation(
+                    new NodeType(useNodeType), Location, FromNode,
+                    (INodeInfo nodeInfo) => {
+                        if (nodeInfo.Node is AccessVariableNode varNode)
+                            varNode.Initialize(varInfo.Name, varInfo.VariableType, true);
+					});
+
+            };
+            DismissPopupMenu();
+        }
+
+        protected void OnNewVariableSelected(Vector2f Location, NodeAndPin? FromNode, int type)
+        {
+			PendingNextFrameAction = () => {
+                Type useNodeType = typeof(CreateGlobalVariableNode);
+				NodeWidget? NewWidget = AppendNewNodeAtLocation(
+					new NodeType(useNodeType), Location, FromNode,
+					(INodeInfo nodeInfo) => {
+						if (nodeInfo.Node is CreateGlobalVariableNode varNode && FromNode != null)
+                            varNode.Initialize(FromNode.Pin.DataType.DataType);
+					});
+
+			};
+            DismissPopupMenu();
+		}
+
+
+
+		protected void DismissPopupMenu()
         {
             //GraphViewport.WidgetScene.RemoveSource(ActivePopupMenuWidgetSet);
             GraphViewport.ViewportUI.WidgetScene.RemoveSource(ActivePopupMenuWidgetSet);
@@ -623,15 +659,20 @@ namespace GSNodeEditor
 
 
 
-        protected void AppendNewNodeAtLocation(NodeType nodeType, Vector2f Postion, NodeAndPin? FromNode = null)
+        protected NodeWidget? AppendNewNodeAtLocation(
+            NodeType nodeType, 
+            Vector2f Postion, 
+            NodeAndPin? FromNode = null,
+            Action<INodeInfo>? NodeInitializerFunc = null)
         {
+            NodeWidget? NewNode = null;
             GraphViewport.ExecuteGraphEdit((NodeGraphEditor Editor) =>
             {
-                NodeWidget NewNode = Editor.AddNodeOfType(nodeType, Postion);
+                NewNode = Editor.AddNodeOfType(nodeType, Postion, NodeInitializerFunc);
 
                 if (FromNode != null)
                 {
-                    // TODO: support automatically connecting data pin when adding Sequence connection
+                    // TODO: support automatically connecting data pin(s) when adding Sequence connection
                     if (FromNode.bIsSequencePin)
                     {
                         Editor.AddConnection(FromNode.Node, -1, NewNode, -1, EConnectionType.Sequence, true, false);
@@ -639,20 +680,24 @@ namespace GSNodeEditor
                     else
                     {
                         Type OutputType = FromNode.Node.OutputWidgets[FromNode.PinIndex].DataType.DataType;
+                        (NodeInputPinWidget? FirstDataInput, int FirstDataIndex) = NewNode.FindFirstDataInput();
 
-                        if ( OutputType == typeof(ControlFlowOutputID) )
+						if ( OutputType == typeof(ControlFlowOutputID) )
                         {
                             Editor.AddConnection(FromNode.Node, FromNode.PinIndex, NewNode, -1, EConnectionType.Sequence, true, false);
                         }
-                        else if (NewNode.InputWidgets.Count > 0 && NewNode.InputWidgets[0].DataType.DataType == OutputType)
+                        else if (FirstDataInput != null && FirstDataInput.DataType.DataType == OutputType)
                         {
-                            Editor.AddConnection(FromNode.Node, FromNode.PinIndex, NewNode, 0, EConnectionType.Data,
+                            Editor.AddConnection(FromNode.Node, FromNode.PinIndex, NewNode, FirstDataIndex, EConnectionType.Data,
                                 AutoReplaceExistingConnections, AutoConnectSequencePath);
                         }
                     }
                 }
             });
-        }
+
+            return NewNode;
+
+		}
 
 
         public void RequestShowContextMenu(in InputDeviceState deviceState)

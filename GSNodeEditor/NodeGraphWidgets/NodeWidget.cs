@@ -321,6 +321,21 @@ namespace GSNodeEditor
             return OutputWidgets.FindIndex(x => x.OutputName == outputName);
         }
 
+
+        //! returns first input pin that can accept data (ie skips node-constant, hidden, etc)
+        public (NodeInputPinWidget?,int) FindFirstDataInput()
+        {
+            ENodeInputFlags ignoreFlags = ENodeInputFlags.IsNodeConstant | ENodeInputFlags.Hidden;
+            for (int i = 0; i < InputWidgets.Count; ++i) {
+                ENodeInputFlags flags = InputWidgets[i].NodeInputInfo.Input.GetInputFlags();
+                if ((flags & ignoreFlags) != 0)
+                    continue;
+                return (InputWidgets[i],i);
+            }
+            return (null,-1);
+        }
+
+
         public void UpdateAllInlineInfo(INodeGraph Graph)
         {
             foreach (NodeInputPinWidget pin in InputWidgets)
