@@ -50,16 +50,16 @@ namespace Gradientspace.UI
         }
 
 
-        public void AddItem(MenuItem item)
+        public void AddItem(MenuItem item, int sortGroupIndex = 0)
         {
-            Items.Add(new MenuListItem() { ItemType = EMenuItemType.StandardEntry, Item = item });
+            Items.Add(new MenuListItem() { ItemType = EMenuItemType.StandardEntry, Item = item, SortGroupIndex = sortGroupIndex });
             ClearHighlightedItemIndex();
         }
 
-        public MenuItem AddItem(string text, Action clickedAction)
+        public MenuItem AddItem(string text, Action clickedAction, int sortGroupIndex = 0)
         {
             MenuItem item = new MenuItem() { Text = text, OnClicked = clickedAction };
-            Items.Add(new MenuListItem() { ItemType = EMenuItemType.StandardEntry, Item = item });
+            Items.Add(new MenuListItem() { ItemType = EMenuItemType.StandardEntry, Item = item, SortGroupIndex = sortGroupIndex });
             ClearHighlightedItemIndex();
             return item;
         }
@@ -74,6 +74,8 @@ namespace Gradientspace.UI
         {
             Items.Sort((x,y) =>
             {
+                if (x.SortGroupIndex != y.SortGroupIndex)
+                    return x.SortGroupIndex.CompareTo(y.SortGroupIndex);
                 return x.Item?.Text.CompareTo(y.Item?.Text) ?? 0;
             });
             ClearHighlightedItemIndex();
@@ -88,6 +90,7 @@ namespace Gradientspace.UI
         {
             public EMenuItemType ItemType = EMenuItemType.StandardEntry;
             public MenuItem? Item = null;
+            public int SortGroupIndex = 0;
             public MenuListItem() { }
         }
 

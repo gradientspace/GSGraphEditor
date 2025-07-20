@@ -40,6 +40,7 @@ namespace GSNodeEditor
         public NodeGraphView CurrentGraphView;
         public InteractionManager InteractionManager;
         protected BaseGraphEditor GraphEditor;
+		public GraphStaticAnalyzer GraphAnalysis;
 		protected GraphEditHistory EditHistory;
 
 		protected EditorHostAPI? HostAPI;
@@ -145,6 +146,9 @@ namespace GSNodeEditor
             //GraphEditor = new NodeGraphEditor(CurrentGraphView, CurrentGraph);
             GraphEditor = new BaseGraphEditor(CurrentGraphView);
             CurrentGraphView.ActiveEditManager = new(this);
+
+            GraphAnalysis = new GraphStaticAnalyzer( (CurrentGraph as ExecutionGraph)! );
+            GraphAnalysis.RebuildAll();
 
 			EditHistory = new GraphEditHistory();
             HistorySystem.SetActiveHistory(EditHistory);
@@ -675,12 +679,17 @@ namespace GSNodeEditor
 
 
 
-        // INodeGraphEditManager impl
+        // INodeGraphEditManager impl   
+        // all graph edits go through this function  
+        // (search)  BeginGraphEdit  BeginChange EditGraph
         public void ExecuteGraphEdit(Action<NodeGraphEditor> EditFunc)
         {
             GraphEditor.BeginGraphEdits(this.History);
             EditFunc(GraphEditor);
             GraphEditor.EndGraphEdits();
+
+            // should run in task...
+            GraphAnalysis.RebuildAll();
 
             MarkGraphDirty();
         }

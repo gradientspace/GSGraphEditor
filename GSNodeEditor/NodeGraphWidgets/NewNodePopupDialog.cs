@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace GSNodeEditor
 {
@@ -35,7 +34,13 @@ namespace GSNodeEditor
         public delegate void NewNodeTypeSelectedEventHandler(NewNodePopupDialog dialog, NodeType nodeType);
         public event NewNodeTypeSelectedEventHandler? OnNewNodeTypeSelected;
 
-        internal WidgetRelativeBoxAnchor SearchBoxAnchor;
+		public delegate void NewVariableSelectedEventHandler(NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, int type);
+		public event NewVariableSelectedEventHandler? OnNewVariableSelected;
+
+		public delegate void GetSetVariableSelectedEventHandler(NewNodePopupDialog dialog, VariablesTracker.VariableInfo varInfo, bool bSet);
+		public event GetSetVariableSelectedEventHandler? OnGetSetVariableSelected;
+
+		internal WidgetRelativeBoxAnchor SearchBoxAnchor;
         internal TextEntryField SearchBox;
 
         internal WidgetRelativeBoxAnchor NodesMenuAnchor;
@@ -58,7 +63,8 @@ namespace GSNodeEditor
         }
 
         internal PopupMenu NodesCategoryMenu;
-        internal List<NodesCategory> NodesCategories = new List<NodesCategory>();
+        internal NodesCategory? VariablesCategory = null; 
+		internal List<NodesCategory> NodesCategories = new List<NodesCategory>();
         bool bCategoryMenuActive = false;
 
 
@@ -213,10 +219,22 @@ namespace GSNodeEditor
         {
             OnNewNodeTypeSelected?.Invoke(this, (selectedItem.CustomData as NodeType)! );
         }
-        //protected virtual void OnNodeSelected()
+		//protected virtual void OnNodeSelected()
 
+		private void VariablesMenu_OnMenuItemSelected(PopupMenu popup, MenuItem selectedItem)
+		{
+            if (selectedItem.CustomData is VariablesTracker.VariableInfo variableInfo)
+            {
+                OnGetSetVariableSelected?.Invoke(this, variableInfo, variableInfo.CreatedAtNodeID == 1);
+            } 
+            else 
+            {
+                NodeAndPin? nodeAndPin = selectedItem.CustomData as NodeAndPin;
+                OnNewVariableSelected?.Invoke(this, nodeAndPin, 0);
+            }
+		}
 
-        private void NodesCategoryMenu_OnMenuItemHovered(PopupMenu popup, MenuItem? hoveredItem, bool bEnded)
+		private void NodesCategoryMenu_OnMenuItemHovered(PopupMenu popup, MenuItem? hoveredItem, bool bEnded)
         {
 
             NodesCategory? category = hoveredItem?.CustomData as NodesCategory ?? null;
@@ -271,33 +289,53 @@ namespace GSNodeEditor
 
         public virtual bool OnKeyChordUpdated(in KeyChord ActiveChord)
         {
-            if (ActiveChord.IsSingleSpecialKey(KeyNames.Escape) ) {
+            if (ActiveChord.IsSingleSpecialKey(KeyNames.Escape)) {
 
                 if ((SearchBox.IsEditing == false || SearchBox.ActiveText.Length == 0)) {
                     OnDismissDialogClick?.Invoke();     // todo need to probably send this next frame or something?
                     return true;
                 }
-            }
-            else if (ActiveChord.IsSingleSpecialKey(KeyNames.Enter))
+            } else if (ActiveChord.IsSingleSpecialKey(KeyNames.Enter))
             {
                 if (NodesMenu.EnumerateItems().Count() == 1)
                     NodesMenu.ExternalSelectItem(NodesMenu.EnumerateItems().First());
                 else if (NodesMenu.HighlightedItem != null)
                     NodesMenu.ExternalSelectItem(NodesMenu.HighlightedItem);
-            }
-            else if (ActiveChord.IsSingleSpecialKey(KeyNames.DownArrow)) {
+            } else if (ActiveChord.IsSingleSpecialKey(KeyNames.DownArrow)) {
                 NodesMenu.HighlightNextItem(true);
-            }
-            else if (ActiveChord.IsSingleSpecialKey(KeyNames.UpArrow)) {
+            } else if (ActiveChord.IsSingleSpecialKey(KeyNames.UpArrow)) {
                 NodesMenu.HighlightPreviousItem(true);
             }
             return false;
         }
 
-
-        public void PopulateValues(NodeLibrary Library, Type? FromPinDataType = null)
+        // this is called each time the popup is shown. It populates the NodesMenu with a list of
+        // all nodes, the NodesCategoryMenu with a list of all categories, and each category with
+        // a list of all category-nodes. If an incoming pin is provided (ie menu shown by user wiring
+        // off a pin into empty space) then these lists are filtered by the pin type, 
+        //
+        // The NodesMenu needs to have all possible nodes so that once the user starts typing in the
+        // search box, it can be shown with filtering.
+        //
+        // Clearly lots of scaling issues here. There should be some kind of caching, the submenus don't need to
+        // be populated until shown, the filtered all-nodes list should probably only be constructed
+        // as needed and with some kind of clamping, etc etc
+        //
+        // (but note that a new Dialog instance is created every time currently, ie this is only called once
+        // and then all the work is thrown away...
+        //
+        // (possibly this menu should be shown at the Avalonia level...)
+		public void PopulateNodeLibrary(NodeLibrary Library, NodeAndPin? FromNodeAndPin = null)
         {
-            Dictionary<string, NodesCategory> CategoryMap = new Dictionary<string, NodesCategory>();
+            // determine type of incoming pin, if there is one. Used to filter nodes list
+			Type? FromPinDataType = null;
+			if (FromNodeAndPin != null && FromNodeAndPin.bIsSequencePin == false) {
+				FromPinDataType = (FromNodeAndPin.DataType.DataType != typeof(ControlFlowOutputID)) ? FromNodeAndPin.DataType.DataType : null;
+			}
+
+			Dictionary<string, NodesCategory> CategoryMap = new Dictionary<string, NodesCategory>();
+
+            // add a node to the menu set. this will dynamically create it's category if it doesn't exist yet.
             var TryAddToCategory = (NodeType nodeType) =>
             {
                 if ( CategoryMap.TryGetValue(nodeType.UICategory, out NodesCategory? found) )
@@ -318,9 +356,10 @@ namespace GSNodeEditor
                 }
             };
 
+            // currently this function is never called more than once on an instance so this is unneccesary...
+			NodesMenu.ClearItems();
 
-            NodesMenu.ClearItems();
-
+            // build out the menus for all nodes with a given input type, or just all nodes
             if (FromPinDataType != null) {
                 foreach (NodeType nodeType in Library.EnumerateAllNodesWithFirstPinType(FromPinDataType)) {
                     NodesMenu.AddItem( new MenuItem() { Text = nodeType.GetNodeTypeUIName(), CustomData = nodeType } );
@@ -333,12 +372,47 @@ namespace GSNodeEditor
                 }
             }
 
-            NodesMenu.SortItems();
+            // sort everthing
+			NodesMenu.SortItems();
             NodesCategoryMenu.SortItems();
             foreach (var Category in NodesCategories)
                 Category.CategoryMenu.SortItems();
         }
 
+
+
+
+        public void PopulateVariables(GraphStaticAnalyzer GraphAnalysis, NodeAndPin? FromNodeAndPin = null)
+        {
+            Debug.Assert(VariablesCategory == null);        // currently this is never called more than once...
+
+			Type? FromPinDataType = null;
+			if (FromNodeAndPin != null && FromNodeAndPin.bIsSequencePin == false) {
+				FromPinDataType = (FromNodeAndPin.DataType.DataType != typeof(ControlFlowOutputID)) ? FromNodeAndPin.DataType.DataType : null;
+			}
+
+			VariablesCategory = new NodesCategory("Variables...", Style);
+			VariablesCategory.CategoryMenu.AnchorTo(NodesCategoryMenuAnchor);
+			VariablesCategory.CategoryMenu.OnMenuItemSelected += VariablesMenu_OnMenuItemSelected;
+
+            if (FromPinDataType == null)
+			    VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = "New Global", CustomData = null }, -1);
+            else
+				VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = "New Global " + FromNodeAndPin.Pin.GetDataTypeAsString() , CustomData = FromNodeAndPin }, -1);
+
+			foreach ( var varInfo in GraphAnalysis.Variables.EnumerateAllVariables())
+            {
+                VariablesTracker.VariableInfo getInfo = varInfo;
+                getInfo.CreatedAtNodeID = 0;
+				VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = varInfo.Name + " (get)", CustomData = getInfo } );
+				VariablesTracker.VariableInfo setInfo = varInfo;
+				setInfo.CreatedAtNodeID = 1;
+				VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = varInfo.Name + " (set)", CustomData = setInfo });
+			}
+
+			NodesCategoryMenu.AddItem(new MenuItem() { Text = VariablesCategory.Label, CustomData = VariablesCategory }, -1);
+			NodesCategoryMenu.SortItems();
+		}
 
     }
 

@@ -24,14 +24,21 @@ namespace GSNodeEditor
 			rebuild_internal();
 		}
 
-
-
-
-		protected struct VariableInfo
+		public struct VariableInfo
 		{
 			public string Name;
+			public Type VariableType;
 			public int CreatedAtNodeID;
 		}
+
+
+		public IEnumerable<VariableInfo> EnumerateAllVariables()
+		{
+			foreach (VariableInfo variableInfo in Variables)
+				yield return variableInfo;
+		}
+
+
 
 		protected List<VariableInfo> Variables = new List<VariableInfo>();
 
@@ -40,6 +47,7 @@ namespace GSNodeEditor
 		{
 			VariableInfo v = new VariableInfo();
 			v.Name = variableNode.GetVariableName();
+			v.VariableType = variableNode.GetVariableType();
 			v.CreatedAtNodeID = variableNode.GraphIdentifier;
 			Variables.Add(v);
 		}

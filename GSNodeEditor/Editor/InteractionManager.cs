@@ -3,6 +3,7 @@ using g3;
 using Gradientspace.NodeGraph;
 using Gradientspace.UI;
 using SkiaSharp;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 
@@ -155,15 +156,6 @@ namespace GSNodeEditor
             FromInputPin,
             FromOutputSequencePin,
             FromInputSequencePin
-        }
-        public class NodeAndPin
-        {
-            public NodeWidget Node;
-            public NodePinWidget Pin;
-            public int PinIndex;                // could possibly replace w/ a search function in NodeWidget?
-            public bool bIsSequencePin = false; // could determine from Pin type?
-            public NodeAndPin(NodeWidget node, NodePinWidget pin, int pinIndex, bool isInput) { Node = node; Pin = pin; PinIndex = pinIndex; }
-            public GraphDataType DataType { get { return Pin.DataType; } }
         }
         NodeAndPin? ActiveDrawConnectionFrom = null;
         NodeAndPin? ActiveDrawConnectionTo = null;
@@ -570,7 +562,7 @@ namespace GSNodeEditor
 
 
 
-        public void BeginShowNewNodePopupMenu(NodeAndPin? FromNode = null)
+        public void BeginShowNewNodePopupMenu(NodeAndPin? FromNodeAndPin = null)
         {
             if (ActiveNewNodePopupDialog != null)
             {
@@ -583,15 +575,19 @@ namespace GSNodeEditor
             ActiveNewNodePopupDialog = new NewNodePopupDialog();
             ActiveNewNodePopupDialog.Position = UIPopupLocation;
             ActiveNewNodePopupDialog.OnDismissDialogClick = () => { DismissPopupMenu(); };
-            Type? FromPinDataType = null;
-            if (FromNode != null && FromNode.bIsSequencePin == false) {
-                FromPinDataType = (FromNode.DataType.DataType != typeof(ControlFlowOutputID)) ? FromNode.DataType.DataType : null;
-            }
-            ActiveNewNodePopupDialog.PopulateValues(DefaultNodeLibrary.Instance, FromPinDataType);
+            ActiveNewNodePopupDialog.PopulateNodeLibrary(DefaultNodeLibrary.Instance, FromNodeAndPin);
             ActiveNewNodePopupDialog.OnNewNodeTypeSelected += (NewNodePopupDialog dialog, NodeType nodeType) => {
-                OnNewNodePopupItemSelected(nodeType, ViewportPopupLocation, FromNode);
+                OnNewNodePopupItemSelected(nodeType, ViewportPopupLocation, FromNodeAndPin);
             };
-            ActivePopupMenuWidgetSet.AddRootWidget(ActiveNewNodePopupDialog);
+            ActiveNewNodePopupDialog.PopulateVariables(GraphViewport.GraphAnalysis, FromNodeAndPin);
+            ActiveNewNodePopupDialog.OnGetSetVariableSelected += (NewNodePopupDialog dialog, VariablesTracker.VariableInfo varInfo, bool bSet) => {
+                Debug.WriteLine($" GETSET VARIABLE {varInfo.Name} : {bSet}");
+            };
+            ActiveNewNodePopupDialog.OnNewVariableSelected += (NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, int type) => {
+				Debug.WriteLine($" NEW VARIABLE (TYPE : {nodeAndPin?.Pin.GetDataTypeAsString() ?? "null"})");
+			};
+
+			ActivePopupMenuWidgetSet.AddRootWidget(ActiveNewNodePopupDialog);
 
             //GraphViewport.WidgetScene.AddSource(ActivePopupMenuWidgetSet);
             GraphViewport.ViewportUI.WidgetScene.AddSource(ActivePopupMenuWidgetSet);
