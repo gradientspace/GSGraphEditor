@@ -147,15 +147,28 @@ namespace GSNodeEditor
         {
             if ((SourceGraph is ExecutionGraph) == false) return;
 
-            bool bHasInputs = true; // (NewNodeWidget.InputWidgets.Count > 0);
-            if (nodeWidget.IsPlaceholderNode)
+            if (nodeWidget.IsPlaceholderNode) {
+                // PlaceholderNode has no sequence pins (replacement node will get them)
                 nodeWidget.SetStandardSequencePinsEnabled(false, false);
-            else if (nodeWidget.ParentNode is SequenceStartNode)
+            } 
+            else if (nodeWidget.ParentNode is SequenceStartNode) {
+                // SequenceStartNode only has a sequence output
                 nodeWidget.SetStandardSequencePinsEnabled(false, true);
-            else if (nodeWidget.ParentNode is ControlFlowNode)
+            } 
+            else if (nodeWidget.ParentNode is ControlFlowNode) {
+                // ControlFlowNodes have multiple sequenece outputs that they manage themselves
                 nodeWidget.SetStandardSequencePinsEnabled(true, false);
-            else
+            }
+            else {
+                // tbd need to do better here for standard nodes. Eg what about a simple void(void) 
+                // function node that does something internal, it may still need sequence pins...
+                // Probably library nodes should have seq pins unless explicitly specified
+                // User code nodes definitely should...
+
+                (NodeInputPinWidget? firstDataInput, int index) = nodeWidget.FindFirstDataInput();
+                bool bHasInputs = (firstDataInput != null);
                 nodeWidget.SetStandardSequencePinsEnabled(bHasInputs, bHasInputs);
+            }
         }
 
         public IEnumerable<NodeWidget> NodeWidgets { get { return Nodes; } }

@@ -58,14 +58,22 @@ namespace GSNodeEditor
 		{
 			Variables = new List<VariableInfo>();
 
+			bool bPrintDebug = false;
+
 			GraphTraversalUtils.TraverseAllSequencePaths(Graph, Graph.StartNodeHandle,
 				(NodeBase node) => {
-				if (node is DefineVariableBaseNode varNode)
-					add_new_variable(varNode);
+					if (node is DefineVariableBaseNode varNode)
+						add_new_variable(varNode);
 				},
-				(NodeBase node, IConnectionInfo connInfo) => { Debug.WriteLine($"PushScope: {node.GetNodeName()}:{connInfo.FromNodeOutputName}"); },
-				(NodeBase node, IConnectionInfo connInfo) => { Debug.WriteLine($"PopScope: {node.GetNodeName()}:{connInfo.FromNodeOutputName}"); }
-				);
+				(NodeBase node, IConnectionInfo connInfo) => { 
+					if (bPrintDebug)
+						Debug.WriteLine($"PushScope: {node.GetNodeName()}:{connInfo.FromNodeOutputName}"); 
+				},
+				(NodeBase node, IConnectionInfo connInfo) => { 
+					if (bPrintDebug)
+						Debug.WriteLine($"PopScope: {node.GetNodeName()}:{connInfo.FromNodeOutputName}"); 
+				}
+			);
 		}
 
 

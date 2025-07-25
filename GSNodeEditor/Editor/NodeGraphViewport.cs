@@ -442,7 +442,7 @@ namespace GSNodeEditor
 		}
 
 
-		static bool ShowCompactMode = false;
+		//static bool ShowCompactMode = false;
 
 		// IGraphEditorActions interface method
 		public bool TrySaveAs()
