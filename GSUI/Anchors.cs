@@ -27,6 +27,7 @@ namespace Gradientspace.UI
     {
         // todo maybe this should just be x/y lerp parameters?
         public BoxPoints BoxAnchorPoint = BoxPoints.TopLeft;
+        public Vector2f Offset = Vector2f.Zero;
 
         public AnchorLocation() { }
         public AnchorLocation(BoxPoints anchorLocation) { BoxAnchorPoint = anchorLocation; }
@@ -37,7 +38,7 @@ namespace Gradientspace.UI
             Vector2f AnchorPosition )
         {
             Vector2f BoxPosition = GetBoxPoint(Box, BoxPlacement.BoxAnchorPoint);
-            Vector2f Translation = AnchorPosition - BoxPosition;
+			Vector2f Translation = AnchorPosition - BoxPosition + BoxPlacement.Offset;
             Box.Translate(Translation);
             return Box;
         }
