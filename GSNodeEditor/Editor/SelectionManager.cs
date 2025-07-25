@@ -98,7 +98,12 @@ namespace GSNodeEditor
 		public bool HasConnectionSelection { get { return SelectedConnections.Count > 0; } }
 		public bool HasSelection { get { return SelectedNodes.Count > 0 || SelectedConnections.Count > 0; } }
 
-        public bool IsSelectedNode(int NodeID) {  return SelectedNodes.Contains(NodeID); }
+        public bool CheckSelectionRequirement(int NumNodes, int NumConnections)
+        {
+            return SelectedNodes.Count == NumNodes && SelectedConnections.Count == NumConnections;
+        }
+
+		public bool IsSelectedNode(int NodeID) {  return SelectedNodes.Contains(NodeID); }
 		public bool IsSelectedConnection(int ConnectionID) { return SelectedConnections.Contains(ConnectionID); }
 
 		public IEnumerable<int> CurrentNodeSelection { get { return SelectedNodes; } }

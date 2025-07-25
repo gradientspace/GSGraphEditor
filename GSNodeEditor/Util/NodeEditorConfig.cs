@@ -49,7 +49,7 @@ namespace GSNodeEditor
 				try {
 					DirectoryInfo newInfo = Directory.CreateDirectory(GraphsPath);
 				}
-				catch (Exception ex) {
+				catch (Exception) {
 					Debug.Assert(false);
 				}
 
@@ -229,7 +229,7 @@ namespace GSNodeEditor
 					return true;
 				}
 			} 
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return false;
 			}

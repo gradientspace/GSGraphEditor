@@ -14,10 +14,12 @@ namespace GSNodeEditor
         public NodeGraphView GraphView { get; set; }
         public NodeGraphViewport GraphViewport { get; set; }
 
-        public const bool EnableCaptureDebugging = false;
+        public bool EnableCaptureDebugging = false;
 
-        NewNodePopupDialog? ActiveNewNodePopupDialog;
-        SimpleWidgetSource ActivePopupMenuWidgetSet;
+        NewNodePopupDialog? ActiveNewNodePopupDialog = null;
+        SimplePopupMenuDialog? ActiveNodePopupDialog = null;
+		Widget? ActivePopupDialog = null;
+		SimpleWidgetSource ActivePopupMenuWidgetSet;
 
         Action? PendingNextFrameAction {
             get;
@@ -345,9 +347,10 @@ namespace GSNodeEditor
 
             ActiveDeviceCapture = captureRequest;
             ActiveDeviceCapture.SourceBehavior?.BeginCapture(CaptureDeviceState, captureRequest);
-            if (EnableCaptureDebugging)
+            if (EnableCaptureDebugging) {
                 Debug.WriteLine("InterationManager: {0} has started capture at priority {1} zdepth {2} - source object {3}", captureRequest.SourceBehavior!.GetType().Name, captureRequest.Priority, captureRequest.ZDepth,
-                    captureRequest.SourceObject?.GetType()?.ToString() ?? "(null)" );
+                    captureRequest.SourceObject?.GetType()?.ToString() ?? "(null)");
+            }
             return true;
         }
 
@@ -564,17 +567,15 @@ namespace GSNodeEditor
 
         public void BeginShowNewNodePopupMenu(NodeAndPin? FromNodeAndPin = null)
         {
-            if (ActiveNewNodePopupDialog != null)
-            {
-                DismissPopupMenu();
-            }
+            DismissActivePopupDialogs();
 
             Vector2f UIPopupLocation = GetDeviceStateInSpace(EInteractionSpace.UILayer).CurrentPosition;
             Vector2f ViewportPopupLocation = GetDeviceStateInSpace(EInteractionSpace.GraphViewport).CurrentPosition;
 
             ActiveNewNodePopupDialog = new NewNodePopupDialog();
-            ActiveNewNodePopupDialog.Position = UIPopupLocation;
-            ActiveNewNodePopupDialog.OnDismissDialogClick = () => { DismissPopupMenu(); };
+            ActivePopupDialog = ActiveNewNodePopupDialog;
+			ActiveNewNodePopupDialog.Position = UIPopupLocation;
+            ActiveNewNodePopupDialog.OnDismissDialogClick = () => { DismissActivePopupDialogs(); };
             ActiveNewNodePopupDialog.PopulateNodeLibrary(DefaultNodeLibrary.Instance, FromNodeAndPin);
             ActiveNewNodePopupDialog.OnNewNodeTypeSelected += (NewNodePopupDialog dialog, NodeType nodeType) => {
                 OnNewNodePopupItemSelected(nodeType, ViewportPopupLocation, FromNodeAndPin);
@@ -602,7 +603,7 @@ namespace GSNodeEditor
         protected void OnNewNodePopupItemSelected(NodeType nodeType, Vector2f Location, NodeAndPin? FromNode)
         {
             PendingNextFrameAction = () => { AppendNewNodeAtLocation(nodeType, Location, FromNode); };
-            DismissPopupMenu();
+            DismissActivePopupDialogs();
         }
 
 
@@ -618,7 +619,7 @@ namespace GSNodeEditor
 					});
 
             };
-            DismissPopupMenu();
+            DismissActivePopupDialogs();
         }
 
         protected void OnNewVariableSelected(Vector2f Location, NodeAndPin? FromNode, int type)
@@ -633,28 +634,38 @@ namespace GSNodeEditor
 					});
 
 			};
-            DismissPopupMenu();
+            DismissActivePopupDialogs();
 		}
 
 
 
-		protected void DismissPopupMenu()
+		protected void DismissActivePopupDialogs()
         {
+            if (ActivePopupDialog == null)
+                return;
+
             //GraphViewport.WidgetScene.RemoveSource(ActivePopupMenuWidgetSet);
             GraphViewport.ViewportUI.WidgetScene.RemoveSource(ActivePopupMenuWidgetSet);
             ActivePopupMenuWidgetSet.Clear();
+            ActivePopupDialog = null;
 
-            // this should work but it doesn't update something in widgetscene...
-            //if (ActiveNewNodePopupDialog != null)
-            //    ActivePopupMenuWidgetSet.RemoveRootWidget(ActiveNewNodePopupDialog);
+			// this should work but it doesn't update something in widgetscene...
+			//if (ActiveNewNodePopupDialog != null)
+			//    ActivePopupMenuWidgetSet.RemoveRootWidget(ActiveNewNodePopupDialog);
 
-            //interactionState = EInteractionState.NoInteraction;
+			//interactionState = EInteractionState.NoInteraction;
 
-            // somehow need to handle the case where we remove widget that is actively capturing...
-            EndActiveHover();
+			// somehow need to handle the case where we remove widget that is actively capturing...
+			EndActiveHover();
 
-            SystemKeyboardRouter.Instance.PopHotkeyTarget(ActiveNewNodePopupDialog!);
-            ActiveNewNodePopupDialog = null;
+            if (ActiveNewNodePopupDialog != null) {
+                SystemKeyboardRouter.Instance.PopHotkeyTarget(ActiveNewNodePopupDialog!);
+                ActiveNewNodePopupDialog = null;
+            }
+            if (ActiveNodePopupDialog != null) {
+				SystemKeyboardRouter.Instance.PopHotkeyTarget(ActiveNodePopupDialog!);
+				ActiveNodePopupDialog = null; 
+			}
         }
 
 
@@ -702,7 +713,57 @@ namespace GSNodeEditor
 
         public void RequestShowContextMenu(in InputDeviceState deviceState)
         {
-            PendingNextFrameAction = () => { BeginShowNewNodePopupMenu(null); };
+			Type WidgetHitType = typeof(NodeWidget);
+			bool bClickHitNode = GraphViewport.WidgetScene.HitQuery(deviceState.CurrentPosition, out var hitResult,
+				(Widget w) => { return w.GetType() == WidgetHitType; });
+
+            bool bIsMaxOneNodeSelected = 
+                GraphViewport.SelectionManager.HasSelection == false 
+                || GraphViewport.SelectionManager.CheckSelectionRequirement(1, 0);
+
+			if (bClickHitNode && bIsMaxOneNodeSelected)
+				PendingNextFrameAction = () => { BeginShowNodeContextMenu( (hitResult.HitWidget as NodeWidget)! ); };
+			else
+                PendingNextFrameAction = () => { BeginShowNewNodePopupMenu(null); };
         }
-    }
+
+
+
+
+        public void BeginShowNodeContextMenu(NodeWidget nodeWidget)
+        {
+            DismissActivePopupDialogs();
+
+			Vector2f UIPopupLocation = GetDeviceStateInSpace(EInteractionSpace.UILayer).CurrentPosition;
+			Vector2f ViewportPopupLocation = GetDeviceStateInSpace(EInteractionSpace.GraphViewport).CurrentPosition;
+
+			ActiveNodePopupDialog = new SimplePopupMenuDialog();
+			ActivePopupDialog = ActiveNodePopupDialog;
+			ActiveNodePopupDialog.Position = UIPopupLocation;
+			ActiveNodePopupDialog.OnDismissDialogClick = () => { DismissActivePopupDialogs(); };
+            ActiveNodePopupDialog.OnItemSelected += (SimplePopupMenuDialog dialog, MenuItem item) => {
+                DismissActivePopupDialogs();
+            };
+
+            ActiveNodePopupDialog.AddItem(new MenuItem() {
+                Text = "Delete Node",
+                OnClicked = () => {
+                    GraphViewport.ExecuteGraphEdit((NodeGraphEditor Editor) => { Editor.RemoveNode(nodeWidget); });
+                }
+            });
+
+			ActiveNodePopupDialog.AddItem(new MenuItem() {
+				Text = "Log Node Info",
+				OnClicked = () => {
+                    GlobalGraphOutput.AppendLog($"{nodeWidget.ParentNode!.ToString()} - NodeID {nodeWidget.GraphNodeIdentifier}");
+				}
+			});
+
+			ActivePopupMenuWidgetSet.AddRootWidget(ActiveNodePopupDialog);
+			GraphViewport.ViewportUI.WidgetScene.AddSource(ActivePopupMenuWidgetSet);
+			SystemKeyboardRouter.Instance.PushHotkeyTarget(ActiveNodePopupDialog);
+
+		}
+
+	}
 }
