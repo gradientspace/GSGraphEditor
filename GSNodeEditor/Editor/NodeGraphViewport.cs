@@ -65,20 +65,22 @@ namespace GSNodeEditor
             // force node library to start building
             DefaultNodeLibrary.Instance.BuildAsync();
 
-			//InlinePinWidgetSystem.Instance.RegisterProvider(
-			//    typeof(SourceCodeDataType), new SourceCodeInlinePinWidgetProvider());
-			NodeWidgetCustomizationSystem.Instance.RegisterProvider(
+            //InlinePinWidgetSystem.Instance.RegisterProvider(
+            //    typeof(SourceCodeDataType), new SourceCodeInlinePinWidgetProvider());
+            NodeWidgetCustomizationSystem.Instance.RegisterProvider(
+                typeof(FunctionDefinitionNode), new FunctionDefnNodeWidgetProvider());
+            NodeWidgetCustomizationSystem.Instance.RegisterProvider(
                 typeof(CodeFunctionNode), new CodeFunctionNodeWidgetProvider());
 			NodeWidgetCustomizationSystem.Instance.RegisterProvider(
 				typeof(PythonFunctionCodeNode), new CodeFunctionNodeWidgetProvider());
 
-			//UsingDataFlowGraph = MakeInitialDataflowGraph();
-			//UsingDataFlowGraphEvaluator = new DataFlowGraphEvaluator(UsingDataFlowGraph);
-			//UsingDataFlowGraphEvaluator.EnableDebugPrinting = true;
-			//UsingDataFlowGraphEvaluator.EvaluateAllOutputs(null);
-			//CurrentGraph = UsingDataFlowGraph;
+            //UsingDataFlowGraph = MakeInitialDataflowGraph();
+            //UsingDataFlowGraphEvaluator = new DataFlowGraphEvaluator(UsingDataFlowGraph);
+            //UsingDataFlowGraphEvaluator.EnableDebugPrinting = true;
+            //UsingDataFlowGraphEvaluator.EvaluateAllOutputs(null);
+            //CurrentGraph = UsingDataFlowGraph;
 
-			UsingExecutionGraph = MakeInitialExecutionGraph();
+            UsingExecutionGraph = MakeInitialExecutionGraph();
             UsingExecutionGraphEvaluator = new ExecutionGraphEvaluator(UsingExecutionGraph);
             UsingExecutionGraphEvaluator.EnableDebugPrinting = true;
             CurrentGraph = UsingExecutionGraph;
@@ -587,6 +589,22 @@ namespace GSNodeEditor
             return false;
         }
 
+
+
+        public void AddNewFunction()
+        {
+            ExecuteGraphEdit((NodeGraphEditor editor) => {
+                int NumFunctionNodes = 0;
+                foreach (INodeInfo nodeInfo in CurrentGraph.EnumerateNodes()) {
+                    if (nodeInfo.Node is FunctionDefinitionNode)
+                        NumFunctionNodes++;
+                }
+                editor.AddNodeOfType(
+                    new NodeType(typeof(FunctionDefinitionNode)), Vector2f.Zero, (INodeInfo nodeInfo) => {
+                        (nodeInfo.Node as FunctionDefinitionNode)!.UpdateFunctionName($"NewFunction{NumFunctionNodes}");
+                });
+            });
+        }
 
 
         public void PreDraw()

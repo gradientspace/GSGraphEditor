@@ -219,7 +219,15 @@ public partial class MainWindow : Window
 			SkiaView.ActiveViewport.OpenGraphFile(path);
 	}
 
-	private void GraphDebugging_OnToggle(object? sender, RoutedEventArgs e)
+
+    private void NewFunction_OnClick(object? sender, RoutedEventArgs e)
+    {
+        SkiaView.ActiveViewport.AddNewFunction();
+        SkiaView.Focus(NavigationMethod.Pointer);
+    }
+
+
+    private void GraphDebugging_OnToggle(object? sender, RoutedEventArgs e)
 	{
 		DebugManager.GlobalEnableGraphDebugging = !DebugManager.GlobalEnableGraphDebugging;
 		Option_EnableGraphDebug.IsChecked = DebugManager.GlobalEnableGraphDebugging;

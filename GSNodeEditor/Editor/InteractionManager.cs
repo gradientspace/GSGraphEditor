@@ -715,7 +715,7 @@ namespace GSNodeEditor
         {
 			Type WidgetHitType = typeof(NodeWidget);
 			bool bClickHitNode = GraphViewport.WidgetScene.HitQuery(deviceState.CurrentPosition, out var hitResult,
-				(Widget w) => { return w.GetType() == WidgetHitType; });
+				(Widget w) => { return w.GetType().IsSubclassOf(WidgetHitType); });
 
             bool bIsMaxOneNodeSelected = 
                 GraphViewport.SelectionManager.HasSelection == false 
@@ -751,6 +751,21 @@ namespace GSNodeEditor
                     GraphViewport.ExecuteGraphEdit((NodeGraphEditor Editor) => { Editor.RemoveNode(nodeWidget); });
                 }
             });
+
+            if (nodeWidget is FunctionDefNodeWidget functionNodeWidget) {
+                ActiveNodePopupDialog.AddItem(new MenuItem() {
+                    Text = "Add Return",
+                    OnClicked = () => {
+                        GraphViewport.ExecuteGraphEdit((NodeGraphEditor Editor) => { 
+                            Editor.AddNodeOfType( new(typeof(FunctionReturnNode)), 
+                                nodeWidget.GetActiveView()!.BoundsQuery(null).CenterRight, 
+                                (INodeInfo newNode) => {
+                                    (newNode.Node as FunctionReturnNode)!.LinkToFunction(functionNodeWidget.FunctionNode);
+                                }); 
+                        });
+                    }
+                });
+            }
 
 			ActiveNodePopupDialog.AddItem(new MenuItem() {
 				Text = "Log Node Info",

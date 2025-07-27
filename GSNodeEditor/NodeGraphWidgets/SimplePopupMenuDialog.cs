@@ -47,8 +47,10 @@ namespace GSNodeEditor
 			dialogAnchor = new FixedPointAnchor();
 			AnchorTo(dialogAnchor);
 
-			// do we need this intermediate anchor??
-			ItemsMenuAnchor = new WidgetRelativeBoxAnchor(this);
+            // do we need this intermediate anchor??
+            ItemsMenuAnchor = new WidgetRelativeBoxAnchor(this) {
+                BoxPoint = BoxPoints.TopLeft, Offset = new Vector2f(0, 5)
+            };
 
 			ItemsMenu = new PopupMenu(Style);
 			ItemsMenu.EnableClickToDismiss = false;
@@ -182,15 +184,9 @@ namespace GSNodeEditor
 		public override void UpdateLayout(SKStyleCache StyleCache)
 		{
 			SourceDialog.ItemsMenu.GetActiveView()?.UpdateLayout(StyleCache);
-
-			AxisAlignedBox2f ListBounds = SourceDialog.ItemsMenu.GetActiveView()?.BoundsQuery(null) ?? AxisAlignedBox2f.Empty;
-
-			SourceDialog.ItemsMenuAnchor.Box = new AxisAlignedBox2f(ListBounds);
-			SourceDialog.ItemsMenuAnchor.BoxPoint = BoxPoints.TopLeft;
-			SourceDialog.ItemsMenuAnchor.Offset = new Vector2f(0, 5);
+            SourceDialog.ItemsMenuAnchor.UpdateFromParentWidget();
 
 			AxisAlignedBox2f ItemBounds = SourceDialog.ItemsMenu.GetActiveView()?.BoundsQuery(SourceDialog.ItemsMenu.GetAnchor()) ?? AxisAlignedBox2f.Empty;
-
 			Vector2f Origin = SourceDialog.GetAnchor()?.GetOrigin() ?? Vector2f.Zero;
 			//ItemBounds.Translate(-Origin);
 			LocalBounds = ItemBounds;
