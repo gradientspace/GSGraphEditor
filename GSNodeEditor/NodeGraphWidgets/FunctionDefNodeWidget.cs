@@ -48,9 +48,6 @@ namespace GSNodeEditor
             FunctionArgsWidget.AnchorPlacement = new AnchorLocation(BoxPoints.TopRight);
             AddChildWidget(FunctionArgsWidget);
 
-            FunctionArgsWidget.OnVariablesChanged += FunctionArgsWidget_OnVariablesChanged;
-
-
 
             FunctionNameEntry = new TextEntryField() {
                 Text = FunctionNode.FunctionName, Width = 120   // variable inputs are 65-wide...
@@ -73,25 +70,13 @@ namespace GSNodeEditor
             ReturnArgsWidget.AnchorPlacement = new AnchorLocation(BoxPoints.TopLeft);
             AddChildWidget(ReturnArgsWidget);
 
+            // initialize variable panels with current values in node...
+            FunctionArgsWidget.SetVariables(FunctionNode.Arguments);
+            ReturnArgsWidget.SetVariables(FunctionNode.ReturnArguments);
+
+            // listen for interactive changes
+            FunctionArgsWidget.OnVariablesChanged += FunctionArgsWidget_OnVariablesChanged;
             ReturnArgsWidget.OnVariablesChanged += ReturnAgsWidget_OnVariablesChanged;
-
-
-
-            // todo need to initialize FunctionArgsWidget with current values in node...
-            FunctionNode.UpdateArguments(FunctionArgsWidget.GetVariables());
-            FunctionNode.UpdateReturnArguments(ReturnArgsWidget.GetVariables());
-
-
-            //CodeButton = new CodeFunctionNodeButton(CodeFunctionNodeWidget.ButtonStyle);
-            //CodeButton.Dimensions = new Vector2f(20, 22);
-            //CodeButtonAnchor = new RelativeBoxAnchor(this.GetAnchor());
-            //CodeButtonAnchor.BoxPoint = BoxPoints.BottomRight;
-            //CodeButtonAnchor.Offset = new Vector2f(-8, -3);
-            //CodeButton.AnchorTo(CodeButtonAnchor);
-            //CodeButton.AnchorPlacement = new AnchorLocation(BoxPoints.CenterTop);
-            //CodeButton.ContentExtension = this;
-            //CodeButton.OnClicked += CodeButton_OnClicked;
-            //AddChildWidget(CodeButton);
         }
 
         private void FunctionNameEntry_OnTextModified(TextEntryField sender, string oldText, string newText)

@@ -132,6 +132,24 @@ namespace GSNodeEditor
         }
 
 
+        public void SetVariables( IEnumerable<FunctionDefinitionNode.FunctionArg> FromArgs )
+        {
+            List<FunctionDefinitionNode.FunctionArg> args = FromArgs.ToList();
+            SetNumVariables(args.Count);
+            for (int r = 0; r < NumVariables; ++r) {
+                TextEntryField? textEntry = GetWidget(r+1, 0) as TextEntryField;
+                if (textEntry != null)
+                    textEntry.Text = args[r].ArgName;
+
+                TypeComboBox? typeCombo = GetWidget(r+1, 1) as TypeComboBox;
+                if (typeCombo != null)
+                    typeCombo.SelectedType = args[r].ArgType;
+
+                // default value??
+            }
+        }
+
+
         public override IWidgetView CreateDefaultView()
         {
             return new VariablesPanelView(this);

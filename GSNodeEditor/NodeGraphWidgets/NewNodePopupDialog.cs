@@ -34,7 +34,10 @@ namespace GSNodeEditor
         public delegate void NewNodeTypeSelectedEventHandler(NewNodePopupDialog dialog, NodeType nodeType);
         public event NewNodeTypeSelectedEventHandler? OnNewNodeTypeSelected;
 
-		public delegate void NewVariableSelectedEventHandler(NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, int type);
+        public delegate void CreateFunctionCallEventHandler(NewNodePopupDialog dialog, FunctionDefinitionNode functionNode);
+        public event CreateFunctionCallEventHandler? OnCreateFunctionCallSelected;
+
+        public delegate void NewVariableSelectedEventHandler(NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, int type);
 		public event NewVariableSelectedEventHandler? OnNewVariableSelected;
 
 		public delegate void GetSetVariableSelectedEventHandler(NewNodePopupDialog dialog, VariablesTracker.VariableInfo varInfo, bool bSet);
@@ -63,8 +66,9 @@ namespace GSNodeEditor
         }
 
         internal PopupMenu NodesCategoryMenu;
-        internal NodesCategory? VariablesCategory = null; 
-		internal List<NodesCategory> NodesCategories = new List<NodesCategory>();
+        internal NodesCategory? VariablesCategory = null;
+        internal NodesCategory? FunctionsCategory = null;
+        internal List<NodesCategory> NodesCategories = new List<NodesCategory>();
         bool bCategoryMenuActive = false;
 
 
@@ -414,6 +418,43 @@ namespace GSNodeEditor
 			NodesCategoryMenu.SortItems();
 		}
 
+
+        public void PopulateFunctions(ExecutionGraph execGraph, NodeAndPin? FromNodeAndPin = null)
+        {
+            Debug.Assert(FunctionsCategory == null);        // currently this is never called more than once...
+
+            Type? FromPinDataType = null;
+            if (FromNodeAndPin != null && FromNodeAndPin.bIsSequencePin == false) {
+                FromPinDataType = (FromNodeAndPin.DataType.DataType != typeof(ControlFlowOutputID)) ? FromNodeAndPin.DataType.DataType : null;
+            }
+
+            FunctionsCategory = new NodesCategory("Functions...", Style);
+            FunctionsCategory.CategoryMenu.AnchorTo(NodesCategoryMenuAnchor);
+            FunctionsCategory.CategoryMenu.OnMenuItemSelected += FunctionsMenu_OnMenuItemSelected; ;
+
+            foreach (INodeInfo nodeInfo in execGraph.EnumerateNodes()) {
+                if ( nodeInfo.Node is FunctionDefinitionNode funcNode) {
+                    // filter on from-pin type if we have one
+                    if (FromPinDataType != null && funcNode.Arguments.Count() > 0) {
+                        Type firstInputType = funcNode.Arguments.First().ArgType;
+                        if (firstInputType.IsAssignableTo(FromPinDataType) == false)
+                            continue;
+                    }
+                    FunctionsCategory.CategoryMenu.AddItem(new MenuItem() { Text = funcNode.FunctionName, CustomData = funcNode });
+                }
+            }
+
+            if (FunctionsCategory.CategoryMenu.NumItems > 0) {
+                NodesCategoryMenu.AddItem(new MenuItem() { Text = FunctionsCategory.Label, CustomData = FunctionsCategory }, -2);
+                NodesCategoryMenu.SortItems();
+            }
+        }
+
+        private void FunctionsMenu_OnMenuItemSelected(PopupMenu popup, MenuItem selectedItem)
+        {
+            if (selectedItem.CustomData is FunctionDefinitionNode functionNode)
+                OnCreateFunctionCallSelected?.Invoke(this, functionNode);
+        }
     }
 
 

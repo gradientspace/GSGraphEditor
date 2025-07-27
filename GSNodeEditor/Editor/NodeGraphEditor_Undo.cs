@@ -37,7 +37,7 @@ namespace GSNodeEditor
 			INode graphNode = fromWidget.ParentNode;
 
 			NodeType? nodeType = null;
-			List<Tuple<string, object>>? customDataItems = null;
+			NodeCustomData? customDataItems = null;
 			if (fromWidget.ParentNode is NodeBase baseNode)
 			{
 				nodeType = baseNode.LibraryNodeType ?? new NodeType(baseNode.GetType());
@@ -176,7 +176,7 @@ namespace GSNodeEditor
 		public bool bIsRemove = false;
 
 		public Vector2f Position;
-		public List<Tuple<string, object>>? CustomDataItems = null;
+		public NodeCustomData? CustomDataItems = null;
 		public List<SerializationUtil.InputConstant>? ConstantValues = null;
 
 		public NodeAddedRemovedChange(NodeGraphEditor editor, NodeType type, int identifier, bool isRemove) {

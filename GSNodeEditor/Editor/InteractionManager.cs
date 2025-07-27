@@ -574,22 +574,26 @@ namespace GSNodeEditor
 
             ActiveNewNodePopupDialog = new NewNodePopupDialog();
             ActivePopupDialog = ActiveNewNodePopupDialog;
-			ActiveNewNodePopupDialog.Position = UIPopupLocation;
+            ActiveNewNodePopupDialog.Position = UIPopupLocation;
             ActiveNewNodePopupDialog.OnDismissDialogClick = () => { DismissActivePopupDialogs(); };
             ActiveNewNodePopupDialog.PopulateNodeLibrary(DefaultNodeLibrary.Instance, FromNodeAndPin);
             ActiveNewNodePopupDialog.OnNewNodeTypeSelected += (NewNodePopupDialog dialog, NodeType nodeType) => {
                 OnNewNodePopupItemSelected(nodeType, ViewportPopupLocation, FromNodeAndPin);
             };
             ActiveNewNodePopupDialog.PopulateVariables(GraphViewport.GraphAnalysis, FromNodeAndPin);
+            ActiveNewNodePopupDialog.PopulateFunctions( (GraphView.GetGraph() as ExecutionGraph)!, FromNodeAndPin);
             ActiveNewNodePopupDialog.OnGetSetVariableSelected += (NewNodePopupDialog dialog, VariablesTracker.VariableInfo varInfo, bool bSet) => {
                 OnGetSetVariableSelected(varInfo, bSet, ViewportPopupLocation, FromNodeAndPin);
             };
             ActiveNewNodePopupDialog.OnNewVariableSelected += (NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, int type) => {
-				// note: do not use FromNodeAndPin here, the event sends null for types that can't be used as a variable
-				OnNewVariableSelected(ViewportPopupLocation, nodeAndPin, type);
-			};
+                // note: do not use outer FromNodeAndPin here, the event sends null for types that can't be used as a variable
+                OnNewVariableSelected(ViewportPopupLocation, nodeAndPin, type);
+            };
+            ActiveNewNodePopupDialog.OnCreateFunctionCallSelected += (NewNodePopupDialog dialog, FunctionDefinitionNode funcNode) => {
+                OnNewFunctionCallSelected(ViewportPopupLocation, FromNodeAndPin, funcNode);
+            };
 
-			ActivePopupMenuWidgetSet.AddRootWidget(ActiveNewNodePopupDialog);
+            ActivePopupMenuWidgetSet.AddRootWidget(ActiveNewNodePopupDialog);
 
             //GraphViewport.WidgetScene.AddSource(ActivePopupMenuWidgetSet);
             GraphViewport.ViewportUI.WidgetScene.AddSource(ActivePopupMenuWidgetSet);
@@ -637,6 +641,19 @@ namespace GSNodeEditor
             DismissActivePopupDialogs();
 		}
 
+
+        protected void OnNewFunctionCallSelected(Vector2f Location, NodeAndPin? FromNode, FunctionDefinitionNode funcNode)
+        {
+            PendingNextFrameAction = () => {
+                NodeWidget? NewWidget = AppendNewNodeAtLocation(
+                    new(typeof(FunctionCallNode)), Location, FromNode,
+                    (INodeInfo nodeInfo) => {
+                        if (nodeInfo.Node is FunctionCallNode callNode)
+                            callNode.LinkToFunction(funcNode);
+                    });
+            };
+            DismissActivePopupDialogs();
+        }
 
 
 		protected void DismissActivePopupDialogs()
