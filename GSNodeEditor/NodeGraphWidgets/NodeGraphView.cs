@@ -147,7 +147,10 @@ namespace GSNodeEditor
         {
             if ((SourceGraph is ExecutionGraph) == false) return;
 
-            if (nodeWidget.IsPlaceholderNode) {
+            if (nodeWidget.HasConfigurableSequencePins) {
+                nodeWidget.UpdateSequencePins();
+            }
+            else if (nodeWidget.IsPlaceholderNode) {
                 // PlaceholderNode has no sequence pins (replacement node will get them)
                 nodeWidget.SetStandardSequencePinsEnabled(false, false);
             } 

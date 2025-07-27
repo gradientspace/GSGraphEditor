@@ -1,21 +1,11 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Reflection.Emit;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 using g3;
 using Gradientspace.NodeGraph;
 using Gradientspace.UI;
 using SkiaSharp;
-using static Gradientspace.NodeGraph.DataFlowGraph;
-using static Gradientspace.UI.ISimpleCaptureTarget;
+
 
 namespace GSNodeEditor
 {
@@ -412,21 +402,25 @@ namespace GSNodeEditor
 
 
         // ISimpleCaptureTarget API
-        public void UpdateCapture(ECaptureState State, in InputDeviceState deviceState) {
+        public void UpdateCapture(ISimpleCaptureTarget.ECaptureState State, in InputDeviceState deviceState) {
             Debug.Assert(false);    // capture should be disabled
         }
-        public void UpdateHover(EHoverState State, in InputDeviceState deviceState, out bool bContinueHover)
+        public void UpdateHover(ISimpleCaptureTarget.EHoverState State, in InputDeviceState deviceState, out bool bContinueHover)
         {
             bContinueHover = true;
-            IsHovered = (State == EHoverState.Begin || State == EHoverState.Update);
+            IsHovered = (State == ISimpleCaptureTarget.EHoverState.Begin || State == ISimpleCaptureTarget.EHoverState.Update);
         }
         public bool IsHovered { get; private set; }
 
 
 
         // placeholder node utility/support
-        public bool IsPlaceholderNode { get { 
+        public virtual bool IsPlaceholderNode { get { 
                 return ParentNodeInfo.Node is PlaceholderNodeBase; } }
+
+        // support for custom sequence pins
+        public virtual bool HasConfigurableSequencePins { get { return false; } }
+        public virtual void UpdateSequencePins() { }
 
 
         // not sure this should be something that the node itself tracks...maybe
