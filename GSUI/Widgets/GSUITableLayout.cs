@@ -24,7 +24,7 @@ namespace Gradientspace.UI
 		public IWidgetContentExtension? BackgroundExtension { get; set; } = null;
 
 
-		WidgetRelativeBoxAnchor TableAnchor;
+		internal WidgetRelativeBoxAnchor TableAnchor;
 
 		public GSUITableLayout()
 		{
@@ -49,9 +49,25 @@ namespace Gradientspace.UI
 			if (NumRows == curRows && NumColumns == curCols)
 				return;
 			Widget?[,] newTable = new Widget[NumRows, NumColumns];
-			for ( int r = 0; r < curRows; ++r )
-				for ( int c = 0; c < curCols; ++c )
-					newTable[r,c] = Table[r,c];
+            for (int r = 0; r < Math.Min(curRows, NumRows); ++r) {
+                for (int c = 0; c < Math.Min(curCols, NumColumns); ++c)
+                    newTable[r, c] = Table[r, c];
+            }
+            // remove extra rows
+            for (int r = NumRows; r < curRows; ++r ) {
+                for (int c = 0; c < curCols; ++c) {
+                    RemoveChildWidget(Table[r, c]);
+                    Table[r, c] = null;
+                }
+            }
+            // remove extra columns
+            for ( int c = NumColumns; c < curCols; ++c) {
+                for (int r = 0; r < curRows; ++r ) {
+                    RemoveChildWidget(Table[r, c]);
+                    Table[r, c] = null;
+                }
+            }
+
 			Table = newTable;
 		}
 
@@ -75,6 +91,16 @@ namespace Gradientspace.UI
 				throw new ArgumentOutOfRangeException($"row/column {row},{col} is out of valid range, table size is {NumRows}x{NumColumns}");
 			return Table[row, col];
 		}
+
+
+        public (bool found, int row, int col) FindWidget(Widget widget)
+        {
+            for (int r = 0; r < NumRows; ++r)
+                for (int c = 0; c < NumColumns; ++c)
+                    if (Table[r, c] == widget)
+                        return new(true, r, c);
+            return (false, -1, -1);
+        }
 
 
 		public IEnumerable<(int, int, Widget)> EnumerateWidgets()
@@ -116,11 +142,9 @@ namespace Gradientspace.UI
 		{
 			int Rows = Source.Rows, Cols = Source.Columns;
 			float[] maxHeights = new float[Rows];
-			for (int i = 0; i < Rows; ++i)
-				maxHeights[i] = 0;
+			for (int i = 0; i < Rows; ++i) maxHeights[i] = 0;   // ugh why no easy array init...
 			float[] maxWidths = new float[Cols];
-			for (int i = 0; i < Cols; ++i)
-				maxWidths[i] = 0;
+			for (int i = 0; i < Cols; ++i) maxWidths[i] = 0;        
 
 			// update layout of all children and get max row/col dimensions
 			foreach ((int r, int c, Widget widget) in Source.EnumerateWidgets())
@@ -159,7 +183,10 @@ namespace Gradientspace.UI
 				}
 				offsetY += maxHeights[r] + SpacingY;
 			}
-		}
+
+            // update the box used for the table anchor
+            Source.TableAnchor.UpdateFromParentWidget();
+        }
 
 
 		public override void Draw(SKStyleCache StyleCache, SKCanvas Canvas, ILayoutAnchor Anchor)
@@ -172,12 +199,14 @@ namespace Gradientspace.UI
 			if (Source.BackgroundExtension != null)
 				Source.BackgroundExtension.DrawContent(Source, StyleCache, Canvas, PlacedBounds, false);
 
-			//Canvas.DrawRect(Conversion.ToSkia(PlacedBounds), new SKPaint() { Color = SKColors.LightGray });
-		}
+            // debug drawing...
+            //Canvas.DrawRect(Conversion.ToSkia(PlacedBounds), new SKPaint() { Color = SKColors.LightGray, IsStroke = true });
+            //Canvas.DrawCircle(Conversion.ToSkia(DrawOrigin), 5.0f, new SKPaint() { Color = SKColors.Red });
+        }
 
 
 
-		public override bool HitTest(Vector2f QueryPoint)
+        public override bool HitTest(Vector2f QueryPoint)
 		{
 			return false;
 		}

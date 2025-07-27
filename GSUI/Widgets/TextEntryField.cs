@@ -30,6 +30,7 @@ namespace Gradientspace.UI
         public bool EnableClearOnEscape = false;
         public bool KeepFocusOnEnter = false;
         public bool RenderOnTopWhileEditing = true;
+        public bool IsEditable = true;
 
         Vector2f _dimensions = new Vector2f(60, 15);
         string _text = "";
@@ -88,6 +89,10 @@ namespace Gradientspace.UI
             get { return _dimensions.x; }
             set { _dimensions.x = value; }
         }
+        public float Height {
+            get { return _dimensions.y; }
+            set { _dimensions.y = value; }
+        }
 
         public override IWidgetView CreateDefaultView()
         {
@@ -106,6 +111,9 @@ namespace Gradientspace.UI
 		//! this function can be called externally, to assign focus to the text entry field
 		public virtual void BeginStringEdit()
         {
+            if (IsEditable == false)
+                return;
+
             ActiveStringEdit = new StringEditor(Text);
             ActiveStringEdit.SelectAll();
 

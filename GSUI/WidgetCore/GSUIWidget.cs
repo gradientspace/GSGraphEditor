@@ -104,8 +104,10 @@ namespace Gradientspace.UI
             ChildWidgetsModified?.Invoke(this, EventArgs.Empty);
         }
 
-        public virtual bool RemoveChildWidget(Widget child)
+        public virtual bool RemoveChildWidget(Widget? child)
         {
+            if (child == null)
+                return false;
             bool bFound = childWidgets.Remove(child);
             if (bFound)
             {
