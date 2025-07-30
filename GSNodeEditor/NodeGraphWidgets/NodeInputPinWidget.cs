@@ -49,7 +49,7 @@ namespace GSNodeEditor
             InputName = sourceInputInfo.InputName;
             DataType = sourceInputInfo.DataType;
 
-            WidgetStyle = NodeWidgetStyles.DefaultInputStyleSet;
+            WidgetStyle = PinWidgetStyles.DefaultInputStyleSet;
 
             SetInputBehavior(new ExtendableWidgetInputBehavior(this, this) { Depth = 0 } );
 
@@ -475,9 +475,9 @@ namespace GSNodeEditor
             WidgetMargins PinMargins = SourcePinWidget.WidgetStyle.BaseMargins;
             TextHeightInfo PinTextHeightInfo = StyleCache.GetCachedFontHeightInfo(SourcePinWidget.WidgetStyle.StandardStyle);
 
-            NodePinWidgetStyle UseStyle = (SourcePinWidget.ShowConversionWarning) ? NodeWidgetStyles.InputStyleSet_Conversion : SourcePinWidget.WidgetStyle;
+            NodePinWidgetStyle UseStyle = (SourcePinWidget.ShowConversionWarning) ? PinWidgetStyles.InputStyleSet_Conversion : SourcePinWidget.WidgetStyle;
             if (SourcePinWidget.DataType.IsDynamic)
-                UseStyle = NodeWidgetStyles.InputStyleSet_Dynamic;
+                UseStyle = PinWidgetStyles.InputStyleSet_Dynamic;
 
             SKPaint InputPinPaint = StyleCache.GetCachedPaint(UseStyle.Select(SourcePinWidget.IsHovered, false), SKStyleCache.EPaintType.Background);
 

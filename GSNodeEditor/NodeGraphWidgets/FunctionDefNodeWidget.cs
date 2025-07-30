@@ -38,11 +38,13 @@ namespace GSNodeEditor
             Debug.Assert(node.Node is FunctionDefinitionNode);
             FunctionNode = (node.Node as FunctionDefinitionNode)!;
 
+            WidgetStyle = NodeWidgetStyles.FunctionDefNode;
+
             FunctionArgsWidget = new VariablesPanelWidget("Arguments");
             FunctionArgsWidget.SetNumVariables(2);
 
             FunctionArgsWidgetAnchor = new WidgetRelativeBoxAnchor(this) {
-                BoxPoint = BoxPoints.TopLeft, Offset = new Vector2f(-15, 25)
+                BoxPoint = BoxPoints.TopLeft, Offset = new Vector2f(-15, 0)
             };
             FunctionArgsWidget.AnchorTo(FunctionArgsWidgetAnchor);
             FunctionArgsWidget.AnchorPlacement = new AnchorLocation(BoxPoints.TopRight);
@@ -50,7 +52,7 @@ namespace GSNodeEditor
 
 
             FunctionNameEntry = new TextEntryField() {
-                Text = FunctionNode.FunctionName, Width = 120   // variable inputs are 65-wide...
+                Text = FunctionNode.FunctionName, Width = 132   // variable inputs are 65-wide...
             };
             FunctionNameEntry.OnTextModified += FunctionNameEntry_OnTextModified;
 

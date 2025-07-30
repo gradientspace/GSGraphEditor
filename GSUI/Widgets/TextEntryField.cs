@@ -443,7 +443,7 @@ namespace Gradientspace.UI
                 PlacedBounds.Max.x = PlacedBounds.Min.x + FocusedTextInfo.Bounds.Width;
             }
 
-            WidgetStyle UseStyle = SourceTextEntry.Style.Select(SourceTextEntry.IsHovered, SourceTextEntry.IsFocused);
+            WidgetStyle UseStyle = SourceTextEntry.Style.Select(SourceTextEntry.IsHovered, SourceTextEntry.IsFocused, !SourceTextEntry.IsEditable);
             SKStyleCache.CachedSKPaintSet StandardPaints = StyleCache.GetCachedPaintSet(UseStyle);
             WidgetMargins Margins = SourceTextEntry.Style.BaseMargins;
 

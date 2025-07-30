@@ -18,7 +18,7 @@ namespace GSNodeEditor
             OutputName = sourceOutputInfo.OutputName;
             DataType = sourceOutputInfo.DataType;
 
-            WidgetStyle = NodeWidgetStyles.DefaultOutputStyleSet;
+            WidgetStyle = PinWidgetStyles.DefaultOutputStyleSet;
 
             SetInputBehavior(new ExtendableWidgetInputBehavior(this, this) { Depth = 0 });
         }
@@ -128,9 +128,9 @@ namespace GSNodeEditor
 
         public void Draw(SKStyleCache StyleCache, SKCanvas Canvas, ILayoutAnchor Anchor)
         {
-            NodePinWidgetStyle UseStyle = NodeWidgetStyles.DefaultOutputStyleSet;
+            NodePinWidgetStyle UseStyle = PinWidgetStyles.DefaultOutputStyleSet;
             if (SourcePinWidget.IsSequenceOutputPin)
-                UseStyle = NodeWidgetStyles.OutputStyleSet_ControlFlow;
+                UseStyle = PinWidgetStyles.OutputStyleSet_ControlFlow;
 
             SKPaint PinTextPaint = StyleCache.GetCachedPaint(UseStyle.StandardStyle, SKStyleCache.EPaintType.Text);
             WidgetMargins PinMargins = UseStyle.BaseMargins;

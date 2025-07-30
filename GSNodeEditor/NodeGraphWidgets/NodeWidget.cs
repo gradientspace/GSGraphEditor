@@ -10,49 +10,6 @@ using SkiaSharp;
 namespace GSNodeEditor
 {
 
-    public class NodeWidgetStyle
-    {
-        public WidgetStateStyle NodeStyle { get; set; }
-        public WidgetStateStyle InputPinStyle { get; set; }
-        public WidgetStateStyle OutputPinStyle { get; set; }
-
-        public NodeWidgetStyle()
-        {
-            NodeStyle = NodeWidgetStyle.DefaultNodeStyleSet;
-            InputPinStyle = NodeWidgetStyle.DefaultInputStyleSet;
-            OutputPinStyle = NodeWidgetStyle.DefaultOutputStyleSet;
-        }
-
-        public static WidgetStyle DefaultNodeStyle = new WidgetStyle() { BackgroundColor = Colorf.SlateGrey, TextSize = 16, FontName = "Calibri", Margins = new WidgetMargins(2,5) };
-        public static WidgetStyle DefaultNodeHoverStyle = new WidgetStyle() { BackgroundColor = Colorf.Orange };
-        public static WidgetStyle DefaultNodePressedStyle = new WidgetStyle() { BackgroundColor = Colorf.Gold };
-        public static WidgetStateStyle DefaultNodeStyleSet = new WidgetStateStyle(DefaultNodeStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
-
-        public static WidgetStyle NodeErrorStyle = new WidgetStyle() { BackgroundColor = Colorf.VideoRed, TextSize = 16, FontName = "Calibri", Margins = new WidgetMargins(2, 5) };
-        public static WidgetStateStyle NodeErrorStyleSet = new WidgetStateStyle(NodeErrorStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
-
-        public static WidgetStyle NodePlaceholderStyle = new WidgetStyle() { BackgroundColor = Colorf.LightGrey, TextSize = 16, FontName = "Calibri", Margins = new WidgetMargins(2, 5) };
-        public static WidgetStateStyle NodePlaceholderStyleSet = new WidgetStateStyle(NodePlaceholderStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
-
-        public static WidgetStyle NodeDebugStyle = new WidgetStyle() { BackgroundColor = Colorf.VideoYellow, TextSize = 16, FontName = "Calibri", Margins = new WidgetMargins(2, 5) };
-        public static WidgetStateStyle NodeDebugStyleSet = new WidgetStateStyle(NodeDebugStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
-
-        public static WidgetStyle DefaultInputStyle = new WidgetStyle() { BackgroundColor = Colorf.DarkGrey, TextSize = 14, FontName = "Calibri" };
-        public static WidgetStyle DefaultInputHoverStyle = new WidgetStyle() { BackgroundColor = Colorf.Orange };
-        public static WidgetStyle DefaultInputPressedStyle = new WidgetStyle() { BackgroundColor = Colorf.LightGrey };
-        public static WidgetStateStyle DefaultInputStyleSet = new WidgetStateStyle(DefaultInputStyle, DefaultInputHoverStyle, DefaultInputPressedStyle);
-
-        public static WidgetStyle DefaultOutputStyle = new WidgetStyle() { BackgroundColor = Colorf.Goldenrod, TextSize = 14, FontName = "Calibri" };
-        public static WidgetStyle DefaultOutputHoverStyle = new WidgetStyle() { BackgroundColor = Colorf.Orange };
-        public static WidgetStyle DefaultOutputPressedStyle = new WidgetStyle() { BackgroundColor = Colorf.Wheat};
-        public static WidgetStateStyle DefaultOutputStyleSet = new WidgetStateStyle(DefaultOutputStyle, DefaultOutputHoverStyle, DefaultOutputPressedStyle);
-
-
-        public static NodeWidgetStyle DefaultNodeWidgetStyle = new NodeWidgetStyle();
-    }
-
-
-
     public class NodeWidget : Widget, ISimpleCaptureTarget, IDisposable
     {
         public NodeWidgetStyle WidgetStyle { get; set; }
@@ -114,7 +71,11 @@ namespace GSNodeEditor
             AnchorTo(nodeAnchor);
             AnchorPlacement = new AnchorLocation(BoxPoints.TopLeft);
 
-            WidgetStyle = NodeWidgetStyle.DefaultNodeWidgetStyle;
+            WidgetStyle = NodeWidgetStyles.DefaultNode;
+            if (IsPlaceholderNode)
+                WidgetStyle = NodeWidgetStyles.PlaceholderNode;
+            if (node.Node is FunctionCallNode || node.Node is FunctionReturnNode)
+                WidgetStyle = NodeWidgetStyles.FunctionCallNode;
 
             SetInputBehavior(new BasicWidgetInputBehavior(this, this) { Depth = 0, EnableCapture = false } );
 
@@ -470,6 +431,10 @@ namespace GSNodeEditor
 
         public virtual void UpdateLayout(SKStyleCache StyleCache)
         {
+            // TODO: this lays out all the pins by creating an Anchor for each one.
+            // Probably could just be using offsets...
+            // (this was some of the oldest layout code and is probably crufty)
+
             AxisAlignedBox2f InitialBox = new AxisAlignedBox2f(Vector2f.Zero, SourceNodeWidget.Size);
 
             SKPaint LabelTextPaint = 
@@ -477,8 +442,8 @@ namespace GSNodeEditor
             WidgetMargins LabelMargins = SourceNodeWidget.WidgetStyle.NodeStyle.BaseMargins;
 
             SKPaint PinTextPaint =
-                StyleCache.GetCachedPaint(SourceNodeWidget.WidgetStyle.InputPinStyle.StandardStyle, SKStyleCache.EPaintType.Text);
-            WidgetMargins PinMargins = SourceNodeWidget.WidgetStyle.InputPinStyle.BaseMargins;
+                StyleCache.GetCachedPaint(PinWidgetStyles.DefaultInputStandardStyle, SKStyleCache.EPaintType.Text);
+            WidgetMargins PinMargins = PinWidgetStyles.DefaultInputStandardStyle.Margins;
 
             string UseLabel = (SourceNodeWidget.Label.Length > 0) ? SourceNodeWidget.Label : "(Node)";
 
@@ -554,7 +519,7 @@ namespace GSNodeEditor
             float LabelY = LabelMargins.Top + LabelTextHeightInfo.AboveBaseline;
             LabelOrigin = new Vector2f(LabelX + SequencePinWidth, LabelY);
 
-            TextHeightInfo PinTextHeightInfo = StyleCache.GetCachedFontHeightInfo(SourceNodeWidget.WidgetStyle.InputPinStyle.StandardStyle);
+            TextHeightInfo PinTextHeightInfo = StyleCache.GetCachedFontHeightInfo(PinWidgetStyles.DefaultInputStandardStyle);
             float PinStartOffsetY = InitialBox.Min.y + (LabelTextHeightInfo.MaxTotalHeight + LabelMargins.TotalHeight);
             float InputPinLeft = InitialBox.Min.x;
             float InputPinRight = InputPinLeft + (MaxInputPinWidth + PinMargins.TotalWidth);
@@ -656,24 +621,15 @@ namespace GSNodeEditor
         public virtual void Draw(SKStyleCache StyleCache, SKCanvas Canvas, ILayoutAnchor Anchor)
         {
             WidgetStateStyle UseStateStyle = (SourceNodeWidget.NodeState == NodeWidget.NodeStates.Error) ?
-                NodeWidgetStyle.NodeErrorStyleSet : SourceNodeWidget.WidgetStyle.NodeStyle;
-            if (SourceNodeWidget.IsPlaceholderNode)
-                UseStateStyle = NodeWidgetStyle.NodePlaceholderStyleSet;
+                NodeWidgetStyles.NodeErrorStyleSet : SourceNodeWidget.WidgetStyle.NodeStyle;
             if (DebugManager.Instance.IsNodeActive(SourceNodeWidget.GraphNodeIdentifier))
-                UseStateStyle = NodeWidgetStyle.NodeDebugStyleSet;
+                UseStateStyle = NodeWidgetStyles.NodeDebugStyleSet;
             WidgetStyle NodeFillStyle = UseStateStyle.Select(SourceNodeWidget.IsHovered, false);
             SKPaint NodePaint = StyleCache.GetCachedPaint(NodeFillStyle, SKStyleCache.EPaintType.Background);
 
             SKPaint LabelTextPaint =
                 StyleCache.GetCachedPaint(SourceNodeWidget.WidgetStyle.NodeStyle.StandardStyle, SKStyleCache.EPaintType.Text);
             WidgetMargins LabelMargins = SourceNodeWidget.WidgetStyle.NodeStyle.BaseMargins;
-
-            SKPaint PinTextPaint =
-                StyleCache.GetCachedPaint(SourceNodeWidget.WidgetStyle.InputPinStyle.StandardStyle, SKStyleCache.EPaintType.Text);
-            WidgetMargins PinMargins = SourceNodeWidget.WidgetStyle.InputPinStyle.BaseMargins;
-            TextHeightInfo PinTextHeightInfo = StyleCache.GetCachedFontHeightInfo(SourceNodeWidget.WidgetStyle.InputPinStyle.StandardStyle);
-            SKPaint InputPinPaint = StyleCache.GetCachedPaint(SourceNodeWidget.WidgetStyle.InputPinStyle.StandardStyle, SKStyleCache.EPaintType.Background);
-            SKPaint OutputTextPaint = StyleCache.GetCachedPaint(SourceNodeWidget.WidgetStyle.OutputPinStyle.StandardStyle, SKStyleCache.EPaintType.Background);
 
             Vector2f DrawOrigin = Anchor.GetOrigin();
             AxisAlignedBox2f PlacedBounds = AnchorLocation.MakeRelativeToAnchor(LocalNodeBounds, SourceNodeWidget.AnchorPlacement, DrawOrigin);

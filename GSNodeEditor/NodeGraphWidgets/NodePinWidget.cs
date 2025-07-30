@@ -15,7 +15,7 @@ namespace GSNodeEditor
      */
     public abstract class NodePinWidget : Widget
     {
-        public NodePinWidgetStyle WidgetStyle { get; set; } = NodeWidgetStyles.DefaultInputStyleSet;
+        public NodePinWidgetStyle WidgetStyle { get; set; } = PinWidgetStyles.DefaultInputStyleSet;
         public bool CompactMode { get; set; } = false;
 
         public GraphDataType DataType { get; init; }

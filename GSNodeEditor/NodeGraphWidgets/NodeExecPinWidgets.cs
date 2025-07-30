@@ -29,7 +29,7 @@ namespace GSNodeEditor
 
             // need to initialize GraphDataType ??
 
-            WidgetStyle = NodeWidgetStyles.DefaultSequenceStyleSet;
+            WidgetStyle = PinWidgetStyles.DefaultSequenceStyleSet;
 
             SetInputBehavior(new ExtendableWidgetInputBehavior(this, this) { Depth = 0 });
         }

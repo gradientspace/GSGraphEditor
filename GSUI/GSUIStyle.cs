@@ -64,6 +64,7 @@ namespace Gradientspace.UI
         public static WidgetStyle DefaultStyle = new WidgetStyle();
         public static WidgetStyle DefaultHoverStyle = new WidgetStyle() { BackgroundColor = Colorf.Orange };
         public static WidgetStyle DefaultPressedStyle = new WidgetStyle() { BackgroundColor = Colorf.LightSteelBlue };
+        public static WidgetStyle DefaultDisabledStyle = new WidgetStyle() { BackgroundColor = Colorf.Grey };
 
 
         // todo clone and operator=
@@ -94,12 +95,14 @@ namespace Gradientspace.UI
         public WidgetStyle StandardStyle { get; set; }
         public WidgetStyle HoverStyle { get; set; }
         public WidgetStyle PressedStyle { get; set; }
+        public WidgetStyle DisabledStyle { get; set; }
 
         public WidgetStateStyle()
         {
             StandardStyle = WidgetStyle.DefaultStyle;
             HoverStyle = WidgetStyle.DefaultHoverStyle;
-            PressedStyle = WidgetStyle.DefaultPressedStyle;            
+            PressedStyle = WidgetStyle.DefaultPressedStyle;
+            DisabledStyle = WidgetStyle.DefaultDisabledStyle;
         }
 
         public WidgetStateStyle(WidgetStyle standard, WidgetStyle hovered, WidgetStyle pressed)
@@ -107,6 +110,15 @@ namespace Gradientspace.UI
             StandardStyle = standard;
             HoverStyle = hovered;
             PressedStyle = pressed;
+            DisabledStyle = standard;
+        }
+
+        public WidgetStateStyle(WidgetStyle standard, WidgetStyle hovered, WidgetStyle pressed, WidgetStyle disabled)
+        {
+            StandardStyle = standard;
+            HoverStyle = hovered;
+            PressedStyle = pressed;
+            DisabledStyle = disabled;
         }
 
         public WidgetMargins BaseMargins { get { return StandardStyle.Margins; } }
@@ -118,13 +130,15 @@ namespace Gradientspace.UI
             return new WidgetStateStyle() {
                 StandardStyle = this.StandardStyle.Duplicate(),
                 HoverStyle = this.HoverStyle.Duplicate(),
-                PressedStyle = this.PressedStyle.Duplicate()
+                PressedStyle = this.PressedStyle.Duplicate(),
+                DisabledStyle = this.DisabledStyle.Duplicate()
             };
         }
 
-        public WidgetStyle Select(bool bHovered, bool bPressed)
+        public WidgetStyle Select(bool bHovered, bool bPressed, bool bDisabled = false)
         {
-            if (bPressed) return PressedStyle;
+            if (bDisabled) return DisabledStyle;
+            else if (bPressed) return PressedStyle;
             else if (bHovered) return HoverStyle;
             return StandardStyle;
         }
@@ -144,11 +158,12 @@ namespace Gradientspace.UI
 
 
         public static readonly WidgetStyle TextFieldStandardStyle = new WidgetStyle() { BackgroundColor = Colorf.LightGrey, ForegroundColor = Colorf.LightGrey };
+        public static readonly WidgetStyle TextFieldDisabledStyle = new WidgetStyle() { BackgroundColor = Colorf.Grey, ForegroundColor = Colorf.LightGrey };
         public static readonly WidgetStyle TextFieldHoverStyle = new WidgetStyle() { BackgroundColor = Colorf.VideoWhite, ForegroundColor = Colorf.LightGrey };
         public static readonly WidgetStyle TextFieldPressedStyle = new WidgetStyle() { BackgroundColor = Colorf.White, ForegroundColor = Colorf.LightGrey };
 
         public static readonly WidgetStateStyle DefaultTextFieldStyle = new WidgetStateStyle(
-            TextFieldStandardStyle, TextFieldHoverStyle, TextFieldPressedStyle);
+            TextFieldStandardStyle, TextFieldHoverStyle, TextFieldPressedStyle, TextFieldDisabledStyle);
     }
 
 
