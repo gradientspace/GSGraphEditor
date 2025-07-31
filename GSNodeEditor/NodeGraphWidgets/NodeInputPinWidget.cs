@@ -312,9 +312,16 @@ namespace GSNodeEditor
             } 
             else if (InlineType == EInlineWidgetType.String ) 
             {
-                ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
-                    Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, newText);
-                });
+                // kind of gross that we have to do this at such a low level...if we are updating
+                // the input on a special VariableNameNodeInput type, we actually want to try a
+                // global graph rename...
+                if ( this.NodeInputInfo.Input is VariableNameNodeInput variableNameInput ) {
+                    TryRenameVariableInput(variableNameInput, OwningNodeIdentifier, newText);
+                } else {
+                    ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                        Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, newText);
+                    });
+                }
             } 
         }
         private void UpdateInputFromModifiedBoolean(INodeGraph Graph, int OwningNodeIdentifier, bool bNewValue)
@@ -353,7 +360,19 @@ namespace GSNodeEditor
                 });
             }
         }
-
+        private void TryRenameVariableInput(VariableNameNodeInput variableNameInput, int OwningNodeIdentifier, string NewName)
+        {
+            NodeGraphView ParentView = FindParentGraphViewChecked();
+            ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                (object? curValue, bool bSet) = variableNameInput.GetConstantValue();
+                if (bSet == false)
+                    return;
+                string curName = (curValue as string)!;
+                bool bSuccess = Editor.TryRenameVariable(OwningNodeIdentifier, curName, NewName);
+                if (bSuccess == false)
+                    (this.InlineWidget as TextEntryField)!.SilentUpdateText(curName);   // reset string to previous value
+            });
+        }
 
 
         // ISimpleCaptureTarget API

@@ -74,8 +74,12 @@ namespace GSNodeEditor
             WidgetStyle = NodeWidgetStyles.DefaultNode;
             if (IsPlaceholderNode)
                 WidgetStyle = NodeWidgetStyles.PlaceholderNode;
-            if (node.Node is FunctionCallNode || node.Node is FunctionReturnNode)
+            else if (node.Node is FunctionCallNode || node.Node is FunctionReturnNode)
                 WidgetStyle = NodeWidgetStyles.FunctionCallNode;
+            else if (node.Node is DefineVariableBaseNode)
+                WidgetStyle = NodeWidgetStyles.VariableNode;
+            else if (node.Node is AccessVariableNode)
+                WidgetStyle = NodeWidgetStyles.VariableAccessNode;
 
             SetInputBehavior(new BasicWidgetInputBehavior(this, this) { Depth = 0, EnableCapture = false } );
 
@@ -94,6 +98,8 @@ namespace GSNodeEditor
         public virtual void InitializeFromNode(INodeInfo nodeInfo)
         {
             GraphNodeIdentifier = nodeInfo.Identifier;
+
+            ParentGraphWidget.UpdateNodeWidgetLabel(this);
 
             INode node = nodeInfo.Node!;
             foreach ( INodeInputInfo inputInfo in node.EnumerateInputs() )

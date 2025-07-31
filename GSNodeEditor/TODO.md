@@ -11,14 +11,18 @@ Bugs
 Graph Features
 ===================
 - Local Variables
-- Functions
+- improve Functions
+    - add Scope tracking during evaluation, fix up return hack so that functions can be nested
+    - verify function setups in graph validation
+    - propagate changes to definition to return and call nodes
+    - prevent wiring between main graph and function graphs
+- Scope static analysis (eg to make sure inside of a For loop doesn't connect to outside, prevent wiring errors, etc)
 - Explicit Cast node  (do we have this yet?)
 - Asset Objects  (eg a DMesh3 that can be loaded in a little mini-graph, on-demand)
 - Parallel Sequence, Parallel For, etc
 - Graph Async/Await/Locks/etc   (await multiple sequences wires?)
 - ThreadSafe/NotThreadSafe tags on nodes?
 - Infinite Loop check/detection
-- Scope validation (eg make sure inside of a For loop doesn't connect to outside)
 - Color input pins by type (by-ref, by-value, python, etcetc)
 - Color nodes by type
 - overrideable node color?
@@ -32,6 +36,7 @@ Core Editor
 - Undo/Redo
     - need to expire low-level textedit changes after it goes out of focus
     - code nodes text
+    - does it work for functions?
 - Copy/Paste   (do it via temp serialize to json??)
 - Mac support (seems to be working
 - Linux support

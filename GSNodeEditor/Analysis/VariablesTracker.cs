@@ -39,8 +39,46 @@ namespace GSNodeEditor
 		}
 
 
+        public bool GetVariableInfoAtNode(int NodeID, out VariableInfo varInfo)
+        {
+            foreach (VariableInfo variableInfo in Variables) {
+                if (variableInfo.CreatedAtNodeID == NodeID) {
+                    varInfo = variableInfo;
+                    return true;
+                }
+            }
+            varInfo = new VariableInfo();
+            return false;
+        }
 
-		protected List<VariableInfo> Variables = new List<VariableInfo>();
+        public bool FindVariableByName(string Name, out VariableInfo varInfo)
+        {
+            foreach (VariableInfo variableInfo in Variables) {
+                if ( String.Compare(variableInfo.Name, Name, true) == 0 ) {
+                    varInfo = variableInfo;
+                    return true;
+                }
+            }
+            varInfo = new VariableInfo();
+            return false;
+        }
+
+
+        public bool CanRenameVariable(int NodeIdentifier, string FromName, string ToName)
+        {
+            if (String.Compare(FromName, ToName, true) == 0)
+                return false;
+
+            if (GetVariableInfoAtNode(NodeIdentifier, out var varInfo) == false)
+                return false;
+
+            if (FindVariableByName(ToName, out var existingVarWithName)) 
+                return false;
+
+            return true;
+        }
+
+        protected List<VariableInfo> Variables = new List<VariableInfo>();
 
 
 		void add_new_variable(DefineVariableBaseNode variableNode)

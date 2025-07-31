@@ -92,13 +92,6 @@ namespace GSNodeEditor
 				Graph.SetNodeConstantValue(change.NodeIdentifier, change.ToValue.InputName, change.ToValue.Value);
 			else
 				Graph.SetNodeConstantValue(change.NodeIdentifier, change.ToValue.InputName, change.FromValue.Value);
-
-			// AAAAHHH forcing full node rebuild here because we currently do not have a way
-			// to just update the values on the inline widgets. Forcing call to PinWidget.UpdateInlineInfo()
-			// does not currently work because the function only builds new input widgets, and possibly will
-			// not work for 
-			if (Graph.FindNodeFromIdentifier(change.NodeIdentifier).Node is NodeBase baseNode)
-				baseNode.PublishNodeModifiedNotification();
 		}
 
 

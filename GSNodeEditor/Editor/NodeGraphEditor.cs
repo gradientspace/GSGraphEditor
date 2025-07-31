@@ -84,6 +84,12 @@ namespace GSNodeEditor
             if (node != null && ModifiedNodes.Contains(node) == false)
                 ModifiedNodes.Add(node);
         }
+        protected void mark_modified_node(int NodeIdentifier)
+        {
+            INodeInfo nodeInfo = Graph.FindNodeFromIdentifier(NodeIdentifier);
+            if ( nodeInfo.Node != null && ModifiedNodes.Contains(nodeInfo.Node) == false)
+                ModifiedNodes.Add(nodeInfo.Node);
+        }
         protected void process_modified_nodes()
         {
             List<IConnectionInfo> connections = new List<IConnectionInfo>();    // temp array
@@ -530,6 +536,51 @@ namespace GSNodeEditor
             // TODO: notify graph widget somehow?
 		}
 
+
+        /**
+         * Try to rename a variable in the graph defined at NodeIdentifier (must be a DefineVariableBaseNode)
+         * that is currently named FromName to a new name ToName.
+         * Will fail (return false) if ToName already exists on some other variable
+         */
+        public virtual bool TryRenameVariable(int NodeIdentifier, string FromName, string ToName)
+        {
+            if (String.Compare(FromName, ToName, true) == 0)
+                return false;
+
+            // somewhere out there this already exists as part of a GraphStaticAnalyzer, but we
+            // have no clean way to access it here...
+            ExecutionGraph execGraph = (Graph as ExecutionGraph)!;
+            VariablesTracker varTracker = new VariablesTracker(execGraph);
+            varTracker.Rebuild();
+
+            // make sure we can complete this rename
+            if ( varTracker.CanRenameVariable(NodeIdentifier, FromName, ToName) == false) {
+                GlobalGraphOutput.AppendLog($"Rename variable {FromName} to {ToName} ignored because a variable named {ToName} already exists");
+                return false;
+            }
+
+            // update constant value on variable node
+            Graph.SetNodeConstantValue(NodeIdentifier, DefineVariableBaseNode.NameInputName, ToName);
+            ActiveHistory?.AppendChange(new NodeConstantValueChange(this, NodeIdentifier,
+                new InputConstant() { InputName = DefineVariableBaseNode.NameInputName, Value = FromName },
+                new InputConstant() { InputName = DefineVariableBaseNode.NameInputName, Value = ToName }));
+
+            // update constant value on all other graph nodes using this variable name
+            // (TODO: should this be based on scope? ie could use same local variable name in multiple places....)
+            // ((maybe each variable should have a GUID like functions?))
+            foreach (INodeInfo nodeInfo in execGraph.EnumerateNodes()) {
+                if ( nodeInfo.Node is AccessVariableNode accessNode) {
+                    if ( String.Compare(accessNode.GetVariableName(), FromName, true) == 0) {
+                        Graph.SetNodeConstantValue(nodeInfo.Identifier, AccessVariableNode.NameInputName, ToName);
+                        ActiveHistory?.AppendChange(new NodeConstantValueChange(this, nodeInfo.Identifier,
+                            new InputConstant() { InputName = AccessVariableNode.NameInputName, Value = FromName },
+                            new InputConstant() { InputName = AccessVariableNode.NameInputName, Value = ToName }));
+                    }
+                }
+            }
+
+            return true;
+        }
 
 
 	}

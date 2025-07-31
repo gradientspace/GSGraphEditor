@@ -107,6 +107,11 @@ namespace Gradientspace.UI
 			return true;
 		}
 
+        public virtual void SilentUpdateText(string NewText)
+        {
+            _text = NewText;
+        }
+
 
 		//! this function can be called externally, to assign focus to the text entry field
 		public virtual void BeginStringEdit()

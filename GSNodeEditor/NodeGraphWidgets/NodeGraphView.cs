@@ -1,14 +1,14 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
+using g3;
+using Gradientspace.NodeGraph;
+using Gradientspace.UI;
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using g3;
-using Gradientspace.NodeGraph;
-using Gradientspace.UI;
-using SkiaSharp;
 
 namespace GSNodeEditor
 {
@@ -45,7 +45,7 @@ namespace GSNodeEditor
         public event NewNodeEventHandler? OnNewNodeAdded;
         public event NewNodeEventHandler? OnExistingNodeUpdated;
 
-        public WeakReference<INodeGraphEditManager> ActiveEditManager;
+        public WeakReference<INodeGraphEditManager>? ActiveEditManager;
 
         public NodeGraphView()
         {
@@ -113,20 +113,14 @@ namespace GSNodeEditor
 
         public NodeWidget CreateAndInitializeNewNodeWidget(INodeInfo nodeInfo)
         {
-            string Label = nodeInfo.Node!.GetNodeName();
+            if (nodeInfo.Node == null) throw new Exception("CreateAndInitializeNewNodeWidget failed - Node is null");
 
             Type nodeClassType = nodeInfo.Node.GetType();
             INodeWidgetProvider? FoundProvider = NodeWidgetCustomizationSystem.Instance.FindProvider(nodeClassType);
             NodeWidget? CustomWidget = FoundProvider?.CreateNewWidget(this, nodeInfo) ?? null;
 
             NodeWidget NewNodeWidget = (CustomWidget != null) ? CustomWidget : new NodeWidget(this, nodeInfo);
-
-            NewNodeWidget.Label = Label;
-            float NodeWidthFromLabel = (Label.Length > 0) ? (NodeLabelTextPaint.MeasureText(Label) + 2 * LabelMargins.x) : 0;
-            float UseWidth = MathF.Max(NodeWidthFromLabel, DefaultNodeWidth);
-            NewNodeWidget.Size = new(UseWidth, DefaultNodeHeight);
             Nodes.Add(NewNodeWidget);
-
             ActiveWidgetSet.AddRootWidget(NewNodeWidget);
 
             NewNodeWidget.InitializeFromNode(nodeInfo);
@@ -143,6 +137,19 @@ namespace GSNodeEditor
 
             return NewNodeWidget;
         }
+
+        // set the node label and update sizing information
+        public void UpdateNodeWidgetLabel(NodeWidget nodeWidget, string? overrideName = null)
+        {
+            if (nodeWidget.ParentNode == null) return;
+            string Label = (overrideName != null) ? overrideName : nodeWidget.ParentNode.GetNodeName();
+            nodeWidget.Label = Label;
+            float NodeWidthFromLabel = (Label.Length > 0) ? (NodeLabelTextPaint.MeasureText(Label) + 2 * LabelMargins.x) : 0;
+            float UseWidth = MathF.Max(NodeWidthFromLabel, DefaultNodeWidth);
+            nodeWidget.Size = new(UseWidth, DefaultNodeHeight);
+        }
+
+        // configure sequence pins on the node
         protected void UpdateSequencePins(NodeWidget nodeWidget)
         {
             if ((SourceGraph is ExecutionGraph) == false) return;
@@ -503,7 +510,7 @@ namespace GSNodeEditor
 
         public virtual void ExecuteGraphEdit(Action<NodeGraphEditor> EditFunc)
         {
-            if (ActiveEditManager.TryGetTarget(out var EditManager))
+            if (ActiveEditManager != null && ActiveEditManager.TryGetTarget(out var EditManager))
             {
                 EditManager.ExecuteGraphEdit(EditFunc);
             }

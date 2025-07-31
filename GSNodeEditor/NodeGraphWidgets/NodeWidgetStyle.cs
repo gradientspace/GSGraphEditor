@@ -36,16 +36,25 @@ namespace GSNodeEditor
         public static WidgetStyle NodeDebugStyle = new WidgetStyle() { BackgroundColor = Colorf.VideoYellow, TextSize = NodeTextSize, FontName = NodeFont, Margins = NodeMargins };
         public static WidgetStateStyle NodeDebugStyleSet = new WidgetStateStyle(NodeDebugStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
 
-        public static WidgetStyle FunctionDefNodeStyle = new WidgetStyle() { BackgroundColor = new Colorf(161, 64, 193, 255), TextSize = NodeTextSize, FontName = NodeFont, Margins = NodeMargins };
+        public static WidgetStyle VariableDefNodeStyle = new WidgetStyle() { BackgroundColor = new Colorf(16, 164, 164), TextSize = NodeTextSize, FontName = NodeFont, Margins = NodeMargins };
+        public static WidgetStateStyle VariableDefNodeStyleSet = new WidgetStateStyle(VariableDefNodeStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
+
+        public static WidgetStyle VariableAccessNodeStyle = new WidgetStyle() { BackgroundColor = new Colorf(96, 164, 164), TextSize = NodeTextSize, FontName = NodeFont, Margins = NodeMargins };
+        public static WidgetStateStyle VariableAccessNodeStyleSet = new WidgetStateStyle(VariableAccessNodeStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
+
+
+        public static WidgetStyle FunctionDefNodeStyle = new WidgetStyle() { BackgroundColor = new Colorf(161, 64, 193), TextSize = NodeTextSize, FontName = NodeFont, Margins = NodeMargins };
         public static WidgetStateStyle FunctionDefNodeStyleSet = new WidgetStateStyle(FunctionDefNodeStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
 
-        public static WidgetStyle FunctionCallNodeStyle = new WidgetStyle() { BackgroundColor = new Colorf(161, 128, 193, 255), TextSize = NodeTextSize, FontName = NodeFont, Margins = NodeMargins };
+        public static WidgetStyle FunctionCallNodeStyle = new WidgetStyle() { BackgroundColor = new Colorf(161, 128, 193), TextSize = NodeTextSize, FontName = NodeFont, Margins = NodeMargins };
         public static WidgetStateStyle FunctionCallNodeStyleSet = new WidgetStateStyle(FunctionCallNodeStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
 
 
 
         public static NodeWidgetStyle DefaultNode = new NodeWidgetStyle();
         public static NodeWidgetStyle PlaceholderNode = new NodeWidgetStyle() { NodeStyle = NodePlaceholderStyleSet };
+        public static NodeWidgetStyle VariableNode = new NodeWidgetStyle() { NodeStyle = VariableDefNodeStyleSet };
+        public static NodeWidgetStyle VariableAccessNode = new NodeWidgetStyle() { NodeStyle = VariableAccessNodeStyleSet };
         public static NodeWidgetStyle FunctionDefNode = new NodeWidgetStyle() { NodeStyle = FunctionDefNodeStyleSet };
         public static NodeWidgetStyle FunctionCallNode = new NodeWidgetStyle() { NodeStyle = FunctionCallNodeStyleSet };
     }
