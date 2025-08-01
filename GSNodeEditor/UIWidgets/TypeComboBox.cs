@@ -1,5 +1,6 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
 using g3;
+using Gradientspace.NodeGraph;
 using Gradientspace.UI;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace GSNodeEditor
 
         public TypeComboBox(WidgetStateStyle? customStyle = null) : base(customStyle)
         {
-            this.Text = selectedType.Name;
+            this.Text = TypeUtils.TypeToString(selectedType);
 
             OnTextEditingUpdate += TypeComboBox_OnTextEditingUpdate;
             OnTextEditingStateUpdate += TypeComboBox_OnTextEditingStateUpdate;
@@ -44,7 +45,7 @@ namespace GSNodeEditor
             set {
                 if (selectedType != value) {
                     selectedType = value;
-                    this.Text = selectedType.Name;
+                    this.Text = TypeUtils.TypeToString(selectedType);
                     OnSelectedTypeChanged?.Invoke(this, selectedType);
                 }
             }
@@ -64,7 +65,7 @@ namespace GSNodeEditor
                 TypePopupMenu.ClearItems();
                 bPopupMenuVisible = false;
 
-                this.Text = selectedType.Name;
+                this.Text = TypeUtils.TypeToString(selectedType);
             }
         }
         private void ShowPopupMenu()
@@ -138,49 +139,57 @@ namespace GSNodeEditor
         }
 
 
+        List<GlobalTypeCache.NamedType> MatchesList = new List<GlobalTypeCache.NamedType>();
+
         private void RefreshPopMenuItems(string? useText = null)
         {
-            string UsingText = useText ?? this.Text;
+            string SearchText = useText ?? this.Text;
             TypePopupMenu.ClearItems();
 
-            bool bAllowContains = false;
-            int MaxResults = 10;
-            if (UsingText.Length >= 3) {
-                List<Type> matches = UpdateActiveTypeMatches(UsingText, bAllowContains, MaxResults);
-
-                foreach (Type t in matches)
-                    TypePopupMenu.AddItem(new MenuItem() { Text = t.Name, CustomData = t });
-            } else {
+            // only an insane person would give a type a name shorter than 3 characters...
+            if (SearchText.Length < 3) {
                 TypePopupMenu.AddItem(new MenuItem() { Text = "(type to search...)" });
+                return;
             }
-        }
 
+            // todo can we fold array and <T> searching into GlobalTypeCache.FindType() functions?
+            // 
 
-        // TODO: this should probably be run async, and maybe be smarter than just max-matches...
-        private List<Type> UpdateActiveTypeMatches(string currentText, bool bAllowContains, int MaxResults = 10)
-        {
-            List<Type> types = new List<Type>();
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            int MaxResults = 10;
+            if ( SearchText.EndsWith("[]") ) 
             {
-                Type[] allTypes = assembly.GetTypes();
-                foreach (Type type in allTypes)
-                {
-                    if ( type.IsPublic == false || type.IsAbstract ) continue;
-
-                    if ( type.Name.StartsWith(currentText, StringComparison.InvariantCultureIgnoreCase) ) {
-                        types.Add(type);
-                        continue;
-                    }
-                    if ( bAllowContains && type.Name.Contains(currentText) ) {
-                        types.Add(type);
-                        continue;
-                    }
+                SearchText = SearchText.Substring(0, SearchText.Length-2);      // chop off array [] suffix
+                GlobalTypeCache.FindTypesByPrefixMatch(SearchText, ref MatchesList, MaxResults);
+                foreach (var match in MatchesList) {
+                    Type useType = match.type.MakeArrayType();
+                    TypePopupMenu.AddItem(new MenuItem() { Text = match.name + "[]", CustomData = useType });
                 }
-
-                if (types.Count > MaxResults)
-                    break;
             }
-            return types;
+            else if (SearchText.StartsWith("list<", StringComparison.InvariantCultureIgnoreCase)) 
+            {
+                Type listType = typeof(List<>);
+                SearchText = SearchText.Remove(0, 5);
+                if (SearchText.EndsWith(">"))
+                    SearchText = SearchText.Remove(SearchText.Length-1, 1);
+                if (SearchText.Length == 0)
+                    return;
+                GlobalTypeCache.FindTypesByPrefixMatch(SearchText, ref MatchesList, MaxResults);
+                foreach (var match in MatchesList) {
+                    try {
+                        // sometimes this throws an exception?? what are the constraints on <T> for a List<T> ??
+                        Type useType = listType.MakeGenericType(match.type);
+                        string useName = TypeUtils.TypeToString(useType);
+                        TypePopupMenu.AddItem(new MenuItem() { Text = useName, CustomData = useType });
+                    } catch { }
+                }
+            }
+            else 
+            {
+                GlobalTypeCache.FindTypesByPrefixMatch(SearchText, ref MatchesList, MaxResults);
+                foreach (var match in MatchesList)
+                    TypePopupMenu.AddItem(new MenuItem() { Text = match.name, CustomData = match.type });
+            }
+
         }
 
 
