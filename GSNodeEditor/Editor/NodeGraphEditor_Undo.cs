@@ -4,6 +4,7 @@ using Gradientspace.NodeGraph;
 using Gradientspace.UI;
 using System;
 using System.Diagnostics;
+using System.Xml.Linq;
 
 namespace GSNodeEditor
 {
@@ -115,8 +116,24 @@ namespace GSNodeEditor
 				remove_output_pin_from_node(foundWidget);
 		}
 
+        internal void ApplyChange(RenameFunctionChange change, bool bApply)
+        {
+            if (bApply)
+                try_rename_function_internal(change.NodeIdentifier, change.FromName, change.ToName);
+            else
+                try_rename_function_internal(change.NodeIdentifier, change.ToName, change.FromName);
+        }
 
-	}
+        internal void ApplyChange(ModifyFunctionArgsChange change, bool bApply)
+        {
+            if (bApply)
+                update_function_arguments_internal(change.NodeIdentifier, change.ToInputArgs, change.ToReturnArgs);
+            else
+                update_function_arguments_internal(change.NodeIdentifier, change.FromInputArgs, change.FromReturnArgs);
+        }
+        
+
+    }
 
 
 
@@ -274,5 +291,58 @@ namespace GSNodeEditor
 			GraphEditor?.ApplyChange(this, bIsRemove ? true : false);
 		}
 	}
+
+
+    public class RenameFunctionChange : BaseNodeGraphEditorChange
+    {
+        public int NodeIdentifier;
+        public string FromName;
+        public string ToName;
+        public RenameFunctionChange(NodeGraphEditor editor, int nodeIdentifier, string from, string to)
+        {
+            Name = "Rename Function";
+            this.GraphEditor = editor;
+            NodeIdentifier = nodeIdentifier;
+            FromName = from;
+            ToName = to;
+        }
+        public override void Apply() {
+            GraphEditor?.ApplyChange(this, true);
+        }
+        public override void Revert() {
+            GraphEditor?.ApplyChange(this, false);
+        }
+    }
+
+
+    public class ModifyFunctionArgsChange : BaseNodeGraphEditorChange
+    {
+        public int NodeIdentifier;
+        public List<FunctionDefinitionNode.FunctionArg>? FromInputArgs;
+        public List<FunctionDefinitionNode.FunctionArg>? FromReturnArgs;
+        public List<FunctionDefinitionNode.FunctionArg>? ToInputArgs;
+        public List<FunctionDefinitionNode.FunctionArg>? ToReturnArgs;
+
+        public ModifyFunctionArgsChange(NodeGraphEditor editor, int nodeIdentifier, FunctionDefinitionNode NodeInInitialState)
+        {
+            Name = "Rename Function";
+            this.GraphEditor = editor;
+            NodeIdentifier = nodeIdentifier;
+            FromInputArgs = NodeInInitialState.Arguments.ToList();
+            FromReturnArgs = NodeInInitialState.Arguments.ToList();
+        }
+        public void Finalize(FunctionDefinitionNode NodeInFinalState)
+        {
+            ToInputArgs = NodeInFinalState.Arguments.ToList();
+            ToReturnArgs = NodeInFinalState.Arguments.ToList();
+        }
+        public override void Apply() {
+            GraphEditor?.ApplyChange(this, true);
+        }
+        public override void Revert() {
+            GraphEditor?.ApplyChange(this, false);
+        }
+    }
+
 
 }

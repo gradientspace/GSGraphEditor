@@ -3,6 +3,10 @@
 Bugs
 ===================
 
+-crash if remove a function input that has values wired to it in call nodes
+-call and return constants get wiped out if funcdef node is modified
+-ask to save on close if graph is modified
+-text entry field hotkeys don't always work...
 -ClutchKeyInputBehavior is broken by selection support. Need to add handling for InputBehavior Priority.
 -CustomDataItem API should be moved from NodeBase to INode
 
@@ -14,7 +18,6 @@ Graph Features
 - improve Functions
     - add Scope tracking during evaluation, fix up return hack so that functions can be nested
     - verify function setups in graph validation
-    - propagate changes to definition to return and call nodes
     - prevent wiring between main graph and function graphs
 - Scope static analysis (eg to make sure inside of a For loop doesn't connect to outside, prevent wiring errors, etc)
 - Explicit Cast node  (do we have this yet?)

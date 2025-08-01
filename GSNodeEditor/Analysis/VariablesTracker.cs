@@ -98,18 +98,15 @@ namespace GSNodeEditor
 
 			bool bPrintDebug = false;
 
-			GraphTraversalUtils.TraverseAllSequencePaths(Graph, Graph.StartNodeHandle,
+			GraphTraversalUtils.TraverseAllSequencePaths(Graph, 
 				(NodeBase node) => {
 					if (node is DefineVariableBaseNode varNode)
 						add_new_variable(varNode);
 				},
-				(NodeBase node, IConnectionInfo connInfo) => { 
-					if (bPrintDebug)
-						Debug.WriteLine($"PushScope: {node.GetNodeName()}:{connInfo.FromNodeOutputName}"); 
-				},
-				(NodeBase node, IConnectionInfo connInfo) => { 
-					if (bPrintDebug)
-						Debug.WriteLine($"PopScope: {node.GetNodeName()}:{connInfo.FromNodeOutputName}"); 
+				(NodeBase node, IConnectionInfo connInfo, GraphTraversalUtils.ScopeType scopeType, bool bIsOpeningScope) => {
+                    string PushPop = bIsOpeningScope ? "Push" : "Pop";
+                    if (bPrintDebug)
+						Debug.WriteLine($"{PushPop}Scope: {node.GetNodeName()}:{connInfo.FromNodeOutputName}"); 
 				}
 			);
 		}

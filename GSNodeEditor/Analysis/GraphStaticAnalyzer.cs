@@ -12,17 +12,20 @@ namespace GSNodeEditor
 		public ExecutionGraph Graph { get; protected set; }
 
 		public VariablesTracker Variables { get; protected set; }
+        public GraphFunctionsTracker Functions { get; protected set; }
 
-		public GraphStaticAnalyzer(ExecutionGraph graph)
+        public GraphStaticAnalyzer(ExecutionGraph graph)
 		{
 			Graph = graph;
 			Variables = new VariablesTracker(graph);
+            Functions = new GraphFunctionsTracker(graph);
 		}
 
 
 		public virtual void RebuildAll()
 		{
 			Variables.Rebuild();
+            Functions.Rebuild();
 		}
 	}
 }

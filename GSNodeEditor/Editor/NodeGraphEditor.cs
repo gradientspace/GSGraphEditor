@@ -9,7 +9,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using static Gradientspace.NodeGraph.DataFlowGraph;
 using static Gradientspace.NodeGraph.SerializationUtil;
 
 namespace GSNodeEditor
@@ -583,7 +582,107 @@ namespace GSNodeEditor
         }
 
 
-	}
+
+
+        /**
+         * Try to rename a function in the graph defined at NodeIdentifier (must be a FunctionDefinitionNode)
+         * that is currently named FromName to a new name ToName.
+         * Will fail (return false) if ToName already exists on some other function
+         */
+        public virtual bool TryRenameFunction(int NodeIdentifier, string FromName, string ToName)
+        {
+            Debug.Assert(IsInGraphEdits);
+            bool bOK = try_rename_function_internal(NodeIdentifier, FromName, ToName);
+            if ( bOK )
+                ActiveHistory?.AppendChange(new RenameFunctionChange(this, NodeIdentifier, FromName, ToName));
+            return bOK;
+        }
+        protected virtual bool try_rename_function_internal(int NodeIdentifier, string FromName, string ToName)
+        {
+            if (String.Compare(FromName, ToName, true) == 0)
+                return false;
+            INodeInfo foundNode = Graph.FindNodeFromIdentifier(NodeIdentifier);
+            FunctionDefinitionNode? funcDefNode = foundNode.Node as FunctionDefinitionNode ?? null;
+            if (funcDefNode == null)
+                return false;
+
+            // somewhere out there this already exists as part of a GraphStaticAnalyzer, but we
+            // have no clean way to access it here...
+            ExecutionGraph execGraph = (Graph as ExecutionGraph)!;
+            GraphFunctionsTracker funcTracker = new GraphFunctionsTracker(execGraph);
+            funcTracker.Rebuild();
+
+            // make sure we can complete this rename
+            if (funcTracker.CanRenameFunction(NodeIdentifier, FromName, ToName) == false) {
+                GlobalGraphOutput.AppendLog($"Rename function {FromName} to {ToName} ignored because a function named {ToName} already exists");
+                return false;
+            }
+
+            // update constant value on variable node
+            funcDefNode.UpdateFunctionName(ToName);
+
+            // update constant value on all other graph nodes using this variable name
+            // (TODO: should this be based on scope? ie could use same local variable name in multiple places....)
+            // ((maybe each variable should have a GUID like functions?))
+            foreach (FunctionCallNode callNode in execGraph.EnumerateNodesOfType<FunctionCallNode>()) {
+                if (String.Compare(callNode.FunctionID, funcDefNode.FunctionID, true) == 0) {
+                    callNode.UpdateFunctionName(ToName);
+                }
+            }
+
+            return true;
+        }
+
+
+        public virtual bool UpdateFunctionArguments(int NodeIdentifier,
+            List<FunctionDefinitionNode.FunctionArg>? NewArguments, List<FunctionDefinitionNode.FunctionArg>? NewReturns)
+        {
+            Debug.Assert(IsInGraphEdits);
+
+            FunctionDefinitionNode? funcDefNode = 
+                Graph.FindNodeFromIdentifier(NodeIdentifier).Node as FunctionDefinitionNode;
+            if (funcDefNode == null) 
+                return false;
+            ModifyFunctionArgsChange newChange = new ModifyFunctionArgsChange(this, NodeIdentifier, funcDefNode);
+            bool bApplied = update_function_arguments_internal(NodeIdentifier, NewArguments, NewReturns);
+            if (bApplied) {
+                newChange.Finalize(funcDefNode);
+                ActiveHistory?.AppendChange(newChange);
+            }
+            return bApplied;
+        }
+
+        public virtual bool update_function_arguments_internal(int NodeIdentifier,
+            List<FunctionDefinitionNode.FunctionArg>? NewArguments, List<FunctionDefinitionNode.FunctionArg>? NewReturns)
+        {
+            ExecutionGraph execGraph = (Graph as ExecutionGraph)!;
+            FunctionDefinitionNode? funcDefNode =
+                Graph.FindNodeFromIdentifier(NodeIdentifier).Node as FunctionDefinitionNode;
+            if (funcDefNode == null)
+                return false;
+
+            if (NewArguments != null)
+                funcDefNode.UpdateArguments(NewArguments);
+            if (NewReturns != null)
+                funcDefNode.UpdateReturnArguments(NewReturns);
+
+            foreach (FunctionReturnNode retNode in execGraph.EnumerateNodesOfType<FunctionReturnNode>()) {
+                if (String.Compare(retNode.FunctionID, funcDefNode.FunctionID, true) == 0) {
+                    retNode.LinkToFunction(funcDefNode);       // update link
+                }
+            }
+
+            foreach (FunctionCallNode callNode in execGraph.EnumerateNodesOfType<FunctionCallNode>()) {
+                if (String.Compare(callNode.FunctionID, funcDefNode.FunctionID, true) == 0) {
+                    callNode.LinkToFunction(funcDefNode);       // update link
+                }
+            }
+
+            return true;
+
+        }
+
+    }
 
 
 }

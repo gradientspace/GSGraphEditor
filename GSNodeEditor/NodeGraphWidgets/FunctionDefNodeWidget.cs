@@ -72,28 +72,57 @@ namespace GSNodeEditor
             ReturnArgsWidget.AnchorPlacement = new AnchorLocation(BoxPoints.TopLeft);
             AddChildWidget(ReturnArgsWidget);
 
-            // initialize variable panels with current values in node...
-            FunctionArgsWidget.SetVariables(FunctionNode.Arguments);
-            ReturnArgsWidget.SetVariables(FunctionNode.ReturnArguments);
-
             // listen for interactive changes
             FunctionArgsWidget.OnVariablesChanged += FunctionArgsWidget_OnVariablesChanged;
             ReturnArgsWidget.OnVariablesChanged += ReturnAgsWidget_OnVariablesChanged;
         }
 
+
+        private bool bIgnoreChanges = false;
+        public override void InitializeFromNode(INodeInfo nodeInfo)
+        {
+            base.InitializeFromNode(nodeInfo);
+
+            // these calls will result in the OnVariablesChanged events firing, which
+            // would result in an infinite loop of graph edits...
+            bIgnoreChanges = true;
+            FunctionArgsWidget.SetVariables(FunctionNode.Arguments);
+            ReturnArgsWidget.SetVariables(FunctionNode.ReturnArguments);
+            bIgnoreChanges = false;
+        }
+
+
         private void FunctionNameEntry_OnTextModified(TextEntryField sender, string oldText, string newText)
         {
-            FunctionNode.UpdateFunctionName(newText);
+            if (bIgnoreChanges) return;
+
+            NodeGraphView ParentView = this.ParentGraphWidget;
+            ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                string CurrentName = FunctionNode.FunctionName;
+                bool bSuccess = Editor.TryRenameFunction(this.GraphNodeIdentifier, CurrentName, newText);
+                if (bSuccess == false)
+                    FunctionNameEntry.SilentUpdateText(CurrentName);   // reset string to previous value
+            });
         }
 
         private void FunctionArgsWidget_OnVariablesChanged(VariablesPanelWidget sender)
         {
-            FunctionNode.UpdateArguments(FunctionArgsWidget.GetVariables());
+            if (bIgnoreChanges) return;
+
+            NodeGraphView ParentView = this.ParentGraphWidget;
+            ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                Editor.UpdateFunctionArguments(this.GraphNodeIdentifier, FunctionArgsWidget.GetVariables(), null);
+            });
         }
 
         private void ReturnAgsWidget_OnVariablesChanged(VariablesPanelWidget sender)
         {
-            FunctionNode.UpdateReturnArguments(ReturnArgsWidget.GetVariables());
+            if (bIgnoreChanges) return;
+
+            NodeGraphView ParentView = this.ParentGraphWidget;
+            ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                Editor.UpdateFunctionArguments(this.GraphNodeIdentifier, null, ReturnArgsWidget.GetVariables());
+            });
         }
 
         public override IWidgetView CreateDefaultView()
