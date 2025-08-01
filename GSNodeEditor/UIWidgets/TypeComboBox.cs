@@ -82,6 +82,23 @@ namespace GSNodeEditor
         }
 
 
+        public override bool OnNextKey(KeyState keyState)
+        {
+            if (base.OnNextKey(keyState))
+                return true;
+
+            // support arrow keys moving highlight up/down
+            if (keyState.KeyName == KeyNames.DownArrow || keyState.KeyName == KeyNames.UpArrow) {
+                if (keyState.KeyName == KeyNames.DownArrow)
+                    TypePopupMenu.HighlightNextItem();
+                else
+                    TypePopupMenu.HighlightPreviousItem();
+            }
+
+            return false;
+        }
+
+
         private void TypeComboBox_OnTextEditingStateUpdate(TextEntryField sender, bool bEditingEnded)
         {
             if (bEditingEnded)

@@ -227,7 +227,7 @@ namespace Gradientspace.UI
 
         // ITextEntryFocusTarget API
 
-        public bool OnNextKey(KeyState keyState)
+        public virtual bool OnNextKey(KeyState keyState)
         {
             if ( keyState.KeyName == KeyNames.Tab ) {
                 SystemKeyboardRouter.Instance.ClearTextEntryFocusTarget(EndFocusType.Commit);

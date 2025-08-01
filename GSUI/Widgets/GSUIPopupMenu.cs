@@ -151,21 +151,31 @@ namespace Gradientspace.UI
 
         public void SetHighlightedItemIndex(int Index)
         {
-            if (Index > 0 && Index < ActiveItems.Count)
+            if (Index > 0 && Index < ActiveItems.Count) {
                 HighlightedItemIndex = Index;
+                HoveredItem = null;
+            }
         }
 
         public void HighlightNextItem(bool bWrap = true)
         {
+            if (HighlightedItemIndex == -1 && HoveredItem != null)
+                HighlightedItemIndex = Items.FindIndex(0, (item) => { return item.Item == HoveredItem; });
+
             HighlightedItemIndex++;
             if (HighlightedItemIndex >= ActiveItems.Count)
                 HighlightedItemIndex = 0;
+            HoveredItem = null;
         }
         public void HighlightPreviousItem(bool bWrap = true)
         {
+            if (HighlightedItemIndex == -1 && HoveredItem != null)
+                HighlightedItemIndex = Items.FindIndex(0, (item) => { return item.Item == HoveredItem; });
+
             HighlightedItemIndex--;
             if (HighlightedItemIndex < 0)
                 HighlightedItemIndex = ActiveItems.Count-1;
+            HoveredItem = null;
         }
 
         public override IWidgetView CreateDefaultView()
@@ -205,6 +215,9 @@ namespace Gradientspace.UI
                 if (GetActiveView()?.HitQuery(deviceState.CurrentPosition, out hitResult) ?? false)
                 {
                     MenuItem? NewHoveredItem = (hitResult.HitSubItem as MenuItem);
+
+                    // reset manual highlight
+                    ClearHighlightedItemIndex();
 
                     if (NewHoveredItem != HoveredItem)
                     {
