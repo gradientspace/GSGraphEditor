@@ -355,8 +355,10 @@ namespace GraphEditorAppV2
 				case Key.Right: keyState = KeyState.RightArrow; break;
 				case Key.Up: keyState = KeyState.UpArrow; break;
 				case Key.Down: keyState = KeyState.DownArrow; break;
+                case Key.Home: keyState = KeyState.Home; break;
+                case Key.End: keyState = KeyState.End; break;
 
-				default:
+                default:
 				{
 					char Character = (keyString != null) ? keyString[0] : '\0';
 					if (Char.IsControl(Character) == false)

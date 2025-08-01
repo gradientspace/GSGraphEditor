@@ -34,7 +34,9 @@ namespace Gradientspace.UI
         UpArrow,
         DownArrow,
         LeftArrow,
-        RightArrow
+        RightArrow,
+        Home,
+        End
     }
 
     public struct KeyState
@@ -101,6 +103,9 @@ namespace Gradientspace.UI
         public static KeyState RightArrow = new KeyState(KeyType.FunctionalKey, KeyNames.RightArrow);
         public static KeyState UpArrow = new KeyState(KeyType.FunctionalKey, KeyNames.UpArrow);
         public static KeyState DownArrow = new KeyState(KeyType.FunctionalKey, KeyNames.DownArrow);
+        public static KeyState Home = new KeyState(KeyType.FunctionalKey, KeyNames.Home);
+        public static KeyState End = new KeyState(KeyType.FunctionalKey, KeyNames.End);
+
 
         public void ConfigureModifiers(in InputDeviceState deviceState)
         {

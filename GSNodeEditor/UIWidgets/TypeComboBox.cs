@@ -75,12 +75,27 @@ namespace GSNodeEditor
                 AxisAlignedBox2f TextEntryBounds = this.GetActiveView()?.BoundsQuery(this.GetAnchor()) ?? new AxisAlignedBox2f();
                 PopupMenuAnchor.AnchorOrigin = TextEntryBounds.TopRight + new Vector2f(0, 2);
 
+                RefreshPopMenuItems();
+
                 AddChildWidget(TypePopupMenu);
 
                 bPopupMenuVisible = true;
             }
         }
 
+
+
+        public override bool TryHandleTextEntryHotkey(KeyState keyState)
+        {
+            if (keyState.KeyName == KeyNames.Enter && TypePopupMenu.ActiveSelectedItem != null) {
+                MenuItem activeItem = TypePopupMenu.ActiveSelectedItem;
+                this.OnEndFocus(ITextEntryFocusTarget.EndFocusType.Cancel);     // losefocus -> TextEditingStateUpdate -> hidepopup -> clear ActiveSelectedItem...
+                activeItem.OnClicked?.Invoke();              // this is always null
+                this.TypePopupMenu_OnMenuItemSelected(TypePopupMenu, activeItem);
+                return true;
+            }
+            return base.TryHandleTextEntryHotkey(keyState);
+        }
 
         public override bool OnNextKey(KeyState keyState)
         {
@@ -119,22 +134,27 @@ namespace GSNodeEditor
 
         private void TypeComboBox_OnTextEditingUpdate(TextEntryField sender, string newText)
         {
+            RefreshPopMenuItems(newText);
+        }
+
+
+        private void RefreshPopMenuItems(string? useText = null)
+        {
+            string UsingText = useText ?? this.Text;
             TypePopupMenu.ClearItems();
 
             bool bAllowContains = false;
             int MaxResults = 10;
-            if ( newText.Length >= 2 )
-            {
-                List<Type> matches = UpdateActiveTypeMatches(newText, bAllowContains, MaxResults);
+            if (UsingText.Length >= 3) {
+                List<Type> matches = UpdateActiveTypeMatches(UsingText, bAllowContains, MaxResults);
 
                 foreach (Type t in matches)
                     TypePopupMenu.AddItem(new MenuItem() { Text = t.Name, CustomData = t });
-            }
-            else
-            {
+            } else {
                 TypePopupMenu.AddItem(new MenuItem() { Text = "(type to search...)" });
             }
         }
+
 
         // TODO: this should probably be run async, and maybe be smarter than just max-matches...
         private List<Type> UpdateActiveTypeMatches(string currentText, bool bAllowContains, int MaxResults = 10)

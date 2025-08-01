@@ -68,6 +68,7 @@ namespace Gradientspace.UI
         {
             Items.Clear();
             ClearHighlightedItemIndex();
+            HoveredItem = null;
         }
 
         public void SortItems()
@@ -142,6 +143,10 @@ namespace Gradientspace.UI
         public MenuItem? HighlightedItem { get { 
                 return (HighlightedItemIndex >= 0 && HighlightedItemIndex < ActiveItems.Count) ? ActiveItems[HighlightedItemIndex].Item : null; 
             } 
+        }
+
+        public MenuItem? ActiveSelectedItem {
+            get { return HighlightedItem ?? HoveredItem; }
         }
 
         public void ClearHighlightedItemIndex()

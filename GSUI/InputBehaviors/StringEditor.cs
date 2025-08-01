@@ -58,6 +58,7 @@ namespace Gradientspace.UI
 
             switch (keyState.KeyName)
             {
+                // todo support ctrl+left/right arrow for word-jumps...
                 case KeyNames.LeftArrow:
                     if ( keyState.bShiftDown )
                     {
@@ -122,6 +123,26 @@ namespace Gradientspace.UI
                     }
                     return true;
 
+
+                case KeyNames.Home:
+                    if (keyState.bShiftDown) {
+                        SelectionStartLocation = 0;
+                        CursorLocation = 0;
+                    } else {
+                        ClearSelection();
+                        CursorLocation = 0;
+                    }
+                    return true;
+
+                case KeyNames.End:
+                    if (keyState.bShiftDown) {
+                        SelectionEndLocation = CurrentString.Length;
+                        CursorLocation = CurrentString.Length;
+                    } else {
+                        ClearSelection();
+                        CursorLocation = CurrentString.Length;
+                    }
+                    return true;
 
                 case KeyNames.Backspace:
                     if (HasSelection)

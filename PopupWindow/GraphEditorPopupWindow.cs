@@ -200,6 +200,8 @@ namespace PopupWindow
                 case VK.VK_RIGHT: keyState = KeyState.RightArrow; break;
                 case VK.VK_UP: keyState = KeyState.UpArrow; break;
                 case VK.VK_DOWN: keyState = KeyState.DownArrow; break;
+                case VK.VK_HOME: keyState = KeyState.Home; break;
+                case VK.VK_END: keyState = KeyState.End; break;
 
                 default:
                     {
