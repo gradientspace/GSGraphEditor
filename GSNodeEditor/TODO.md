@@ -16,6 +16,7 @@ Graph Features
 ===================
 - Local Variables
 - improve Functions
+    - visibility toggle for function signature edit panel
     - add Scope tracking during evaluation, fix up return hack so that functions can be nested
     - verify function setups in graph validation
     - prevent wiring between main graph and function graphs
@@ -32,6 +33,13 @@ Graph Features
 - show by-ref vs by-value in pin tooltip
 - by-ref in-to-out dashed lines
 
+
+===================
+CodeGen
+===================
+- start on it
+
+
 ===================
 Core Editor
 ==================
@@ -39,7 +47,6 @@ Core Editor
 - Undo/Redo
     - need to expire low-level textedit changes after it goes out of focus
     - code nodes text
-    - does it work for functions?
 - Copy/Paste   (do it via temp serialize to json??)
 - Mac support (seems to be working
 - Linux support

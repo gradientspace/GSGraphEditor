@@ -71,15 +71,7 @@ namespace GSNodeEditor
             AnchorTo(nodeAnchor);
             AnchorPlacement = new AnchorLocation(BoxPoints.TopLeft);
 
-            WidgetStyle = NodeWidgetStyles.DefaultNode;
-            if (IsPlaceholderNode)
-                WidgetStyle = NodeWidgetStyles.PlaceholderNode;
-            else if (node.Node is FunctionCallNode || node.Node is FunctionReturnNode)
-                WidgetStyle = NodeWidgetStyles.FunctionCallNode;
-            else if (node.Node is DefineVariableBaseNode)
-                WidgetStyle = NodeWidgetStyles.VariableNode;
-            else if (node.Node is AccessVariableNode)
-                WidgetStyle = NodeWidgetStyles.VariableAccessNode;
+            WidgetStyle = NodeWidgetStyles.GetStyleByNodeType(node.Node);
 
             SetInputBehavior(new BasicWidgetInputBehavior(this, this) { Depth = 0, EnableCapture = false } );
 

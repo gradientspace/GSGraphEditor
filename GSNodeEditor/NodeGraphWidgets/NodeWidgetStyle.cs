@@ -1,4 +1,5 @@
 ﻿using g3;
+using Gradientspace.NodeGraph;
 using Gradientspace.UI;
 
 namespace GSNodeEditor
@@ -57,6 +58,25 @@ namespace GSNodeEditor
         public static NodeWidgetStyle VariableAccessNode = new NodeWidgetStyle() { NodeStyle = VariableAccessNodeStyleSet };
         public static NodeWidgetStyle FunctionDefNode = new NodeWidgetStyle() { NodeStyle = FunctionDefNodeStyleSet };
         public static NodeWidgetStyle FunctionCallNode = new NodeWidgetStyle() { NodeStyle = FunctionCallNodeStyleSet };
+
+
+
+
+        public static NodeWidgetStyle GetStyleByNodeType(INode? Node)
+        {
+            if (Node is PlaceholderNodeBase)
+                return NodeWidgetStyles.PlaceholderNode;
+            else if (Node is FunctionDefinitionNode)
+                return NodeWidgetStyles.FunctionDefNode;
+            else if (Node is FunctionCallNode || Node is FunctionReturnNode)
+                return NodeWidgetStyles.FunctionCallNode;
+            else if (Node is DefineVariableBaseNode)
+                return NodeWidgetStyles.VariableNode;
+            else if (Node is AccessVariableNode)
+                return NodeWidgetStyles.VariableAccessNode;
+
+            return NodeWidgetStyles.DefaultNode;
+        }
     }
 
 }
