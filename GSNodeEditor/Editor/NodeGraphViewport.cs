@@ -9,6 +9,8 @@ using Gradientspace.NodeGraph.Geometry;
 using Gradientspace.UI;
 using Gradientspace.NodeGraph.CodeNodes;
 using Gradientspace.NodeGraph.PythonNodes;
+using System.Text;
+using Microsoft.CodeAnalysis;
 
 //using Gradientspace.NodeGraph.Testing;
 //using Gradientspace.NodeGraph.GeometryBuffersTestLibrary;
@@ -504,6 +506,17 @@ namespace GSNodeEditor
 			return false;
 		}
 
+        // IGraphEditorActions interface method
+        public bool TryImport()
+        {
+            string InitialPath = NodeEditorConfig.GetActiveSaveLoadPath();
+            if (HostAPI != null && HostAPI.ShowBlockingOpenFileDialog(DefaultExtension, DefaultFileFilter, DefaultFileName, InitialPath, out string SelectedFilename)) {
+                if (ImportGraphFromFile(SelectedFilename))
+                    return true;
+            }
+            return false;
+        }
+
         //! returns false if graph is unsaved, ie must do Save-As
         public bool CanSaveCurrentGraph { 
             get { return CurrentGraphFilePath.Length > 0 && File.Exists(CurrentGraphFilePath); } 
@@ -568,7 +581,8 @@ namespace GSNodeEditor
                 using (FileStream fileStream = File.OpenRead(Filename))
                 {
                     NodeLayoutCache layoutCache = new NodeLayoutCache();
-                    bool bOK = ExecutionGraphSerializer.Restore(fileStream, readGraph, layoutCache);
+                    ExecutionGraphSerializer.RestoreGraphOptions options = new ExecutionGraphSerializer.RestoreGraphOptions() { LayoutProvider = layoutCache };
+                    bool bOK = ExecutionGraphSerializer.Restore(fileStream, readGraph, options);
 
                     UsingExecutionGraph = readGraph;
                     UsingExecutionGraphEvaluator = new ExecutionGraphEvaluator(UsingExecutionGraph);
@@ -584,9 +598,26 @@ namespace GSNodeEditor
 					return true;
                 }
             } catch (Exception e) {
-                GlobalGraphOutput.AppendError($"ERROR SAVING LOADING GRAPH FROM {Filename} : {e.Message}");
+                GlobalGraphOutput.AppendError($"ERROR LOADING GRAPH FROM {Filename} : {e.Message}");
             }
             return false;
+        }
+
+
+        public bool ImportGraphFromFile(string Filename)
+        {
+            bool bResult = false;
+            try {
+                string FileText = File.ReadAllText(Filename);
+                ExecuteGraphEdit((NodeGraphEditor editor) => {
+                    bResult = editor.TryImportGraphFromJson(FileText, out List<int>? NewNodeIDs);
+                    if ( bResult && NewNodeIDs != null)
+                        SelectionManager.SelectNodes(NewNodeIDs, true);
+                });
+            } catch (Exception e) {
+                GlobalGraphOutput.AppendError($"ERROR IMPORTING GRAPH FROM {Filename} : {e.Message}");
+            }
+            return bResult;
         }
 
 

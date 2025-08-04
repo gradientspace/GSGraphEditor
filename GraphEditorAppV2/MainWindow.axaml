@@ -27,6 +27,7 @@
 						<MenuItem Header="_New" Click="New_OnClick" />
 						<Separator/>
 						<MenuItem Header="_Open..." Click="Open_OnClick" />
+						<MenuItem Header="_Import..." Click="Import_OnClick" />
 						<MenuItem Header="_Save" Click="Save_OnClick"/>
 						<MenuItem Header="_Save As..." Click="SaveAs_OnClick"/>
 						<Separator/>

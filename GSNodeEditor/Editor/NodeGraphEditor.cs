@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using static Gradientspace.NodeGraph.SerializationUtil;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxTokenParser;
 
 namespace GSNodeEditor
 {
@@ -681,6 +682,83 @@ namespace GSNodeEditor
             return true;
 
         }
+
+
+
+
+
+        public virtual bool TryImportGraphFromJson(string GraphJSonText, out List<int>? NewNodeIDs)
+        {
+            NewNodeIDs = null;
+            ImportGraphFromJSonChange? newChange = null;
+            Debug.Assert(IsInGraphEdits);
+
+            // TODO need some kind of better error handling here...graph might be left in a broken state.
+            // Maybe we need a simple way to push/pop full-graph serializations...
+            try {
+                newChange = import_graph_from_json(GraphJSonText, null);
+                if (newChange != null) {
+                    ActiveHistory?.AppendChange(newChange);
+                    NewNodeIDs = new List<int>(newChange.NodeIDMap.Values);
+                }
+            } catch (Exception e) {
+                GlobalGraphOutput.AppendError($"[NodeGraphEditor] Caught exception importing graph from json : {e.Message}");
+            }
+            return (newChange != null);
+        }
+        protected virtual ImportGraphFromJSonChange? import_graph_from_json(string GraphJSonText, ImportGraphFromJSonChange? change)
+        {
+            ImportGraphFromJSonChange? newChange = null;
+
+            byte[] byteArray = Encoding.UTF8.GetBytes(GraphJSonText);
+            using (MemoryStream memStream = new MemoryStream(byteArray)) {
+                ExecutionGraph execGraph = (Graph as ExecutionGraph)!;
+                NodeLayoutCache layoutCache = new NodeLayoutCache();
+                ExecutionGraphSerializer.RestoreGraphOptions options = new ExecutionGraphSerializer.RestoreGraphOptions() {
+                    LayoutProvider = layoutCache,
+                    NodeIDMapOut = new Dictionary<int, int>(),
+                    IncludeNodeFunc = (NodeType nodeType, int id, string name) => { return !(nodeType.ClassType == typeof(SequenceStartNode)); }
+                };
+
+                if (change != null)
+                    options.NodeIDMapIn = change.NodeIDMap;
+
+                bool bOK = ExecutionGraphSerializer.Restore(memStream, execGraph, options);
+                if (!bOK)
+                    throw new Exception("ExecutionGraphSerializer.Restore returned false");
+                if (options.NodeIDMapOut.Count > 0) 
+                {
+                    if (change == null) {       // only creating new change if we are in initial call, and not redo
+                        newChange = new ImportGraphFromJSonChange(this) {
+                            ImportedJSonText = GraphJSonText,
+                            NodeIDMap = options.NodeIDMapOut,
+                        };
+                    }
+
+                    // after restoring graph, new nodes and connections will have no widgets. So rebuild them.
+                    GraphView.UpdateAfterUntrackedGraphChanges();
+                    layoutCache.ApplyToGraphView(GraphView, options.NodeIDMapOut);
+                }
+            }
+            return newChange;
+        }
+        protected virtual void revert_import_graph(ImportGraphFromJSonChange change)
+        {
+            // on revert we just delete everything that we added...
+            foreach (int NodeID in change.NodeIDMap.Values) {
+
+                List<IConnectionInfo> connections = new List<IConnectionInfo>();
+                foreach (EConnectionType connectionType in Enum.GetValues<EConnectionType>()) {
+                    Graph.FindAllNodeConnections(NodeID, ref connections, connectionType);
+                    foreach (IConnectionInfo connectionInfo in connections) 
+                        remove_connection_internal(connectionInfo);
+                    connections.Clear();
+                }
+                remove_node_internal(NodeID);
+            }
+        }
+
+
 
     }
 

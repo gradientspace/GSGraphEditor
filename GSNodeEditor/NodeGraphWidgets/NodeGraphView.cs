@@ -324,6 +324,29 @@ namespace GSNodeEditor
 			UpdateAllConnections();
 		}
 
+        public void UpdateAfterUntrackedGraphChanges()
+        {
+            if (SourceGraph == null) throw new Exception("SourceGraph is null...?");
+
+            // create new widgets
+            foreach (INodeInfo NodeInfo in SourceGraph.EnumerateNodes())  {
+                if (FindNode(NodeInfo.Identifier) != null) continue;
+                CreateAndInitializeNewNodeWidget(NodeInfo);
+            }
+            // create new connections
+            foreach (IConnectionInfo connectionInfo in SourceGraph.EnumerateConnections(EConnectionType.Data)) {
+                if (FindConnection(connectionInfo) != null) continue;
+                AddConnection(connectionInfo);
+            }
+            foreach (IConnectionInfo connectionInfo in SourceGraph.EnumerateConnections(EConnectionType.Sequence)) {
+                if (FindConnection(connectionInfo) != null) continue;
+                AddConnection(connectionInfo);
+            }
+
+            // run full-graph validation
+            UpdateAllConnections();
+        }
+
 
         // update cached ConnectionState in each ConnectionView by querying the graph
         public void UpdateAllConnections()
@@ -556,6 +579,16 @@ namespace GSNodeEditor
             foreach (var pair in StoredLocationInfo)
             {
                 graphView.SetNodeLocationFromString(pair.Key, pair.Value.locationString);
+            }
+        }
+
+        public virtual void ApplyToGraphView(NodeGraphView graphView, Dictionary<int,int> NodeIDMap)
+        {
+            foreach (var pair in StoredLocationInfo) {
+                if ( NodeIDMap.TryGetValue(pair.Key, out int NewID) )
+                    graphView.SetNodeLocationFromString(NewID, pair.Value.locationString);
+                else
+                    graphView.SetNodeLocationFromString(pair.Key, pair.Value.locationString);
             }
         }
     }

@@ -201,7 +201,12 @@ public partial class MainWindow : Window
 			UpdateRecentFilesMenu();
 		SkiaView.Focus(NavigationMethod.Pointer);
 	}
-	private void Save_OnClick(object? sender, RoutedEventArgs e)
+    private void Import_OnClick(object? sender, RoutedEventArgs e)
+    {
+        SkiaView.ActiveViewport.TryImport();
+        SkiaView.Focus(NavigationMethod.Pointer);
+    }
+    private void Save_OnClick(object? sender, RoutedEventArgs e)
 	{
 		if (SkiaView.ActiveViewport.TrySave())
 			UpdateRecentFilesMenu();

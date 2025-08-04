@@ -59,6 +59,18 @@ namespace GSNodeEditor
             }
         }
 
+        public void SelectNodes(IEnumerable<int> NodeIDs, bool bReplace)
+        {
+            if (bReplace) {
+                SelectedNodes.Clear();
+                SelectedConnections.Clear();
+            }
+            foreach (int NodeID in NodeIDs) {
+                if (SelectedNodes.Contains(NodeID) == false)
+                    SelectedNodes.Add(NodeID);
+            }
+        }
+
         public void DeselectNode(int NodeID)
         {
             if (SelectedNodes.Contains(NodeID))

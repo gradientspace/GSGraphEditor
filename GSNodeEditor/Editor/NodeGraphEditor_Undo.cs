@@ -131,7 +131,15 @@ namespace GSNodeEditor
             else
                 update_function_arguments_internal(change.NodeIdentifier, change.FromInputArgs, change.FromReturnArgs);
         }
-        
+
+
+        internal void ApplyChange(ImportGraphFromJSonChange change, bool bApply)
+        {
+            if (bApply)
+                import_graph_from_json(change.ImportedJSonText, change);
+            else
+                revert_import_graph(change);
+        }
 
     }
 
@@ -335,6 +343,25 @@ namespace GSNodeEditor
         {
             ToInputArgs = NodeInFinalState.Arguments.ToList();
             ToReturnArgs = NodeInFinalState.Arguments.ToList();
+        }
+        public override void Apply() {
+            GraphEditor?.ApplyChange(this, true);
+        }
+        public override void Revert() {
+            GraphEditor?.ApplyChange(this, false);
+        }
+    }
+
+
+
+    public class ImportGraphFromJSonChange : BaseNodeGraphEditorChange
+    {
+        public string ImportedJSonText = "";
+        public Dictionary<int, int> NodeIDMap = new Dictionary<int, int>();
+        public ImportGraphFromJSonChange(NodeGraphEditor editor)
+        {
+            Name = "Import Graph";
+            this.GraphEditor = editor;
         }
         public override void Apply() {
             GraphEditor?.ApplyChange(this, true);
