@@ -1,16 +1,16 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
-using SkiaSharp;
-using System.Diagnostics;
-
 using g3;
 using Gradientspace.NodeGraph;
-using Gradientspace.NodeGraph.Nodes;
-using Gradientspace.NodeGraph.Geometry;
-using Gradientspace.UI;
 using Gradientspace.NodeGraph.CodeNodes;
+using Gradientspace.NodeGraph.Geometry;
+using Gradientspace.NodeGraph.Nodes;
 using Gradientspace.NodeGraph.PythonNodes;
-using System.Text;
+using Gradientspace.UI;
 using Microsoft.CodeAnalysis;
+using SkiaSharp;
+using System.Diagnostics;
+using System.IO;
+using System.Text;
 
 //using Gradientspace.NodeGraph.Testing;
 //using Gradientspace.NodeGraph.GeometryBuffersTestLibrary;
@@ -415,9 +415,19 @@ namespace GSNodeEditor
             {
                 History.TryStepForward();
                 return true;
-            }               
+            } 
+            else if (ActiveChord.IsChord2(KeyNames.Ctrl, 'C')) 
+            {
+                CopySelectionToClipboard();
+                return true;
+            }
+            else if (ActiveChord.IsChord2(KeyNames.Ctrl, 'V')) 
+            {
+                PasteFromClipboard();
+                return true;
+            }
 
-			return false;
+            return false;
         }
 
         private bool KeyboardRouter_OnNewPressedKey(KeyboardRouter sender, KeyState[] NewKeyChord)
@@ -558,7 +568,9 @@ namespace GSNodeEditor
             try {
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
-                    ExecutionGraphSerializer.Save(UsingExecutionGraph!, memoryStream, CurrentGraphView);
+                    ExecutionGraphSerializer.SaveGraphOptions options = new ExecutionGraphSerializer.SaveGraphOptions();
+                    options.LayoutProvider = CurrentGraphView;
+                    ExecutionGraphSerializer.Save(UsingExecutionGraph!, memoryStream, options);
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     File.Delete(Filename);
                     using (FileStream fileStream = File.OpenWrite(Filename)) {
@@ -620,6 +632,58 @@ namespace GSNodeEditor
             return bResult;
         }
 
+
+        public void CopySelectionToClipboard()
+        {
+            if (SelectionManager.HasNodeSelection == false) return;
+            List<int> SelectedNodes = new List<int>(SelectionManager.CurrentNodeSelection);
+
+            try {
+                using (MemoryStream memStream = new MemoryStream()) {
+                    ExecutionGraphSerializer.SaveGraphOptions options = new ExecutionGraphSerializer.SaveGraphOptions();
+                    options.IncludeNodeFunc = (NodeBase node) => { return SelectedNodes.Contains(node.GraphIdentifier); };
+                    options.LayoutProvider = CurrentGraphView;
+                    ExecutionGraphSerializer.Save(UsingExecutionGraph!, memStream, options);
+                    memStream.Seek(0, SeekOrigin.Begin);
+                    string CopiedText = Encoding.UTF8.GetString(memStream.GetBuffer());
+                    HostAPI?.SetSystemClipboardText(CopiedText);
+                }
+            } catch (Exception e) {
+                GlobalGraphOutput.AppendError($"Error saving Graph Selection to Clipboard : {e.Message}");
+            }
+        }
+
+
+        public void PasteFromClipboard()
+        {
+            string? clipboardText = HostAPI?.GetSystemClipboardText() ?? null;
+            if (clipboardText != null)
+                PasteGraphFromJson(clipboardText);
+        }
+        public void PasteGraphFromJson(string PastedText)
+        {
+            try {
+                if ( ExecutionGraphSerializer.IsSerializedGraphJSon(PastedText) == false ) {
+                    GlobalGraphOutput.AppendLog($"Pasted text was not identified as saved node graph data, ignoring");
+                    return;
+                }
+                ExecuteGraphEdit((NodeGraphEditor editor) => {
+                    bool bResult = editor.TryImportGraphFromJson(PastedText, out List<int>? NewNodeIDs);
+                    if (bResult && NewNodeIDs != null) {
+                        SelectionManager.SelectNodes(NewNodeIDs, true);
+
+                        Vector2f PasteTranslation = new Vector2f(25, 25); 
+                        foreach (int NodeID in SelectionManager.CurrentNodeSelection) {
+                            NodeWidget? widget = CurrentGraphView.FindNode(NodeID);
+                            if (widget != null)
+                                widget.Position += PasteTranslation;
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                GlobalGraphOutput.AppendError($"Error pasting Clipboard as graph nodes : {e.Message}");
+            }
+        }
 
 
         public void AddNewFunction()

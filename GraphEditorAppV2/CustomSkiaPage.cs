@@ -22,6 +22,7 @@ using Gradientspace.UI;
 using System.Threading;
 using Gradientspace.NodeGraph;
 using Avalonia.Win32.Input;
+using Avalonia.Interactivity;
 
 
 
@@ -65,11 +66,11 @@ namespace GraphEditorAppV2
 			// NodeGraphViewport by default sets a kinda hacky backdoor key handler for space key.
 			// Remove that in this usage (better fix tbd)
 			SystemKeyboardRouter.Instance.OnNewPressedKeyFunc = null;
-		}
+            SystemKeyboardRouter.Instance.OnTextCopied += KeyboardRouter_OnTextCopied;
 
-		public NodeGraphViewport ActiveViewport { get { return GraphView; } }
+        }
 
-
+        public NodeGraphViewport ActiveViewport { get { return GraphView; } }
 
 
 		// ICustomHitTest impl - always hit?
@@ -162,7 +163,7 @@ namespace GraphEditorAppV2
 			RawDeviceState.CtrlButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Control));
 			RawDeviceState.ShiftButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Shift));
 
-			if (bHaveDownEvent) { 
+			if (bHaveDownEvent) {
 				GraphView.OnPointerDown(RawDeviceState);
 				e.Handled = true;
 			}
@@ -334,6 +335,19 @@ namespace GraphEditorAppV2
 		}
 
 
+        protected override void OnGotFocus(GotFocusEventArgs e)
+        {
+            base.OnGotFocus(e);
+            GraphView.OnBeginFocus();
+        }
+
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+            base.OnLostFocus(e);
+            GraphView.OnEndFocus();
+        }
+
+
 		static public KeyState ConvertToKeyState(Key key, string? keyString, InputDeviceState deviceState)
 		{
 			KeyState keyState = KeyState.Unknown;
@@ -376,10 +390,16 @@ namespace GraphEditorAppV2
 			return keyState;
 		}
 
+        private void KeyboardRouter_OnTextCopied(KeyboardRouter sender, string NewCopiedText)
+        {
+            TopLevel? topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel != null && topLevel.Clipboard != null)
+                topLevel.Clipboard.SetTextAsync(NewCopiedText).Wait();
+        }
 
 
 
-		class SkiaCanvasDrawOp : ICustomDrawOperation
+        class SkiaCanvasDrawOp : ICustomDrawOperation
         {
 			//static int FrameCounter = 0;
 

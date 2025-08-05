@@ -22,6 +22,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Shapes;
 using System.Text;
+using System.Threading.Tasks;
 
 
 namespace GraphEditorAppV2;
@@ -99,6 +100,12 @@ public partial class MainWindow : Window
 		if (NodeEditorConfig.LoadLastGraphOnStartup)
 			TryLoadGraphFromPath( NodeEditorConfig.EnumerateRecentFiles().FirstOrDefault() );
 	}
+
+    protected override void OnGotFocus(GotFocusEventArgs e)
+    {
+        SkiaView.Focus(NavigationMethod.Pointer);
+    }
+
 
 
 	private bool bActiveLogFilterOutput = true;
@@ -223,6 +230,24 @@ public partial class MainWindow : Window
 		if (path != null && File.Exists(path) )
 			SkiaView.ActiveViewport.OpenGraphFile(path);
 	}
+
+
+    private void Copy_OnClick(object? sender, RoutedEventArgs e)
+    {
+        SkiaView.ActiveViewport.CopySelectionToClipboard();
+        SkiaView.Focus(NavigationMethod.Pointer);
+    }
+    private async void Paste_OnClick(object? sender, RoutedEventArgs e)
+    {
+        // get clipboard text
+        if (Clipboard == null)
+            return;
+        string? text = await Clipboard.GetTextAsync();
+        if (text != null) {
+            SkiaView.ActiveViewport.PasteGraphFromJson(text);
+            SkiaView.Focus(NavigationMethod.Pointer);
+        }
+    }
 
 
     private void NewFunction_OnClick(object? sender, RoutedEventArgs e)

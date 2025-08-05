@@ -35,17 +35,16 @@
 						<Separator/>
 						<MenuItem Header="_Exit" Click="Exit_OnClick"/>
 					</MenuItem>
-					<MenuItem Header="_Graph">
+					<MenuItem Header="_Edit">
+						<MenuItem Header="_Copy" Click="Copy_OnClick" />
+						<MenuItem Header="_Paste" Click="Paste_OnClick" />
+						<Separator/>
 						<MenuItem Header="_New Function" Click="NewFunction_OnClick" />
 					</MenuItem>
 					<MenuItem Header="Settings">
 						<CheckBox Name="Option_LoadLastOnStartup" Click="LoadLastOnStartup_OnToggle">Load Last Graph On Startup</CheckBox>
 						<Separator/>
 						<CheckBox Name="Option_EnableGraphDebug" Click="GraphDebugging_OnToggle">Enable Graph Debug</CheckBox>
-					</MenuItem>
-					<MenuItem Header="_Edit">
-						<MenuItem Header="Copy"/>
-						<MenuItem Header="Paste"/>
 					</MenuItem>
 				</Menu>
 
