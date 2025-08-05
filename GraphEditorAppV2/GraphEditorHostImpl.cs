@@ -123,5 +123,20 @@ namespace GraphEditorAppV2
 		}
 
 
-	}
+        public virtual async void SetSystemClipboardText(string NewText)
+        {
+            TopLevel? topLevel = TopLevel.GetTopLevel(AppMainWindow);
+            if (topLevel != null && topLevel.Clipboard != null)
+                await topLevel.Clipboard.SetTextAsync(NewText);
+        }
+
+        public virtual string? GetSystemClipboardText()
+        {
+            TopLevel? topLevel = TopLevel.GetTopLevel(AppMainWindow);
+            if (topLevel != null && topLevel.Clipboard != null)
+                return topLevel.Clipboard.GetTextAsync().Result;
+            return null;
+        }
+
+    }
 }

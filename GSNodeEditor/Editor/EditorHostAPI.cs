@@ -31,5 +31,8 @@ namespace GSNodeEditor
             string? InitialFolder,
             out string SelectedFilename);
 
+        void SetSystemClipboardText(string NewText);
+        string? GetSystemClipboardText();
+
     }
 }

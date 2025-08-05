@@ -118,6 +118,15 @@ namespace PopupWindow
             return bSelected && SelectedFilename.Length > 0;
         }
 
+        public virtual void SetSystemClipboardText(string NewText)
+        {
+            Win32WindowUtils.SetClipboardText(NewText);
+        }
+
+        public virtual string? GetSystemClipboardText()
+        {
+            return Win32WindowUtils.GetClipboardText();
+        }
 
         //public SoundHandle InitSound(string assetPath)
         //{
