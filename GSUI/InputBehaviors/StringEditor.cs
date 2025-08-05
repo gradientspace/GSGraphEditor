@@ -183,13 +183,13 @@ namespace Gradientspace.UI
             if (NumSelected == 0)
             {
                 TempString = TempString.Insert(CursorLocation, PastedString);
-                NewCursorLocation += PastedString.Length;
+                NewCursorLocation = CursorLocation + PastedString.Length;
             }
             else
             {
                 TempString = TempString.Remove(SelectionStartLocation, NumSelected);
-                NewCursorLocation = SelectionStartLocation;
-                TempString = TempString.Insert(NewCursorLocation, PastedString);
+                TempString = TempString.Insert(SelectionStartLocation, PastedString);
+                NewCursorLocation = SelectionStartLocation + PastedString.Length;
             }
 
             if (TryUpdateString(TempString))
