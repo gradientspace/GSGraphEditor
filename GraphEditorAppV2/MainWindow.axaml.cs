@@ -256,6 +256,14 @@ public partial class MainWindow : Window
         SkiaView.Focus(NavigationMethod.Pointer);
     }
 
+    private void GenerateCode_OnClick(object? sender, RoutedEventArgs e)
+    {
+        ExecutionGraph? graph = SkiaView.ActiveViewport.CurrentGraphView.GetGraph() as ExecutionGraph;
+        ExecutionGraphCodeGen codeGen = new ExecutionGraphCodeGen(graph!);
+        string result = codeGen.GenerateCode();
+        File.WriteAllTextAsync("c:\\scratch\\CODEGEN.cs", result);
+    }
+
 
     private void GraphDebugging_OnToggle(object? sender, RoutedEventArgs e)
 	{

@@ -40,6 +40,8 @@
 						<MenuItem Header="_Paste" Click="Paste_OnClick" />
 						<Separator/>
 						<MenuItem Header="_New Function" Click="NewFunction_OnClick" />
+						<Separator/>
+						<MenuItem Header="_Generate Code" Click="GenerateCode_OnClick" />
 					</MenuItem>
 					<MenuItem Header="Settings">
 						<CheckBox Name="Option_LoadLastOnStartup" Click="LoadLastOnStartup_OnToggle">Load Last Graph On Startup</CheckBox>
