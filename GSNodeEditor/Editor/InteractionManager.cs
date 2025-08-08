@@ -707,14 +707,15 @@ namespace GSNodeEditor
                     }
                     else
                     {
-                        Type OutputType = FromNode.Node.OutputWidgets[FromNode.PinIndex].DataType.DataType;
+                        GraphDataType OutputDataType = FromNode.Node.OutputWidgets[FromNode.PinIndex].DataType;
+                        Type OutputType = OutputDataType.DataType;
                         (NodeInputPinWidget? FirstDataInput, int FirstDataIndex) = NewNode.FindFirstDataInput();
 
 						if ( OutputType == typeof(ControlFlowOutputID) )
                         {
                             Editor.AddConnection(FromNode.Node, FromNode.PinIndex, NewNode, -1, EConnectionType.Sequence, true, false);
                         }
-                        else if (FirstDataInput != null && FirstDataInput.DataType.DataType == OutputType)
+                        else if (FirstDataInput != null && Editor.Graph.CanConnectTypes(OutputDataType, FirstDataInput.DataType) )
                         {
                             Editor.AddConnection(FromNode.Node, FromNode.PinIndex, NewNode, FirstDataIndex, EConnectionType.Data,
                                 AutoReplaceExistingConnections, AutoConnectSequencePath);

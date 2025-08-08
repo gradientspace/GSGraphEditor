@@ -332,9 +332,13 @@ namespace GSNodeEditor
 		public void PopulateNodeLibrary(NodeLibrary Library, NodeAndPin? FromNodeAndPin = null)
         {
             // determine type of incoming pin, if there is one. Used to filter nodes list
-			Type? FromPinDataType = null;
+            GraphDataType FromPinGraphDataType = GraphDataType.Default;
+            bool bHaveValidFromPin = false;
 			if (FromNodeAndPin != null && FromNodeAndPin.bIsSequencePin == false) {
-				FromPinDataType = (FromNodeAndPin.DataType.DataType != typeof(ControlFlowOutputID)) ? FromNodeAndPin.DataType.DataType : null;
+                if (FromNodeAndPin.DataType.DataType != typeof(ControlFlowOutputID)) {
+                    FromPinGraphDataType = FromNodeAndPin.DataType;
+                    bHaveValidFromPin = true;
+                }
 			}
 
 			Dictionary<string, NodesCategory> CategoryMap = new Dictionary<string, NodesCategory>();
@@ -364,8 +368,8 @@ namespace GSNodeEditor
 			NodesMenu.ClearItems();
 
             // build out the menus for all nodes with a given input type, or just all nodes
-            if (FromPinDataType != null) {
-                foreach (NodeType nodeType in Library.EnumerateAllNodesWithFirstPinType(FromPinDataType)) {
+            if (bHaveValidFromPin) {
+                foreach (NodeType nodeType in Library.EnumerateAllNodesWithFirstAssignablePinType(FromPinGraphDataType)) {
                     NodesMenu.AddItem( new MenuItem() { Text = nodeType.GetNodeTypeUIName(), CustomData = nodeType } );
                     TryAddToCategory(nodeType);
                 }

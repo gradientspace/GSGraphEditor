@@ -30,7 +30,7 @@ namespace GSNodeEditor
             GraphView = graphView;
         }
 
-        protected INodeGraph Graph { get { return GraphView.GetGraph(); } }
+        public INodeGraph Graph { get { return GraphView.GetGraph(); } }
 
 
 

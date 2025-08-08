@@ -54,6 +54,12 @@ namespace GSNodeEditor
             SetInputBehavior(new ExtendableWidgetInputBehavior(this, this) { Depth = 0 } );
 
             InlineWidgetAnchor = new BoxAnchor();
+            InlineWidgetAnchor.Offset = new Vector2f(-WidgetStyle.BaseMargins.Right/2, 0);      // why does this have to be /2?
+
+            // set CompactMode on the pin if the input is marked HiddenLabel
+            // (maybe not ideal way to do this...)
+            if ((sourceInputInfo.Input.GetInputFlags() & ENodeInputFlags.HiddenLabel) != 0)
+                CompactMode = true;
         }
 
         public override bool IsOutputPin { get { return false; } }
@@ -190,8 +196,12 @@ namespace GSNodeEditor
                             textEntry.Text = ((float)defaultValue).ToString("0.0#######");
                         else if (defaultValue is double)
                             textEntry.Text = ((double)defaultValue).ToString("0.0#######");
-                        else if ((defaultValue is int) || (defaultValue is short) || (defaultValue is long))
+                        else if (defaultValue is int)
                             textEntry.Text = ((int)defaultValue).ToString();
+                        else if (defaultValue is short)
+                            textEntry.Text = ((short)defaultValue).ToString();
+                        else if (defaultValue is long)
+                            textEntry.Text = ((long)defaultValue).ToString();
                         else if (defaultValue is string)
                             textEntry.Text = (string)defaultValue;
                     }
@@ -427,11 +437,18 @@ namespace GSNodeEditor
                 StyleCache.GetCachedPaint(SourcePinWidget.WidgetStyle.StandardStyle, SKStyleCache.EPaintType.Text);
             WidgetMargins PinMargins = SourcePinWidget.WidgetStyle.BaseMargins;
 
-            float InputTextWidth = (SourcePinWidget.CompactMode) ? 5 : PinTextPaint.MeasureText(SourcePinWidget.GetPinLabel());
-            UpdateWidthForInlineWidgets(ref InputTextWidth);
+            bool bHasInlineWidget = (SourcePinWidget.InlineWidget != null);
+
+            float AccumPinWidth = 0;
+            // why don't we need left margin in compact mode w/ inline widget??
+            if (SourcePinWidget.CompactMode)
+                AccumPinWidth += (bHasInlineWidget) ? 0 : 2*PinMargins.TotalWidth;
+            else
+                AccumPinWidth += PinMargins.Left + PinTextPaint.MeasureText(SourcePinWidget.GetPinLabel()) + (bHasInlineWidget ? PinMargins.Left : 0);
+            UpdateWidthForInlineWidgets(ref AccumPinWidth);
 
             TextHeightInfo PinTextHeightInfo = StyleCache.GetCachedFontHeightInfo(SourcePinWidget.WidgetStyle.StandardStyle);
-            float InputPinRight = (InputTextWidth + PinMargins.TotalWidth);
+            float InputPinRight = (AccumPinWidth + PinMargins.Right);
 
             //float PinHeight = (SourcePinWidget.CompactMode) ? 5 : PinTextHeightInfo.MaxTotalHeight;
             float PinHeight = PinTextHeightInfo.MaxTotalHeight;
