@@ -1,3 +1,9 @@
+==================
+Renaming
+==================
+GraphNodeFunctionLibrary -> NodeFunctionLibrary
+MappedLibraryName - > MappedFunctionLibraryName
+
 
 ===================
 Bugs
@@ -15,6 +21,10 @@ Bugs
 ===================
 Graph Features
 ===================
+- ConstExpr node/function tags, and handling. This would allow Pure nodes to not be re-evaluated, if entire pure-scope is constexpr
+    - the hard part is handling /inputs/ to constexpr nodes from /outside/ a pure-scope?
+- code-functions defined like graph functions (ie separate thing)
+- one-liner code expressions?
 - Local Variables
 - improve Functions
     - visibility toggle for function signature edit panel
@@ -38,7 +48,12 @@ Graph Features
 ===================
 CodeGen
 ===================
-- start on it
+- handle graph functions and function calls
+- handle other controlflows
+- handle ref and out args in librarynode
+- some way to handle multiple sequence output wire going into a single sequence input
+   - also manually-created loops...this is effectively a 'goto'...
+- some way to allow NodeFuncs to customize code...maybe do it at the Library level? or a side-by-side `_CodeGen` func?
 
 
 ===================
@@ -48,7 +63,6 @@ Core Editor
 - Undo/Redo
     - need to expire low-level textedit changes after it goes out of focus
     - code nodes text
-- Copy/Paste   (do it via temp serialize to json??)
 - Mac support (seems to be working
 - Linux support
 - open graph on drag/drop
