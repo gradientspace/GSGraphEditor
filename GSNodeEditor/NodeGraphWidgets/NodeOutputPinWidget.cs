@@ -26,15 +26,15 @@ namespace GSNodeEditor
 
         public override bool IsOutputPin { get { return true; } }
 
-        public bool IsSequenceOutputPin { get { return DataType.DataType == typeof(ControlFlowOutputID); } }
+        public bool IsSequenceOutputPin { get { return DataType.CSType == typeof(ControlFlowOutputID); } }
 
         public override string GetDataTypeAsString()
         {
-            if (DataType.DataType == typeof(ControlFlowOutputID))
+            if (DataType.CSType == typeof(ControlFlowOutputID))
                 return "(Exec)";
 
 			string? CustomTypeString = DataType.ExtendedTypeInfo?.GetCustomTypeString() ?? null;
-			return CustomTypeString ?? TypeUtils.TypeToString(DataType.DataType);
+			return CustomTypeString ?? TypeUtils.TypeToString(DataType.CSType);
         }
 
 

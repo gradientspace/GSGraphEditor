@@ -176,7 +176,7 @@ namespace GSNodeEditor
 
         bool ArePinTypesCompatible(GraphDataType outputType, GraphDataType inputType)
         {
-            if (outputType.DataType == inputType.DataType && inputType.IsDynamic == false )     // what is this IsDynamic check accomplishing?
+            if (outputType.CSType == inputType.CSType && inputType.IsDynamic == false )     // what is this IsDynamic check accomplishing?
                 return true;
             return GraphView.GetGraph().CanConnectTypes(outputType, inputType);
         }
@@ -189,7 +189,7 @@ namespace GSNodeEditor
             {
                 NodeOutputPinWidget outputPinWidget = ((NodeOutputPinWidget)pinWidget)!;
                 int PinIndex = FromWidget.FindOutputPinIndexByName(outputPinWidget.OutputName);
-                bool bIsControlFlowPin = (outputPinWidget.DataType.DataType == typeof(ControlFlowOutputID));
+                bool bIsControlFlowPin = (outputPinWidget.DataType.CSType == typeof(ControlFlowOutputID));
                 ActiveDrawConnectionFrom = new NodeAndPin(FromWidget, outputPinWidget, PinIndex, false) { bIsSequencePin = false };
                 ConnectionStartPosition = ActiveDrawConnectionFrom.Node.GetOutputPinConnectionPoint(ActiveDrawConnectionFrom.PinIndex);
                 ActiveDrawConnectionType = (bIsControlFlowPin) ? EDrawConnectionType.FromOutputSequencePin : EDrawConnectionType.FromOutputPin;
@@ -513,7 +513,7 @@ namespace GSNodeEditor
                 };
                 bool bHaveLossyConversion = (ActiveDrawConnectionFrom != null && ActiveDrawConnectionTo != null &&
                     ActiveDrawConnectionFrom.bIsSequencePin == false && ActiveDrawConnectionTo.bIsSequencePin == false &&
-                    TypeUtils.IsLossyNumericConversion(ActiveDrawConnectionFrom.DataType.DataType, ActiveDrawConnectionTo.DataType.DataType));
+                    TypeUtils.IsLossyNumericConversion(ActiveDrawConnectionFrom.DataType.CSType, ActiveDrawConnectionTo.DataType.CSType));
                 if (bHaveLossyConversion)
                     UseFillPaint = WarningDataTypeFillPaint;
 
@@ -634,7 +634,7 @@ namespace GSNodeEditor
 					new NodeType(useNodeType), Location, FromNode,
 					(INodeInfo nodeInfo) => {
 						if (nodeInfo.Node is CreateGlobalVariableNode varNode && FromNode != null)
-                            varNode.Initialize(FromNode.Pin.DataType.DataType);
+                            varNode.Initialize(FromNode.Pin.DataType.CSType);
 					});
 
 			};
@@ -708,7 +708,7 @@ namespace GSNodeEditor
                     else
                     {
                         GraphDataType OutputDataType = FromNode.Node.OutputWidgets[FromNode.PinIndex].DataType;
-                        Type OutputType = OutputDataType.DataType;
+                        Type OutputType = OutputDataType.CSType;
                         (NodeInputPinWidget? FirstDataInput, int FirstDataIndex) = NewNode.FindFirstDataInput();
 
 						if ( OutputType == typeof(ControlFlowOutputID) )

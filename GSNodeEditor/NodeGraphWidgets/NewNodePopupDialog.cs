@@ -335,7 +335,7 @@ namespace GSNodeEditor
             GraphDataType FromPinGraphDataType = GraphDataType.Default;
             bool bHaveValidFromPin = false;
 			if (FromNodeAndPin != null && FromNodeAndPin.bIsSequencePin == false) {
-                if (FromNodeAndPin.DataType.DataType != typeof(ControlFlowOutputID)) {
+                if (FromNodeAndPin.DataType.CSType != typeof(ControlFlowOutputID)) {
                     FromPinGraphDataType = FromNodeAndPin.DataType;
                     bHaveValidFromPin = true;
                 }
@@ -396,7 +396,7 @@ namespace GSNodeEditor
 
 			Type? FromPinDataType = null;
 			if (FromNodeAndPin != null && FromNodeAndPin.bIsSequencePin == false) {
-				FromPinDataType = (FromNodeAndPin.DataType.DataType != typeof(ControlFlowOutputID)) ? FromNodeAndPin.DataType.DataType : null;
+				FromPinDataType = (FromNodeAndPin.DataType.CSType != typeof(ControlFlowOutputID)) ? FromNodeAndPin.DataType.CSType : null;
 			}
 
 			VariablesCategory = new NodesCategory("Variables...", Style);
@@ -429,7 +429,7 @@ namespace GSNodeEditor
 
             Type? FromPinDataType = null;
             if (FromNodeAndPin != null && FromNodeAndPin.bIsSequencePin == false) {
-                FromPinDataType = (FromNodeAndPin.DataType.DataType != typeof(ControlFlowOutputID)) ? FromNodeAndPin.DataType.DataType : null;
+                FromPinDataType = (FromNodeAndPin.DataType.CSType != typeof(ControlFlowOutputID)) ? FromNodeAndPin.DataType.CSType : null;
             }
 
             FunctionsCategory = new NodesCategory("Functions...", Style);

@@ -1,7 +1,7 @@
 ==================
 Renaming
 ==================
-GraphDataType.DataType -> CSharpType
+
 
 
 ===================

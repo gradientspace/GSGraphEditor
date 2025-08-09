@@ -25,7 +25,7 @@ namespace GSNodeEditor
 
         public virtual string GetDataTypeAsString()
         {
-            return TypeUtils.TypeToString(DataType.DataType);
+            return TypeUtils.TypeToString(DataType.CSType);
         }
 
 

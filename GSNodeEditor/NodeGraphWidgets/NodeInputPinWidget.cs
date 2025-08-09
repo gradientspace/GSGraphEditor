@@ -67,7 +67,7 @@ namespace GSNodeEditor
         public override string GetDataTypeAsString()
         {
             string? CustomTypeString = DataType.ExtendedTypeInfo?.GetCustomTypeString() ?? null;
-            return CustomTypeString ?? TypeUtils.TypeToString(DataType.DataType);
+            return CustomTypeString ?? TypeUtils.TypeToString(DataType.CSType);
         }
 
 
@@ -99,7 +99,7 @@ namespace GSNodeEditor
 
             IInlinePinWidgetProvider? UseWidgetProvider = null;
 
-            Type pinType = DataType.DataType;
+            Type pinType = DataType.CSType;
 
             (object? defaultValue, bool bDefaultIsDefined) = Graph.GetNodeConstantValue(OwningNodeIdentifier, InputName);
             IConnectionInfo Connection = Graph.FindConnectionTo(OwningNodeIdentifier, InputName);
@@ -148,9 +148,9 @@ namespace GSNodeEditor
             if (InlineType == EInlineWidgetType.None && Connection.IsValid == true)
             {
                 bool bHaveFromType = Graph.GetNodeOutputType(Connection.FromNodeIdentifier, Connection.FromNodeOutputName, out GraphDataType FromDataType);
-                if (bHaveFromType && FromDataType.DataType != pinType && TypeUtils.IsLossyNumericConversion(FromDataType.DataType, pinType)) {
+                if (bHaveFromType && FromDataType.CSType != pinType && TypeUtils.IsLossyNumericConversion(FromDataType.CSType, pinType)) {
                     ShowConversionWarning = true;
-                    FromTypeConversion = FromDataType.DataType;
+                    FromTypeConversion = FromDataType.CSType;
                 }
             }
 
@@ -534,7 +534,7 @@ namespace GSNodeEditor
                 TextHeightInfo DataTypeTextHeightInfo = SKStyleCache.MeasureTextHeightInfo(DataTypeTextPaint);
                 SKPaint WarningDataTypeFillPaint = new SKPaint { Color = SKColors.DarkOrange };
                 const float Margin = 3;
-                string TypeText = TypeUtils.TypeToString(SourcePinWidget.DataType.DataType) + " -> " + TypeUtils.TypeToString(SourcePinWidget.FromTypeConversion!);
+                string TypeText = TypeUtils.TypeToString(SourcePinWidget.DataType.CSType) + " -> " + TypeUtils.TypeToString(SourcePinWidget.FromTypeConversion!);
                 SKRect Bounds = SKRect.Empty;
                 float Width = DataTypeTextPaint.MeasureText(TypeText, ref Bounds);
                 Bounds.Left -= (Margin + 2); Bounds.Right += (Margin + 1); Bounds.Bottom += Margin; Bounds.Top -= Margin;
