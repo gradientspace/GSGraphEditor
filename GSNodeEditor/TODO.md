@@ -1,8 +1,6 @@
 ==================
 Renaming
 ==================
-GraphNodeFunctionLibrary -> NodeFunctionLibrary
-MappedLibraryName - > MappedFunctionLibraryName
 GraphDataType.DataType -> CSharpType
 
 

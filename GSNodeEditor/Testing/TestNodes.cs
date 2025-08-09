@@ -33,7 +33,7 @@ namespace Gradientspace.NodeGraph.Nodes
     }
 
 
-    [GraphNodeFunctionLibrary("AAAATest")]
+    [NodeFunctionLibrary("AAAATest")]
     public static class TestNodeFunctionLibrary
     {
         [NodeFunction]

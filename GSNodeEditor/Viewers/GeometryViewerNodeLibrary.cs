@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace GSNodeEditor
 {
-    [GraphNodeFunctionLibrary("GeometryViewer")]
+    [NodeFunctionLibrary("GeometryViewer")]
     public static class GeometryViewerNodeLibrary
     {
         public static void Initialize()
