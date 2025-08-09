@@ -377,6 +377,10 @@ namespace GSNodeEditor
         public virtual bool IsPlaceholderNode { get { 
                 return ParentNodeInfo.Node is PlaceholderNodeBase; } }
 
+        public virtual bool IsPureNode { get { 
+                return (ParentNodeInfo.Node!.GetNodeFlags() & ENodeFlags.IsPure) != 0; } }
+
+
         // support for custom sequence pins
         public virtual bool HasConfigurableSequencePins { get { return false; } }
         public virtual void UpdateSequencePins() { }

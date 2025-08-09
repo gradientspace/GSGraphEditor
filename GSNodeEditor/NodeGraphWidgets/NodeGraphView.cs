@@ -175,9 +175,13 @@ namespace GSNodeEditor
                 // Probably library nodes should have seq pins unless explicitly specified
                 // User code nodes definitely should...
 
-                (NodeInputPinWidget? firstDataInput, int index) = nodeWidget.FindFirstDataInput();
-                bool bHasInputs = (firstDataInput != null);
-                nodeWidget.SetStandardSequencePinsEnabled(bHasInputs, bHasInputs);
+                bool bIsPure = nodeWidget.IsPureNode;
+                bool bForceEnableSeqPins = (nodeWidget.ParentNode!.GetNodeFlags() & ENodeFlags.EnableSequencePins) != 0;
+                bool bEnable = (bIsPure == false) || bForceEnableSeqPins;
+
+                //(NodeInputPinWidget? firstDataInput, int index) = nodeWidget.FindFirstDataInput();
+                //bool bHasInputs = (firstDataInput != null);
+                nodeWidget.SetStandardSequencePinsEnabled(bEnable, bEnable);
             }
         }
 

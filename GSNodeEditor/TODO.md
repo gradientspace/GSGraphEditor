@@ -20,7 +20,11 @@ Bugs
 ===================
 Graph Features
 ===================
-- ConstExpr node/function tags, and handling. This would allow Pure nodes to not be re-evaluated, if entire pure-scope is constexpr
+- nodeconstant default values  (copy from archetype?)
+- support for serializing NodeFlags? required if they are used to store edit states...could compare w/ archetype? (but then delta-serialize issues...)
+- support for toggling the EnableSequencePins flag on nodes (has to remove sequence connections, and so go through Editor...)
+    - does that make sense? another way would be to have some kind of mini-pin that toggles on if it is wired...
+- allow Pure nodes to not be re-evaluated, if entire pure-scope is clean...
     - the hard part is handling /inputs/ to constexpr nodes from /outside/ a pure-scope?
 - code-functions defined like graph functions (ie separate thing)
 - one-liner code expressions?
