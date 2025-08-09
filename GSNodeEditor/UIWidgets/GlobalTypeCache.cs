@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
