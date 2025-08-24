@@ -8,6 +8,7 @@ Renaming
 Bugs
 ===================
 
+-can't type -1 into integer field?
 -crash if remove a function input that has values wired to it in call nodes
 -call and return constants get wiped out if funcdef node is modified
 -ask to save on close if graph is modified
@@ -20,6 +21,7 @@ Bugs
 ===================
 Graph Features
 ===================
+- docking branch node  (to simplify common bool/branch pattern)
 - nodeconstant default values  (copy from archetype?)
 - support for serializing NodeFlags? required if they are used to store edit states...could compare w/ archetype? (but then delta-serialize issues...)
 - support for toggling the EnableSequencePins flag on nodes (has to remove sequence connections, and so go through Editor...)
