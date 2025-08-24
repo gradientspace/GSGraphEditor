@@ -2,7 +2,7 @@
 Renaming
 ==================
 
-
+rename Gradientspace. libraries to Core.
 
 ===================
 Bugs

@@ -1,10 +1,11 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
-using System;
-using System.Diagnostics;
 using g3;
 using Gradientspace.NodeGraph;
 using Gradientspace.UI;
 using SkiaSharp;
+using System;
+using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace GSNodeEditor
@@ -320,8 +321,25 @@ namespace GSNodeEditor
 
         public override bool GetTooltipStrings(out string? tooltip, out string[]? extendedTooltip)
         {
-            tooltip = ParentNodeInfo.Node.GetType().FullName!;
+            tooltip = null;
             extendedTooltip = null;
+            if (ParentNode == null)
+                return false;
+
+            string ShowNamespace = ParentNode!.GetNodeNamespace();
+            if (ParentNode is NodeBase baseNode) {
+                if ( baseNode.LibraryNodeType != null)
+                    ShowNamespace = baseNode.LibraryNodeType.UICategory;
+            }
+            tooltip =  $"[{ShowNamespace}] {ParentNode!.GetNodeName()}";
+
+            extendedTooltip = new string[2];
+
+            if ( ParentNode is LibraryFunctionNodeBase libNode )
+                extendedTooltip[0] = $"{libNode.LibraryClass!.Namespace}.{libNode.LibraryClass!.Name}.{libNode.Function!.Name}";
+            else
+                extendedTooltip[0] = ParentNode.GetType().ToString();
+            extendedTooltip[1] = $"NodeID: {ParentNodeInfo.Identifier}";
             return true;
         }
 
