@@ -130,6 +130,7 @@ namespace GSNodeEditor
                 widgetScene.RemoveSource(CurrentGraphView.WidgetSource);
                 CurrentGraphView.OnNewNodeAdded -= CurrentGraphView_OnNewNodeAdded;
                 CurrentGraphView.OnExistingNodeUpdated -= CurrentGraphView_OnExistingNodeUpdated;
+                CurrentGraphView.OnNodeWidgetModified -= CurrentGraphView_OnNodeWidgetModified;
             }
 
             widgetScene = new WidgetScene();
@@ -138,6 +139,7 @@ namespace GSNodeEditor
             CurrentGraphView = new NodeGraphView();
             CurrentGraphView.OnNewNodeAdded += CurrentGraphView_OnNewNodeAdded;
             CurrentGraphView.OnExistingNodeUpdated += CurrentGraphView_OnExistingNodeUpdated;
+            CurrentGraphView.OnNodeWidgetModified += CurrentGraphView_OnNodeWidgetModified;
 
             selectionManager = new SelectionManager(this);
             InteractionManager = new InteractionManager(CurrentGraphView, this);
@@ -788,6 +790,10 @@ namespace GSNodeEditor
         private void CurrentGraphView_OnExistingNodeUpdated(object? sender, NodeWidget newNodeWidget)
         {
             ConfigureNewNodeWidget(newNodeWidget);
+        }
+        private void CurrentGraphView_OnNodeWidgetModified(object? sender, NodeWidget newNodeWidget)
+        {
+            MarkGraphDirty();
         }
 
 

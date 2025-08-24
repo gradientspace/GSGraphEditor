@@ -23,7 +23,10 @@ namespace GSNodeEditor
         protected FixedPointAnchor nodeAnchor;
         public Vector2f Position {
             get { return nodeAnchor.AnchorOrigin; }
-            set { nodeAnchor.AnchorOrigin = value; }
+            set { 
+                nodeAnchor.AnchorOrigin = value;
+                ParentGraphWidget.NotifyNodeWidgetModified(this);
+            }
         }
 
 

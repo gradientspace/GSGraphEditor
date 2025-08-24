@@ -25,12 +25,6 @@ namespace GSNodeEditor
 
         SimpleWidgetSource ActiveWidgetSet;
 
-        NodeWidget? HoveredNode;
-
-        NodeWidget? DraggingNode;
-        Vector2f DragStartPosition;
-        Vector2f InitialNodePosition;
-
         SKPaint NodeLabelTextPaint;
         Vector2f LabelMargins;
 
@@ -43,7 +37,8 @@ namespace GSNodeEditor
 
         public delegate void NewNodeEventHandler(object? sender, NodeWidget newNodeWidget);
         public event NewNodeEventHandler? OnNewNodeAdded;
-        public event NewNodeEventHandler? OnExistingNodeUpdated;
+        public event NewNodeEventHandler? OnExistingNodeUpdated;    // fires when a node's structure is changed (ie pins, types, etc)
+        public event NewNodeEventHandler? OnNodeWidgetModified;     // fires when a node widget is updated (ie position)
 
         public WeakReference<INodeGraphEditManager>? ActiveEditManager;
 
@@ -51,7 +46,6 @@ namespace GSNodeEditor
         {
             Nodes = new List<NodeWidget>();
             HighlightNodes = new List<NodeWidget>();
-            HoveredNode = null;
 
             DataConnections = new List<ConnectionView>();
             SequenceConnections = new List<ConnectionView>();
@@ -227,6 +221,11 @@ namespace GSNodeEditor
             }
         }
 
+        internal virtual void NotifyNodeWidgetModified(NodeWidget widget)
+        {
+            OnNodeWidgetModified?.Invoke(this, widget);
+        }
+
         public ConnectionView? AddConnection(IConnectionInfo connectionInfo)
         {
             ConnectionView NewConnection = new ConnectionView();
@@ -361,46 +360,6 @@ namespace GSNodeEditor
 				c.ConnectionState = SourceGraph!.GetConnectionState(c.ConnectionInfo);
 		}
 
-
-		public bool HaveHoverHit
-        {
-            get { return HoveredNode != null; }
-        }
-
-
-        public bool OnBeginDrag(Vector2f CursorPosition)
-        {
-            if (HaveHoverHit)
-            {
-                DraggingNode = HoveredNode;
-                DragStartPosition = CursorPosition;
-                InitialNodePosition = DraggingNode!.Position;
-                return true;
-            }
-            return false;
-        }
-        public bool OnEndDrag()
-        {
-            if (InDragAction)
-            {
-                DraggingNode = null;
-                return true;
-            }
-            return false;
-        }
-        public bool InDragAction
-        {
-            get { return DraggingNode != null; }
-        }
-        public void OnUpdateDrag(Vector2f NewCursorPosition)
-        {
-            if (InDragAction)
-            {
-                Vector2f Delta = NewCursorPosition - DragStartPosition;
-                Vector2f NewNodePosition = InitialNodePosition + Delta;
-                DraggingNode!.Position = NewNodePosition;
-            }
-        }
 
 
         public void UpdateLayout()
