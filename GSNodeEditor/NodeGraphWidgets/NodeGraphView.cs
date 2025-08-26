@@ -229,7 +229,8 @@ namespace GSNodeEditor
         public ConnectionView? AddConnection(IConnectionInfo connectionInfo)
         {
             ConnectionView NewConnection = new ConnectionView();
-            if ( NewConnection.InitializeFromConnection(connectionInfo, this) )
+            bool bConnectionOK = NewConnection.InitializeFromConnection(connectionInfo, this);
+            if (bConnectionOK)
             {
                 if (connectionInfo.ConnectionType == EConnectionType.Data)
                     DataConnections.Add(NewConnection);
@@ -240,6 +241,31 @@ namespace GSNodeEditor
 
                 return NewConnection;
             }
+
+            // if we could not add a data connection, force-add the missing pin(s) and 
+            // then create a connection
+            if (connectionInfo.ConnectionType == EConnectionType.Data) 
+            {
+                NodeWidget? FoundFrom = FindNode(connectionInfo.FromNodeIdentifier);
+                NodeWidget? FoundTo = FindNode(connectionInfo.ToNodeIdentifier);
+                if (FoundFrom != null && FoundTo != null) {
+                    int FromPin = FoundFrom.FindOutputPinIndexByName(connectionInfo.FromNodeOutputName);
+                    if (FromPin < 0) {
+                        FoundFrom.AddMissingOutputPin(connectionInfo.FromNodeOutputName);
+                        FromPin = FoundFrom.FindOutputPinIndexByName(connectionInfo.FromNodeOutputName);
+                    }
+                    int ToPin = FoundTo.FindInputPinIndexByName(connectionInfo.ToNodeInputName);
+                    if (ToPin < 0) {
+                        FoundTo.AddMissingInputPin(connectionInfo.ToNodeInputName);
+                        ToPin = FoundTo.FindInputPinIndexByName(connectionInfo.ToNodeInputName);
+                    }
+                    bConnectionOK = NewConnection.InitializeFromConnection(connectionInfo, this);
+                    DataConnections.Add(NewConnection);
+                    return NewConnection;
+                }
+            }
+
+
             return null;
         }
 

@@ -54,6 +54,7 @@ namespace GSNodeEditor
 
 
         public static NodeWidgetStyle DefaultNode = new NodeWidgetStyle();
+        public static NodeWidgetStyle MissingNode = new NodeWidgetStyle() { NodeStyle = NodeErrorStyleSet };
         public static NodeWidgetStyle PlaceholderNode = new NodeWidgetStyle() { NodeStyle = NodePlaceholderStyleSet };
         public static NodeWidgetStyle VariableNode = new NodeWidgetStyle() { NodeStyle = VariableDefNodeStyleSet };
         public static NodeWidgetStyle VariableAccessNode = new NodeWidgetStyle() { NodeStyle = VariableAccessNodeStyleSet };

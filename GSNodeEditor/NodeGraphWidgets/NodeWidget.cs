@@ -128,6 +128,42 @@ namespace GSNodeEditor
 
 
 
+        public virtual void AddMissingInputPin(string InputName)
+        {
+            INodeInputInfo inputInfo = new INodeInputInfo();
+            inputInfo.InputName = InputName;
+            inputInfo.Input = new MissingNodeInput();
+            NodeInputPinWidget inputWidget = new NodeInputPinWidget(inputInfo);
+            InputWidgets.Add(inputWidget);
+            AddChildWidget(inputWidget);
+
+            RelativeBoxAnchor boxAnchor = new RelativeBoxAnchor(nodeAnchor);
+            inputWidget.AnchorTo(boxAnchor);
+            InputWidgetAnchors.Add(boxAnchor);
+
+            inputWidget.WidgetStyle = PinWidgetStyles.InputOutputStyleSet_Missing;
+        }
+
+        public virtual void AddMissingOutputPin(string OutputName)
+        {
+            INodeOutputInfo outputInfo = new INodeOutputInfo();
+            outputInfo.OutputName = OutputName;
+            outputInfo.Output = new MissingNodeOutput();
+            NodeOutputPinWidget outputWidget = new NodeOutputPinWidget(outputInfo);
+            OutputWidgets.Add(outputWidget);
+            AddChildWidget(outputWidget);
+
+            RelativeBoxAnchor boxAnchor = new RelativeBoxAnchor(nodeAnchor);
+            boxAnchor.BoxPoint = BoxPoints.CenterRight;
+            outputWidget.AnchorPlacement = new AnchorLocation(BoxPoints.CenterRight);
+            outputWidget.AnchorTo(boxAnchor);
+            OutputWidgetAnchors.Add(boxAnchor);
+
+            outputWidget.WidgetStyle = PinWidgetStyles.InputOutputStyleSet_Missing;
+        }
+
+
+
         public virtual void Reinitialize()
         {
             foreach (NodeInputPinWidget inputWidget in InputWidgets)

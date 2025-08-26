@@ -70,6 +70,8 @@ namespace GSNodeEditor
             //InlinePinWidgetSystem.Instance.RegisterProvider(
             //    typeof(SourceCodeDataType), new SourceCodeInlinePinWidgetProvider());
             NodeWidgetCustomizationSystem.Instance.RegisterProvider(
+                typeof(MissingNodeErrorNode), new MissingNodeWidgetProvider());
+            NodeWidgetCustomizationSystem.Instance.RegisterProvider(
                 typeof(FunctionDefinitionNode), new FunctionDefnNodeWidgetProvider());
             NodeWidgetCustomizationSystem.Instance.RegisterProvider(
                 typeof(CodeFunctionNode), new CodeFunctionNodeWidgetProvider());

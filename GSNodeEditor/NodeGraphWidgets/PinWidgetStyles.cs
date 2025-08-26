@@ -41,6 +41,10 @@ namespace GSNodeEditor
         public static WidgetStyle OutputStandardStyle_ControlFlow = new WidgetStyle() { BackgroundColor = Colorf.VideoWhite, TextSize = PinTextSize, FontName = PinFont };
         public static NodePinWidgetStyle OutputStyleSet_ControlFlow = new NodePinWidgetStyle(OutputStandardStyle_ControlFlow, DefaultInputHoverStyle, DefaultInputPressedStyle);
 
+        // style for dynamically/spawned 'missing' input/output pins
+        public static WidgetStyle InputOutputStyle_Missing = new WidgetStyle() { BackgroundColor = Colorf.Red, TextSize = PinTextSize, FontName = PinFont };
+        public static NodePinWidgetStyle InputOutputStyleSet_Missing = new NodePinWidgetStyle(InputOutputStyle_Missing, DefaultInputHoverStyle, DefaultInputPressedStyle);
+
 
         public static WidgetStyle DefaultSequenceStandardStyle = new WidgetStyle() { BackgroundColor = Colorf.DarkSlateGrey, ForegroundColor = Colorf.VideoWhite, TextSize = PinTextSize, FontName = PinFont };
         public static WidgetStyle DefaultSequenceHoverStyle = new WidgetStyle() { BackgroundColor = Colorf.Orange };

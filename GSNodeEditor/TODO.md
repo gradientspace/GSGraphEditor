@@ -2,7 +2,9 @@
 Renaming
 ==================
 
-rename Gradientspace. libraries to Core.
+- rename Gradientspace. libraries to Core.
+- 'Missing' pins do not disappear when disconnected
+- Missing pins not necessarily an error when evaluating graph...
 
 ===================
 Bugs
@@ -131,7 +133,7 @@ Debugging Improvements
 - graph single-stepping evaluation
 - inspecting values on pins during single-step
 - Breakpoints that pause graph execution
-- Watches on graph wires or input/output pins. Watches would be shown in RHS panel in editor view.
+- Watches on graph wires or input/output pins. Watches would be shown in RHS panel in editor view
 
 
 =================
