@@ -28,7 +28,10 @@ namespace Gradientspace.UI
         public event TextEditUpdateEventHandler? OnTextEditingUpdate;
 
         public bool EnableClearOnEscape = false;
+
         public bool KeepFocusOnEnter = false;
+        public Action? OnEnterKeyPressed = null;
+
         public bool RenderOnTopWhileEditing = true;
         public bool IsEditable = true;
 
@@ -305,6 +308,7 @@ namespace Gradientspace.UI
             }
             else if (keyState.KeyName == KeyNames.Enter && KeepFocusOnEnter)
             {
+                OnEnterKeyPressed?.Invoke();
                 return true;
             }
             return false;

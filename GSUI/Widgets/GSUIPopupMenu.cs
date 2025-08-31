@@ -183,6 +183,15 @@ namespace Gradientspace.UI
             HoveredItem = null;
         }
 
+        public void SelectHighlightedItem()
+        {
+            if (HighlightedItem == null) return;
+
+            // select item
+            HighlightedItem.OnClicked?.Invoke();
+            OnMenuItemSelected?.Invoke(this, HighlightedItem);
+        }
+
         public override IWidgetView CreateDefaultView()
         {
             return new PopupMenuView(this);

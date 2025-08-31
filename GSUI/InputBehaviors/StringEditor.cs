@@ -127,6 +127,7 @@ namespace Gradientspace.UI
                 case KeyNames.Home:
                     if (keyState.bShiftDown) {
                         SelectionStartLocation = 0;
+                        SelectionEndLocation = CursorLocation;
                         CursorLocation = 0;
                     } else {
                         ClearSelection();

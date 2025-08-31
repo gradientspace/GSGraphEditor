@@ -82,9 +82,9 @@ namespace GSNodeEditor
         public static readonly WidgetStateStyle DefaultNewNodeDialogStyle = new WidgetStateStyle(
             NewNodeDialogStandardStyle, NewNodeDialogHoverStyle, NewNodeDialogPressedStyle);
 
-        public static readonly WidgetStyle SearchBoxStandardStyle = new WidgetStyle() { BackgroundColor = Colorf.LightGrey, ForegroundColor = Colorf.Black, TextSize = 12, Margins = new WidgetMargins(4,2) };
-        public static readonly WidgetStyle SearchBoxHoverStyle = new WidgetStyle() { BackgroundColor = Colorf.LightSlateGrey, ForegroundColor = Colorf.Black, TextColor = Colorf.Black, TextSize = 12 };
-        public static readonly WidgetStyle SearchBoxPressedStyle = new WidgetStyle() { BackgroundColor = Colorf.VideoWhite, ForegroundColor = Colorf.Black, TextColor = Colorf.Black, TextSize = 12 };
+        public static readonly WidgetStyle SearchBoxStandardStyle = new WidgetStyle() { BackgroundColor = Colorf.LightGrey, ForegroundColor = Colorf.LightGrey, TextSize = 12, Margins = new WidgetMargins(4,2) };
+        public static readonly WidgetStyle SearchBoxHoverStyle = new WidgetStyle() { BackgroundColor = Colorf.LightSlateGrey, ForegroundColor = Colorf.LightGrey, TextColor = Colorf.Black, TextSize = 12 };
+        public static readonly WidgetStyle SearchBoxPressedStyle = new WidgetStyle() { BackgroundColor = Colorf.VideoWhite, ForegroundColor = Colorf.LightGrey, TextColor = Colorf.Black, TextSize = 12 };
         public static readonly WidgetStateStyle SearchBoxStyle = new WidgetStateStyle(
             SearchBoxStandardStyle, SearchBoxHoverStyle, SearchBoxPressedStyle);
 
@@ -106,6 +106,7 @@ namespace GSNodeEditor
             //SearchBox.Text = "Search";
             SearchBox.OnTextEditingUpdate += SearchBox_OnTextEditingUpdate;
             //SearchBox.OnTextModified += SearchBox_OnTextModified;
+            SearchBox.OnEnterKeyPressed = SearchBox_OnEnterKey;
 
             NodesMenuAnchor = new WidgetRelativeBoxAnchor(this);
             NodesCategoryMenuAnchor = new WidgetRelativeBoxAnchor(this);
@@ -218,6 +219,10 @@ namespace GSNodeEditor
         //    SearchBox_OnTextEditingUpdate(sender, newText);
         //}
 
+        private void SearchBox_OnEnterKey()
+        {
+            NodesMenu.SelectHighlightedItem();
+        }
 
         private void NodesMenu_OnMenuItemSelected(PopupMenu popup, MenuItem selectedItem)
         {

@@ -32,6 +32,9 @@ namespace Gradientspace.UI
 
         public static bool IsIntegerString(string s)
         {
+            if (s.Length == 0
+                || (s.Length == 1 && (s[0] == '-')) )
+                return true;
             return int.TryParse(s, out var IntValue);
         }
 
