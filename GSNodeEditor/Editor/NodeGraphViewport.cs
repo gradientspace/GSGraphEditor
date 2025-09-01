@@ -166,20 +166,20 @@ namespace GSNodeEditor
         protected static DataFlowGraph MakeInitialDataflowGraph()
         {
             DataFlowGraph dataflowGraph = new DataFlowGraph();
-            var Constant1 = dataflowGraph.AddNodeOfType<FloatConstantNode>();
-            var Constant2 = dataflowGraph.AddNodeOfType<FloatConstantNode>();
-            var Sum = dataflowGraph.AddNodeOfType<FloatAddNode>();
-            var Sum2 = dataflowGraph.AddNodeOfType<FloatAddNode>();
-            dataflowGraph.AddConnection(Constant1, FloatConstantNode.ValueOutputName, Sum, FloatAddNode.Operand1Name);
-            dataflowGraph.AddConnection(Constant2, FloatConstantNode.ValueOutputName, Sum, FloatAddNode.Operand2Name);
-            dataflowGraph.AddConnection(Sum, FloatAddNode.ValueOutputName, Sum2, FloatAddNode.Operand1Name);
-            dataflowGraph.AddConnection(Constant2, FloatConstantNode.ValueOutputName, Sum2, FloatAddNode.Operand2Name);
-            var Sink = dataflowGraph.AddNodeOfType<PrintFloatSinkNode>();
-            dataflowGraph.AddConnection(Sum2, FloatConstantNode.ValueOutputName, Sink, PrintFloatSinkNode.InputName);
+            DoubleConstantNode Constant1 = dataflowGraph.CreateNewNode<DoubleConstantNode>()!;
+            DoubleConstantNode Constant2 = dataflowGraph.CreateNewNode<DoubleConstantNode>()!;
+            DoubleAddNode Sum = dataflowGraph.CreateNewNode<DoubleAddNode>()!;
+            DoubleAddNode Sum2 = dataflowGraph.CreateNewNode<DoubleAddNode>()!;
+            dataflowGraph.AddConnection(Constant1, DoubleConstantNode.ValueOutputName, Sum, Sum.Operand1Name);
+            dataflowGraph.AddConnection(Constant2, DoubleConstantNode.ValueOutputName, Sum, Sum.Operand2Name);
+            dataflowGraph.AddConnection(Sum, Sum.ValueOutputName, Sum2, Sum2.Operand1Name);
+            dataflowGraph.AddConnection(Constant2, DoubleConstantNode.ValueOutputName, Sum2, Sum2.Operand2Name);
+            PrintWithFormatNode Print = dataflowGraph.CreateNewNode<PrintWithFormatNode>()!;
+            dataflowGraph.AddConnection(Sum2, DoubleConstantNode.ValueOutputName, Print, Print.MakeObjectInputName(0));
 
-            dataflowGraph.SetNodeConstantValue(Constant1.Identifier, FloatConstantNode.ValueInputName, 2);
-            dataflowGraph.SetNodeConstantValue(Constant2.Identifier, FloatConstantNode.ValueInputName, 3);
-            dataflowGraph.SetNodeConstantValue(Sink.Identifier, PrintFloatSinkNode.FormatInputName, "Value is {0}");
+            dataflowGraph.SetNodeConstantValue(Constant1, DoubleConstantNode.ValueInputName, 2);
+            dataflowGraph.SetNodeConstantValue(Constant2, DoubleConstantNode.ValueInputName, 3);
+            dataflowGraph.SetNodeConstantValue(Print, PrintWithFormatNode.FormatName, "Value is {0}");
 
             return dataflowGraph;
         }
@@ -195,24 +195,24 @@ namespace GSNodeEditor
         {
             ExecutionGraph executionGraph = new ExecutionGraph();
 
-            var Constant1 = executionGraph.AddNodeOfType<FloatConstantNode>();
-            var Constant2 = executionGraph.AddNodeOfType<FloatConstantNode>();
-            var Sum = executionGraph.AddNodeOfType<FloatAddNode>();
-            var Sum2 = executionGraph.AddNodeOfType<FloatAddNode>();
-            executionGraph.AddConnection(Constant1, FloatConstantNode.ValueOutputName, Sum, FloatAddNode.Operand1Name);
-            executionGraph.AddConnection(Constant2, FloatConstantNode.ValueOutputName, Sum, FloatAddNode.Operand2Name);
-            executionGraph.AddConnection(Sum, FloatAddNode.ValueOutputName, Sum2, FloatAddNode.Operand1Name);
-            executionGraph.AddConnection(Constant2, FloatConstantNode.ValueOutputName, Sum2, FloatAddNode.Operand2Name);
-            var Sink = executionGraph.AddNodeOfType<PrintFloatSinkNode>();
-            executionGraph.AddConnection(Sum2, FloatConstantNode.ValueOutputName, Sink, PrintFloatSinkNode.InputName);
+            DoubleConstantNode Constant1 = executionGraph.CreateNewNode<DoubleConstantNode>()!;
+            DoubleConstantNode Constant2 = executionGraph.CreateNewNode<DoubleConstantNode>()!;
+            DoubleAddNode Sum = executionGraph.CreateNewNode<DoubleAddNode>()!;
+            DoubleAddNode Sum2 = executionGraph.CreateNewNode<DoubleAddNode>()!;
+            executionGraph.AddConnection(Constant1, DoubleConstantNode.ValueOutputName, Sum, Sum.Operand1Name);
+            executionGraph.AddConnection(Constant2, DoubleConstantNode.ValueOutputName, Sum, Sum.Operand2Name);
+            executionGraph.AddConnection(Sum, Sum.ValueOutputName, Sum2, Sum2.Operand1Name);
+            executionGraph.AddConnection(Constant2, DoubleConstantNode.ValueOutputName, Sum2, Sum2.Operand2Name);
+            PrintWithFormatNode Print = executionGraph.CreateNewNode<PrintWithFormatNode>()!;
+            executionGraph.AddConnection(Sum2, DoubleConstantNode.ValueOutputName, Print, Print.MakeObjectInputName(0));
 
             executionGraph.AddSequenceConnection(Sum, "", Sum2, "");
-            executionGraph.AddSequenceConnection(Sum2, "", Sink, "");
-            executionGraph.AddSequenceConnection(executionGraph.StartNodeHandle, "", Sum, "");
+            executionGraph.AddSequenceConnection(Sum2, "", Print, "");
+            executionGraph.AddSequenceConnection(executionGraph.StartNodeHandle, "", Sum.Handle, "");
 
-            executionGraph.SetNodeConstantValue(Constant1.Identifier, FloatConstantNode.ValueInputName, 2);
-            executionGraph.SetNodeConstantValue(Constant2.Identifier, FloatConstantNode.ValueInputName, 3);
-            executionGraph.SetNodeConstantValue(Sink.Identifier, PrintFloatSinkNode.FormatInputName, "Value is {0}");
+            executionGraph.SetNodeConstantValue(Constant1, DoubleConstantNode.ValueInputName, 2);
+            executionGraph.SetNodeConstantValue(Constant2, DoubleConstantNode.ValueInputName, 3);
+            executionGraph.SetNodeConstantValue(Print, PrintWithFormatNode.FormatName, "Value is {0}");
 
             return executionGraph;
         }

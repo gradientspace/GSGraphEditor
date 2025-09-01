@@ -520,17 +520,25 @@ namespace GSNodeEditor
             int NumInputs = SourceNodeWidget.InputWidgets.Count;
             int NumOutputs = SourceNodeWidget.OutputWidgets.Count;
 
+            const float PinNodeEdgeOffset = 5;
+            const float PinNodeConstantEdgeOffset = 2;
+            const float PinVerticalSpace = 5;
+
             // compute max input and output pin text length
             float MaxInputPinWidth = 0;
             for (int k = 0; k < NumInputs; ++k)
             {
                 //float InputTextWidth = PinTextPaint.MeasureText(SourceNodeWidget.InputWidgets[k].InputName);
                 //MaxInputPinWidth = MathF.Max(MaxInputPinWidth, InputTextWidth);
-
                 SourceNodeWidget.InputWidgets[k].GetActiveView()?.UpdateLayout(StyleCache);
                 AxisAlignedBox2f childBounds = SourceNodeWidget.InputWidgets[k].GetActiveView()?.BoundsQuery(null) ?? AxisAlignedBox2f.Empty;
-                MaxInputPinWidth = MathF.Max(MaxInputPinWidth, childBounds.Width);
+                float ChildWidth = childBounds.Width;
+                if (SourceNodeWidget.InputWidgets[k].NodeInputInfo.IsNodeConstant)
+                    ChildWidth += (PinNodeEdgeOffset+PinNodeConstantEdgeOffset);      // otherwise constant val may overlap rhs
+
+                MaxInputPinWidth = MathF.Max(MaxInputPinWidth, ChildWidth);
             }
+
             float MaxOutputPinWidth = 0;
             for (int k = 0; k < NumOutputs; ++k)
             {
@@ -552,9 +560,6 @@ namespace GSNodeEditor
             else
                 SequencePinWidth = 0;
 
-            const float PinNodeEdgeOffset = 5;
-            const float PinNodeConstantEdgeOffset = 2;
-            const float PinVerticalSpace = 5;
             float TotalPinWidth = MaxInputPinWidth + MaxOutputPinWidth;// + 2*PinNodeEdgeOffset;
             if (InitialBox.Width < TotalPinWidth)
             {
