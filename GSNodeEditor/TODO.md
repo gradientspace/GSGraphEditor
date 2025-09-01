@@ -10,7 +10,6 @@ Bugs
 
 - 'Missing' pins do not disappear when disconnected
 - Missing pins not necessarily an error when evaluating graph...
--can't type -1 into integer field?
 -crash if remove a function input that has values wired to it in call nodes
 -call and return constants get wiped out if funcdef node is modified
 -ask to save on close if graph is modified
