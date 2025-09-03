@@ -6,6 +6,7 @@ using SkiaSharp;
 using System.Diagnostics;
 using System.Reflection;
 using static Gradientspace.NodeGraph.TypeUtils;
+using System.Security.Cryptography;
 
 namespace GSNodeEditor
 {
@@ -19,11 +20,13 @@ namespace GSNodeEditor
 
         Boolean,
         Integer,
-        Float,
+        Real,
         String,
         Enum,
         EnumList,
         Type,
+
+        Vector3Real,
 
         FromProvider
     }
@@ -111,30 +114,25 @@ namespace GSNodeEditor
                 }
                 else if (pinType == typeof(float) || pinType == typeof(double))
                 {
-                    InlineType = EInlineWidgetType.Float;
+                    InlineType = EInlineWidgetType.Real;
                 }
                 else if (pinType == typeof(int) || pinType == typeof(short) || pinType == typeof(long))
                 {
                     InlineType = EInlineWidgetType.Integer;
                 }
-                else if (pinType == typeof(string))
+                else if (pinType == typeof(g3.Vector3d) || pinType == typeof(g3.Vector3f)) 
                 {
+                    InlineType = EInlineWidgetType.Vector3Real;
+                }
+                else if (pinType == typeof(string)) {
                     InlineType = EInlineWidgetType.String;
-                }
-                else if (pinType.IsEnum)
-                {
+                } else if (pinType.IsEnum) {
                     InlineType = EInlineWidgetType.Enum;
-                }
-                else if (pinType == typeof(EnumOptionItem) && NodeInputInfo.Input is IEnumOptionSetNodeInput )
-                {
+                } else if (pinType == typeof(EnumOptionItem) && NodeInputInfo.Input is IEnumOptionSetNodeInput) {
                     InlineType = EInlineWidgetType.EnumList;
-                }
-                else if (pinType == typeof(Type))
-                {
+                } else if (pinType == typeof(Type)) {
                     InlineType = EInlineWidgetType.Type;
-                }
-                else
-                {
+                } else {
                     UseWidgetProvider = InlinePinWidgetSystem.Instance.FindProvider(pinType);
                     if (UseWidgetProvider != null)
                         InlineType = EInlineWidgetType.FromProvider;
@@ -180,16 +178,21 @@ namespace GSNodeEditor
                     InlineWidget = checkbox;
                     AddChildWidget(InlineWidget);
                 }
-                else if (InlineType == EInlineWidgetType.Float || InlineType == EInlineWidgetType.Integer || InlineType == EInlineWidgetType.String)
+                else if (InlineType == EInlineWidgetType.Real || InlineType == EInlineWidgetType.Integer || InlineType == EInlineWidgetType.String
+                    || InlineType == EInlineWidgetType.Vector3Real )
                 {
                     TextEntryField textEntry = new TextEntryField();
                     textEntry.Width = 40;
-                    if (InlineType == EInlineWidgetType.Float)
+                    if (InlineType == EInlineWidgetType.Real) {
                         textEntry.ValidationType = TextEntryField.StringValidation.Real;
-                    else if (InlineType == EInlineWidgetType.Integer)
+                    } else if (InlineType == EInlineWidgetType.Integer) {
                         textEntry.ValidationType = TextEntryField.StringValidation.Integer;
-                    else if (InlineType == EInlineWidgetType.String)
+                    } else if (InlineType == EInlineWidgetType.Vector3Real) {
+                        textEntry.ValidationType = TextEntryField.StringValidation.VectorReal;
+                        textEntry.Width = 55;
+                    } else if (InlineType == EInlineWidgetType.String) {
                         textEntry.Width = 65;
+                    }
 
                     if (bDefaultIsDefined && defaultValue != null) {
                         if (defaultValue is float)
@@ -204,6 +207,8 @@ namespace GSNodeEditor
                             textEntry.Text = ((long)defaultValue).ToString();
                         else if (defaultValue is string)
                             textEntry.Text = (string)defaultValue;
+                        else if (defaultValue is g3.Vector3d)
+                            textEntry.Text = ((g3.Vector3d)defaultValue).ToString("0.0#######");
                     }
 
                     InlineWidgetAnchor.BoxPoint = BoxPoints.CenterRight;
@@ -305,7 +310,7 @@ namespace GSNodeEditor
         {
             NodeGraphView? ParentView = FindParentGraphViewChecked();
 
-			if (InlineType == EInlineWidgetType.Float) 
+			if (InlineType == EInlineWidgetType.Real) 
             {
                 if ( float.TryParse(newText, out float value)) {
                     ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
@@ -319,6 +324,14 @@ namespace GSNodeEditor
                     ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
                         Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, value);
                     });
+            }
+            else if (InlineType == EInlineWidgetType.Vector3Real) 
+            {
+                if ( g3.Vector3d.TryParse(newText, out Vector3d value)) {
+                    ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                        Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, value);
+                    });
+                }
             } 
             else if (InlineType == EInlineWidgetType.String ) 
             {

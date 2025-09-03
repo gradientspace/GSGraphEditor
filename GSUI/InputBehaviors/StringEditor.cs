@@ -45,6 +45,11 @@ namespace Gradientspace.UI
             CharacterFilterFunc = StringValidators.IsRealCharacter;
             StringFilterFunc = StringValidators.IsRealString_TextEntry;
         }
+        public void ConfigureForVectorReal()
+        {
+            CharacterFilterFunc = StringValidators.IsVectorRealCharacter;
+            StringFilterFunc = StringValidators.IsVectorRealString_TextEntry;
+        }
 
 
 

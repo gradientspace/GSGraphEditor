@@ -30,6 +30,11 @@ namespace Gradientspace.UI
             return Char.IsAsciiDigit(c) || c == '.';
         }
 
+        public static bool IsVectorRealCharacter(char c)
+        {
+            return Char.IsAsciiDigit(c) || c == '-' || c == '.' || c == ' ' || c == ',';
+        }
+
         public static bool IsIntegerString(string s)
         {
             if (s.Length == 0
@@ -49,6 +54,15 @@ namespace Gradientspace.UI
                 || (s.Length == 2 && s[0] == '-' && s[1] == '.') )
                 return true;
             return double.TryParse(s, out var RealValue);
+        }
+
+        public static bool IsVectorRealString_TextEntry(string s)
+        {
+            // note this doesn't prevent typing invalid text, unlike other functions above
+            for (int k = 0; k < s.Length; ++k)
+                if (IsVectorRealCharacter(s[k]) == false)
+                    return false;
+            return true;
         }
 
     }

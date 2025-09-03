@@ -1,15 +1,10 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
-using System;
-using System.Collections.Generic;
+using g3;
+using SkiaSharp;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using g3;
-using SkiaSharp;
-using static Gradientspace.UI.ISimpleCaptureTarget;
-using static Gradientspace.UI.ITextEntryFocusTarget;
 
 
 namespace Gradientspace.UI
@@ -42,7 +37,8 @@ namespace Gradientspace.UI
         {
             None,
             Integer,
-            Real
+            Real,
+            VectorReal
         }
         public StringValidation ValidationType { get; set; } = StringValidation.None;
 
@@ -133,6 +129,8 @@ namespace Gradientspace.UI
                 ActiveStringEdit.ConfigureForInteger();
             else if (ValidationType == StringValidation.Real)
                 ActiveStringEdit.ConfigureForReal();
+            else if (ValidationType == StringValidation.VectorReal)
+                ActiveStringEdit.ConfigureForVectorReal();
 
             IsFocused = true;
 
@@ -195,7 +193,7 @@ namespace Gradientspace.UI
 		}
         public virtual void UpdateHover(ISimpleCaptureTarget.EHoverState State, in InputDeviceState deviceState, out bool bContinueHover) 
         {
-            IsHovered = (State == EHoverState.Begin || State == EHoverState.Update);
+            IsHovered = (State == ISimpleCaptureTarget.EHoverState.Begin || State == ISimpleCaptureTarget.EHoverState.Update);
             bContinueHover = true; 
         }
         internal int GetActiveEditCursorLocation()
@@ -233,7 +231,7 @@ namespace Gradientspace.UI
         public virtual bool OnNextKey(KeyState keyState)
         {
             if ( keyState.KeyName == KeyNames.Tab ) {
-                SystemKeyboardRouter.Instance.ClearTextEntryFocusTarget(EndFocusType.Commit);
+                SystemKeyboardRouter.Instance.ClearTextEntryFocusTarget(ITextEntryFocusTarget.EndFocusType.Commit);
                 return true;
             }
 
@@ -274,9 +272,9 @@ namespace Gradientspace.UI
             end_change();
         }
 
-        public void OnEndFocus(EndFocusType endType)
+        public void OnEndFocus(ITextEntryFocusTarget.EndFocusType endType)
         {
-            if (endType == EndFocusType.Commit && ActiveStringEdit != null)
+            if (endType == ITextEntryFocusTarget.EndFocusType.Commit && ActiveStringEdit != null)
             {
                 if ( Text != ActiveStringEdit.CurrentString )
                     Text = ActiveStringEdit.CurrentString;
@@ -331,6 +329,15 @@ namespace Gradientspace.UI
                 if (double.TryParse(NewString, out double RealValue))
                 {
                     NewString = ((double)RealValue).ToString("0.0#######");
+                    return true;
+                }
+            } 
+            else if (ValidationType == StringValidation.VectorReal) {
+                if (Vector3d.TryParse(NewString, out Vector3d value)) {
+                    NewString = string.Format("{0},{1},{2}", 
+                        value.x.ToString("0.########"), 
+                        value.y.ToString("0.########"), 
+                        value.z.ToString("0.########"));
                     return true;
                 }
             }

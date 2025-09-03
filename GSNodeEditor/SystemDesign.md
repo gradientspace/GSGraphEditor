@@ -60,6 +60,28 @@ Similarly Connection rendering and hit-testing is done there (probably need to f
 
 
 
+------------------
+Data Conversions
+------------------
+
+Custom datatype conversions (ie that will be done automatically when connecting graph pins)
+can be provided from within a [NodeFunctionLibrary] using static functions with the [GraphDataTypeConversion]
+attribute. The function must be of the form 
+   public static ToType ConvertFunc(FromType value) { ... }
+G3Vector3Functions contains various scalar-to-vector conversions of this form
+
+A second option is to provide a static function with the [GraphDataTypeRegisterFunction] attribute, of the form
+   public static void RegisterFunc(DataConversionLibrary library)
+Inside this function, library.AddConversion() can be used to add conversions using (eg) lambdas/etc.
+GSPythonConversionsLibrary is an example of this kind of usage
+
+Both these types of functions are automatically discovered by DataConversionLibrary.Build(). 
+Currently a global singleton instance GlobalDataConversionLibrary is being used, with
+the static GlobalDataConversionLibrary.Find() being the main way that code finds/applies these conversions.
+
+
+
+
 --------------------
 Viewport Selection
 --------------------
