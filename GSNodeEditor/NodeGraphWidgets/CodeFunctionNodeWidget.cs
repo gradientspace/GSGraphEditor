@@ -108,8 +108,8 @@ namespace GSNodeEditor
             SKPaint LinePaint = StyleCache.GetCachedPaint(CodeFunctionNodeWidget.IconStyle, SKStyleCache.EPaintType.Outline);
             
             Vector2f Offset = new Vector2f(3, 0);
-            Segment2f Segment1 = new Segment2f(Bounds.TopLeft+Offset, Bounds.BottomLeft+Offset);
-            Segment2f Segment2 = new Segment2f(Bounds.TopRight-Offset, Bounds.BottomRight-Offset);
+            Segment2d Segment1 = new Segment2d(Bounds.TopLeft+Offset, Bounds.BottomLeft+Offset);
+            Segment2d Segment2 = new Segment2d(Bounds.TopRight-Offset, Bounds.BottomRight-Offset);
             Canvas.DrawLine( Conversion.ToSkia(Segment1.PointBetween(0.3f)), Conversion.ToSkia(Segment2.PointBetween(0.3f)), LinePaint);
             Canvas.DrawLine( Conversion.ToSkia(Segment1.PointBetween(0.5f)), Conversion.ToSkia(Segment2.PointBetween(0.5f)), LinePaint);
             Canvas.DrawLine( Conversion.ToSkia(Segment1.PointBetween(0.7f)), Conversion.ToSkia(Segment2.PointBetween(0.7f)), LinePaint);
