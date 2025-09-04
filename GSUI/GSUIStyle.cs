@@ -225,18 +225,22 @@ namespace Gradientspace.UI
 
         public CachedSKPaintSet GetCachedPaintSet(WidgetStyle style)
         {
-            CachedSKPaintSet found;
-            if (CachedBasicPaints.TryGetValue(style, out found))
-            {
-                // todo Timestamp on WidgetStyle?
-                //if (found.Timestamp != )
+            // temporary for now, to try to avoid some weird race condition possibly
+            // related to threaded rendering?
+            lock (CachedBasicPaints) {
 
-                return found;
+                CachedSKPaintSet found;
+                if (CachedBasicPaints.TryGetValue(style, out found)) {
+                    // todo Timestamp on WidgetStyle?
+                    //if (found.Timestamp != )
+
+                    return found;
+                }
+                CachedSKPaintSet NewPaint = new CachedSKPaintSet();
+                UpdatePaint(ref NewPaint, style);
+                CachedBasicPaints.Add(style, NewPaint);
+                return NewPaint;
             }
-            CachedSKPaintSet NewPaint = new CachedSKPaintSet();
-            UpdatePaint(ref NewPaint, style);
-            CachedBasicPaints.Add(style, NewPaint);
-            return NewPaint;
         }
 
 
