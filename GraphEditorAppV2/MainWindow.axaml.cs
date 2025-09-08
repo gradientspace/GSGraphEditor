@@ -110,16 +110,21 @@ public partial class MainWindow : Window
 
 	private bool bActiveLogFilterOutput = true;
 
-	private void GlobalGraphOutput_OnGraphOutputUpdated(string? appendedLine, EGraphOutputType OutputType)
-	{
-		Dispatcher.UIThread.InvokeAsync(() => {
-			if (bActiveLogFilterOutput && OutputType != EGraphOutputType.User)
-				return;
-			LogTextArea.Text += appendedLine + "\r\n";
-			LogTextAreaScrollView.ScrollToEnd();
-		});
-	}
-	private void UpdateLogWindow()
+    private void GlobalGraphOutput_OnGraphOutputUpdated(string? appendedLine, EGraphOutputType OutputType)
+    {
+        Dispatcher.UIThread.InvokeAsync(() => {
+
+            string prefix = "";
+            if (OutputType == EGraphOutputType.GraphError)
+                prefix = "[GRAPH_ERROR] ";
+
+            if (bActiveLogFilterOutput && (OutputType != EGraphOutputType.User && OutputType != EGraphOutputType.GraphError))
+                return;
+            LogTextArea.Text += prefix + appendedLine + "\r\n";
+            LogTextAreaScrollView.ScrollToEnd();
+        });
+    }
+    private void UpdateLogWindow()
 	{
 		Dispatcher.UIThread.InvokeAsync(() => {
 

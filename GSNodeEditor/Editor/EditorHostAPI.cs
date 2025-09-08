@@ -1,4 +1,5 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
+using Gradientspace.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,4 +36,30 @@ namespace GSNodeEditor
         string? GetSystemClipboardText();
 
     }
+
+
+
+
+    public class EditorClipboardTextAccess : IClipboardTextAccess
+    {
+        public EditorHostAPI? HostAPI;
+
+        // IClipboardTextAccess API
+
+        public virtual bool GetClipboardText(out string text)
+        {
+            string? FoundText = HostAPI?.GetSystemClipboardText() ?? null;
+            if (FoundText != null && FoundText.Length > 0) {
+                text = FoundText;
+                return true;
+            }
+            text = "";
+            return false;
+        }
+        public virtual void SetClipboardText(string newText)
+        {
+            HostAPI?.SetSystemClipboardText(newText);
+        }
+    }
+
 }

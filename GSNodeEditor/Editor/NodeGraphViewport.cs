@@ -116,6 +116,7 @@ namespace GSNodeEditor
         public void SetActiveHostAPI(EditorHostAPI hostAPI)
         {
             HostAPI = hostAPI;
+            SystemKeyboardRouter.Instance.ClipboardAPI = new EditorClipboardTextAccess() { HostAPI = hostAPI };
             UpdateWindowTitle();
         }
         private void Instance_OnTooltipDrawUpdatePending()

@@ -241,6 +241,13 @@ namespace Gradientspace.UI
         bool OnKeyRepeat(KeyState RepeatKey, in KeyChord ActiveChord);
     }
 
+    public interface IClipboardTextAccess
+    {
+        bool GetClipboardText(out string text) { text = ""; return false; }
+        void SetClipboardText(string newText) { }
+    }
+
+
 
     public class KeyboardRouter
     {
@@ -340,14 +347,14 @@ namespace Gradientspace.UI
 
 					if (currentChord.IsChord2(KeyNames.Ctrl, 'V'))
                     {
-                        if (LastClipboardText.Length > 0)
-                            activeTextTarget.OnPasteText(LastClipboardText);
+                        if (GetCurrentClipboardText(out string PasteText))
+                            activeTextTarget.OnPasteText(PasteText);
 						bWaitForAllNonModifiersReleased = true;
                         bConsumed = true;
                     } 
                     else if (currentChord.IsChord2(KeyNames.Ctrl, 'C')) {
                         if (activeTextTarget.GetCurrentSelectedText(out string CopiedText)) {
-                            LastClipboardText = CopiedText;
+                            SetCurrentClipboardText(CopiedText);
                             OnTextCopied?.Invoke(this, CopiedText);
                         }
 						bWaitForAllNonModifiersReleased = true;
@@ -580,10 +587,23 @@ namespace Gradientspace.UI
 
 
 
-		protected string LastClipboardText = "";
-        public virtual void SetCurrentSystemClipboardText(string Text)
+
+
+        public IClipboardTextAccess? ClipboardAPI { get; set; } = null;
+
+        protected string LastClipboardText = "";
+        public virtual void SetCurrentClipboardText(string Text)
         {
             LastClipboardText = Text;
+            if (ClipboardAPI != null)
+                ClipboardAPI.SetClipboardText(Text);
+        }
+        public virtual bool GetCurrentClipboardText(out string Text)
+        {
+            Text = LastClipboardText;
+            if (ClipboardAPI != null && ClipboardAPI.GetClipboardText(out Text))
+                return (Text.Length > 0);
+            return Text.Length > 0;
         }
 
     }
