@@ -392,9 +392,11 @@ namespace GraphEditorAppV2
 
         private void KeyboardRouter_OnTextCopied(KeyboardRouter sender, string NewCopiedText)
         {
+            // TODO: had to disable Wait() here because it was causing a hang on ctrl+c inside node text entry fields...
             TopLevel? topLevel = TopLevel.GetTopLevel(this);
             if (topLevel != null && topLevel.Clipboard != null)
-                topLevel.Clipboard.SetTextAsync(NewCopiedText).Wait();
+                topLevel.Clipboard.SetTextAsync(NewCopiedText);
+                //topLevel.Clipboard.SetTextAsync(NewCopiedText).Wait();
         }
 
 
