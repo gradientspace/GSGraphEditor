@@ -1,10 +1,11 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
+using g3;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Diagnostics;
 
 namespace Gradientspace.NodeGraph.Nodes
 {
@@ -68,6 +69,78 @@ namespace Gradientspace.NodeGraph.Nodes
         }
     }
 
+
+
+
+    [NodeFunctionLibrary("Geometry3.Test")]
+    public static class G3TestFunctions
+    {
+        [NodeFunction]
+        [NodeReturnValue(DisplayName = "Mesh")]
+        public static DMesh3? TestDMesh3Attribs()
+        {
+            GridBox3Generator BoxGen = new GridBox3Generator() { EdgeVertices = 3 };
+            DMesh3 Mesh = BoxGen.Generate().MakeDMesh();
+
+            foreach (int tid in Mesh.TriangleIndices())
+                Mesh.Attribs.MaterialID.SetValue(tid, tid);
+
+            Mesh.CheckValidity();
+            foreach (int tid in Mesh.TriangleIndices())
+                g3.Util.gDevAssert(Mesh.Attribs.MaterialID.GetValue(tid) == tid);
+
+            int a = Mesh.AppendVertex(Vector3d.Zero), b = Mesh.AppendVertex(Vector3d.Zero), c = Mesh.AppendVertex(Vector3d.Zero);
+            int newtid = Mesh.AppendTriangle(a, b, c);
+            Mesh.CheckValidity();
+            Mesh.Attribs.MaterialID.SetValue(newtid, newtid);
+
+            foreach (int tid in Mesh.TriangleIndices())
+                g3.Util.gDevAssert(Mesh.Attribs.MaterialID.GetValue(tid) == tid);
+
+            int[] remove = [0, 4];
+            foreach (int rid in remove)
+                Mesh.RemoveTriangle(rid);
+            Mesh.CheckValidity();
+            foreach (int tid in Mesh.TriangleIndices())
+                g3.Util.gDevAssert(Mesh.Attribs.MaterialID.GetValue(tid) == tid);
+
+            Mesh.CompactInPlace();
+            Mesh.CheckValidity();
+            foreach (int tid in Mesh.TriangleIndices())
+                g3.Util.gDevAssert(remove.Contains(Mesh.Attribs.MaterialID.GetValue(tid)) == false);
+
+            int eid = Mesh.GetTriEdges(0).a;
+            MeshResult splitResult = Mesh.SplitEdge(eid, out DMesh3.EdgeSplitInfo splitInfo);
+            g3.Util.gDevAssert(splitResult == MeshResult.Ok);
+            Mesh.CheckValidity();
+
+            MeshResult pokeResult = Mesh.PokeTriangle(5, out DMesh3.PokeTriangleInfo pokeInfo);
+            g3.Util.gDevAssert(pokeResult == MeshResult.Ok);
+            Mesh.CheckValidity();
+
+            Index2i edgev = Mesh.GetEdgeV(pokeInfo.new_edges.c);
+            MeshResult collapseResult = Mesh.CollapseEdge(edgev.a, edgev.b, out DMesh3.EdgeCollapseInfo collapseInfo);
+            g3.Util.gDevAssert(collapseResult == MeshResult.Ok);
+            Mesh.CheckValidity();
+
+            MeshEditor editor = new MeshEditor(Mesh);
+            editor.SeparateTriangles([collapseInfo.eKept0], true, out List<Index2i> EdgePairs);
+            Mesh.CheckValidity();
+
+            MeshResult mergeResult = Mesh.MergeEdges(EdgePairs[0].a, EdgePairs[0].b, out DMesh3.MergeEdgesInfo merge_info);
+            g3.Util.gDevAssert(mergeResult == MeshResult.Ok);
+            Mesh.CheckValidity();
+
+            int flipedge = Mesh.EdgeCount/2;
+            while (Mesh.IsEdge(flipedge) == false)
+                flipedge++;
+            MeshResult flipResult = Mesh.FlipEdge(flipedge, out DMesh3.EdgeFlipInfo flipInfo);
+            g3.Util.gDevAssert(flipResult == MeshResult.Ok);
+            Mesh.CheckValidity();
+
+            return Mesh;
+        }
+    }
 
 
 
