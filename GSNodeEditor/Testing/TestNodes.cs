@@ -82,6 +82,9 @@ namespace Gradientspace.NodeGraph.Nodes
             GridBox3Generator BoxGen = new GridBox3Generator() { EdgeVertices = 3 };
             DMesh3 Mesh = BoxGen.Generate().MakeDMesh();
 
+            Mesh.Attribs.EnableTriNormals();
+            Mesh.Attribs.EnableTriUVs(4);
+
             foreach (int tid in Mesh.TriangleIndices())
                 Mesh.Attribs.MaterialID.SetValue(tid, tid);
 
@@ -137,6 +140,38 @@ namespace Gradientspace.NodeGraph.Nodes
             MeshResult flipResult = Mesh.FlipEdge(flipedge, out DMesh3.EdgeFlipInfo flipInfo);
             g3.Util.gDevAssert(flipResult == MeshResult.Ok);
             Mesh.CheckValidity();
+
+
+            Mesh.Attribs.SetNumUVChannels(2);
+            Mesh.CheckValidity();
+            Mesh.Attribs.DisableTriUVs();
+            Mesh.Attribs.DisableTriNormals();
+            Mesh.Attribs.DisableMaterialID();
+            Mesh.CheckValidity();
+
+            return Mesh;
+        }
+
+
+        [NodeFunction]
+        [NodeReturnValue(DisplayName = "Mesh")]
+        public static DMesh3? TestDMesh3TriUVs()
+        {
+            GriddedRectGenerator RectGen = new GriddedRectGenerator();
+            DMesh3 Mesh = RectGen.Generate().MakeDMesh();
+
+            TriUVsGeoAttribute uvSet = Mesh.Attribs.TriUVChannel(0);
+            foreach (int tid in Mesh.TriangleIndices()) {
+                Mesh.GetTriVertices(tid, out Triangle3d tri);
+                uvSet.SetValue(tid, new TriUVs() { A = (Vector2f)tri.V0.xz, B = (Vector2f)tri.V1.xz, C = (Vector2f)tri.V2.xz });
+            }
+            Mesh.CheckValidity();
+
+            IndexedUVMesh uvMesh = new IndexedUVMesh(Mesh, uvSet);
+            WriteMesh writeMesh = new WriteMesh() { Mesh = Mesh, UVs = uvMesh };
+            StandardMeshWriter writer = new StandardMeshWriter();
+            WriteOptions writeOpt = new WriteOptions() { };
+            writer.Write("C:\\scratch\\AAA_UV_TEST.obj", [writeMesh], writeOpt);
 
             return Mesh;
         }
