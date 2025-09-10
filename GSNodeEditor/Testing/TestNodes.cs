@@ -163,8 +163,14 @@ namespace Gradientspace.NodeGraph.Nodes
             TriUVsGeoAttribute uvSet = Mesh.Attribs.TriUVChannel(0);
             foreach (int tid in Mesh.TriangleIndices()) {
                 Mesh.GetTriVertices(tid, out Triangle3d tri);
-                uvSet.SetValue(tid, new TriUVs() { A = (Vector2f)tri.V0.xz, B = (Vector2f)tri.V1.xz, C = (Vector2f)tri.V2.xz });
+                Vector3d c = Mesh.GetTriCentroid(tid);
+                Vector2f tx = (c.x > 0) ? new Vector2f(1, 0) : Vector2f.Zero;
+
+                uvSet.SetValue(tid, new TriUVs() { A = (Vector2f)tri.V0.xz+tx, B = (Vector2f)tri.V1.xz+tx, C = (Vector2f)tri.V2.xz+tx });
             }
+            Mesh.CheckValidity();
+
+            Mesh.PokeTriangle(7, out DMesh3.PokeTriangleInfo pokeInfo);
             Mesh.CheckValidity();
 
             IndexedUVMesh uvMesh = new IndexedUVMesh(Mesh, uvSet);
@@ -172,6 +178,9 @@ namespace Gradientspace.NodeGraph.Nodes
             StandardMeshWriter writer = new StandardMeshWriter();
             WriteOptions writeOpt = new WriteOptions() { };
             writer.Write("C:\\scratch\\AAA_UV_TEST.obj", [writeMesh], writeOpt);
+
+            DMesh3 converted = uvMesh.ToDMesh3();
+            writer.Write("C:\\scratch\\AAA_UV_TEST_uvmesh.obj", [new WriteMesh(converted)], writeOpt);
 
             return Mesh;
         }
