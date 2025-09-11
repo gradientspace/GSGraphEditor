@@ -164,13 +164,21 @@ namespace Gradientspace.NodeGraph.Nodes
             foreach (int tid in Mesh.TriangleIndices()) {
                 Mesh.GetTriVertices(tid, out Triangle3d tri);
                 Vector3d c = Mesh.GetTriCentroid(tid);
-                Vector2f tx = (c.x > 0) ? new Vector2f(1, 0) : Vector2f.Zero;
+                Vector2f tx = (c.x > 0) ? new Vector2f(0.1, 0) : Vector2f.Zero;
 
                 uvSet.SetValue(tid, new TriUVs() { A = (Vector2f)tri.V0.xz+tx, B = (Vector2f)tri.V1.xz+tx, C = (Vector2f)tri.V2.xz+tx });
             }
             Mesh.CheckValidity();
 
             Mesh.PokeTriangle(7, out DMesh3.PokeTriangleInfo pokeInfo);
+            Mesh.CheckValidity();
+
+            List<int> testEdges = new();
+            for (int i = 0; i < Mesh.MaxEdgeID; i += 3) testEdges.Add(i);
+            foreach (int eid in testEdges) {
+                if (Mesh.IsEdge(eid))
+                    Mesh.SplitEdge(eid, out DMesh3.EdgeSplitInfo splitInfo, 0.25);
+            }
             Mesh.CheckValidity();
 
             IndexedUVMesh uvMesh = new IndexedUVMesh(Mesh, uvSet);
