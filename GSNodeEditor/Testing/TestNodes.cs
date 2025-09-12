@@ -157,6 +157,9 @@ namespace Gradientspace.NodeGraph.Nodes
         [NodeReturnValue(DisplayName = "Mesh")]
         public static DMesh3? TestDMesh3TriUVs()
         {
+            StandardMeshWriter writer = new StandardMeshWriter();
+            WriteOptions writeOpt = new WriteOptions() { bPerVertexColors = true };
+
             GriddedRectGenerator RectGen = new GriddedRectGenerator();
             DMesh3 Mesh = RectGen.Generate().MakeDMesh();
 
@@ -170,8 +173,17 @@ namespace Gradientspace.NodeGraph.Nodes
             }
             Mesh.CheckValidity();
 
+            Mesh.EnableVertexColors(new Vector3f(1, 0, 0));
+            VertexColorsGeoAttribute vertexColors = Mesh.Attribs.VertexColor;
+            for (int vid = 0; vid < Mesh.MaxVertexID; vid += 2)
+                vertexColors.SetValue(vid, new Vector3f(0, 0, 1));
+
+            writer.Write("C:\\scratch\\AAA_UV_TEST_0_orig.obj", [new WriteMesh(Mesh)], writeOpt);
+
             Mesh.PokeTriangle(7, out DMesh3.PokeTriangleInfo pokeInfo);
             Mesh.CheckValidity();
+
+            writer.Write("C:\\scratch\\AAA_UV_TEST_1_poked.obj", [new WriteMesh(Mesh)], writeOpt);
 
             List<int> testEdges = new();
             for (int i = 0; i < Mesh.MaxEdgeID; i += 3) testEdges.Add(i);
@@ -181,17 +193,73 @@ namespace Gradientspace.NodeGraph.Nodes
             }
             Mesh.CheckValidity();
 
+            writer.Write("C:\\scratch\\AAA_UV_TEST_2_split.obj", [new WriteMesh(Mesh)], writeOpt);
+
             IndexedUVMesh uvMesh = new IndexedUVMesh(Mesh, uvSet);
             WriteMesh writeMesh = new WriteMesh() { Mesh = Mesh, UVs = uvMesh };
-            StandardMeshWriter writer = new StandardMeshWriter();
-            WriteOptions writeOpt = new WriteOptions() { };
-            writer.Write("C:\\scratch\\AAA_UV_TEST.obj", [writeMesh], writeOpt);
+            writer.Write("C:\\scratch\\AAA_UV_TEST_3_withtriuv.obj", [writeMesh], writeOpt);
 
             DMesh3 converted = uvMesh.ToDMesh3();
-            writer.Write("C:\\scratch\\AAA_UV_TEST_uvmesh.obj", [new WriteMesh(converted)], writeOpt);
+            writer.Write("C:\\scratch\\AAA_UV_TEST_3_uvmesh.obj", [new WriteMesh(converted)], writeOpt);
 
             return Mesh;
         }
+
+
+
+        [NodeFunction]
+        [NodeReturnValue(DisplayName = "Mesh")]
+        public static DMesh3? TestDMesh3PerVertAttribs()
+        {
+            StandardMeshWriter writer = new StandardMeshWriter();
+            WriteOptions writeOpt = new WriteOptions() { bPerVertexColors = true, bPerVertexUVs = true };
+
+            GriddedRectGenerator RectGen = new GriddedRectGenerator();
+            RectGen.Height = 1.5f;
+            RectGen.WantUVs = true;
+            RectGen.UVMode = TrivialRectGenerator.UVModes.FullUVSquare;
+            DMesh3 Mesh = RectGen.Generate().MakeDMesh();
+
+            Mesh.EnableVertexColors(new Vector3f(1, 0, 0));
+            VertexColorsGeoAttribute vertexColors = Mesh.Attribs.VertexColor;
+            for (int vid = 0; vid < Mesh.MaxVertexID; vid += 2)
+                vertexColors.SetValue(vid, new Vector3f(0, 0, 1));
+
+            writer.Write("C:\\scratch\\AAA_TEST_PerVert_0_orig.obj", [new WriteMesh(Mesh)], writeOpt);
+
+            writer.Write("C:\\scratch\\AAA_TEST_PerVert_0_uvmesh.obj",
+                [new WriteMesh(IndexedUVMesh.FromPerVertexUVs(Mesh).ToDMesh3())], writeOpt);
+
+
+            Mesh.PokeTriangle(7, out DMesh3.PokeTriangleInfo pokeInfo);
+            Mesh.CheckValidity();
+
+            writer.Write("C:\\scratch\\AAA_TEST_PerVert_1_poked.obj", [new WriteMesh(Mesh)], writeOpt);
+
+            List<int> testEdges = new();
+            for (int i = 0; i < Mesh.MaxEdgeID; i += 3) testEdges.Add(i);
+            foreach (int eid in testEdges) {
+                if (Mesh.IsEdge(eid))
+                    Mesh.SplitEdge(eid, out DMesh3.EdgeSplitInfo splitInfo, 0.25);
+            }
+            Mesh.CheckValidity();
+
+            writer.Write("C:\\scratch\\AAA_TEST_PerVert_2_split.obj", [new WriteMesh(Mesh)], writeOpt);
+
+            writer.Write("C:\\scratch\\AAA_TEST_PerVert_2_uvmesh.obj",
+                [new WriteMesh(IndexedUVMesh.FromPerVertexUVs(Mesh).ToDMesh3())], writeOpt);
+
+            Mesh.RemoveVertex(37);
+            DMesh3 CompactedMesh = new DMesh3(Mesh, true);
+            CompactedMesh.CheckValidity();
+            Mesh.CompactInPlace();
+            Mesh.CheckValidity();
+
+            writer.Write("C:\\scratch\\AAA_TEST_PerVert_3_compact.obj", [new WriteMesh(CompactedMesh)], writeOpt);
+
+            return Mesh;
+        }
+
     }
 
 
