@@ -37,13 +37,15 @@ namespace Mujoco.Nodes
             IntPtr errStringPtr = mjs_getError(spec);
             string? errString = Marshal.PtrToStringAnsi(errStringPtr);
 
-            //mjModel_* model = mj_loadXML("D:\\git\\mujoco\\model\\humanoid\\humanoid.xml", vfs, errStrings, error_sz);
 
             StringBuilder errStrings = new StringBuilder();
             int error_sz = 1;
-            mj_saveLastXML("D:\\git\\mujoco\\model\\humanoid\\spec_test.xml", model, errStrings, error_sz);
 
-            mj_saveXML(spec, "D:\\git\\mujoco\\model\\humanoid\\spec_test2.xml", errStrings, error_sz);
+            //mjModel_* model = mj_loadXML("D:\\git\\mujoco\\model\\humanoid\\humanoid.xml", vfs, errStrings, error_sz);
+            //mj_saveLastXML("D:\\git\\mujoco\\model\\humanoid\\spec_test.xml", model, errStrings, error_sz);
+
+            //mj_saveXML(spec, "D:\\git\\mujoco\\model\\humanoid\\spec_test2.xml", errStrings, error_sz);
+            mj_saveXML(spec, "C:\\scratch\\MUJOCO_SPEC_1.xml", errStrings, error_sz);
 
             mj_deleteModel(model);
             mj_deleteSpec(spec);
