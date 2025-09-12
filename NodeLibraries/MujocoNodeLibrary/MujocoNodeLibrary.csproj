@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <RootNamespace>Mujoco.Nodes</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\DerivativeCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
+  </ItemGroup>
+
+
+	<!--- This will copy the mujoco.dll the output folder for this project and also any dependent project -->
+	<ItemGroup>
+		<Content Include="mujoco\bin\mujoco.dll">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<TargetPath>mujoco.dll</TargetPath>
+		</Content>
+	</ItemGroup>	
+	
+
+</Project>

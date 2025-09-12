@@ -23,6 +23,7 @@ using System.Threading;
 using Gradientspace.NodeGraph;
 using Avalonia.Win32.Input;
 using Avalonia.Interactivity;
+using Mujoco.Nodes;
 
 
 
@@ -61,6 +62,10 @@ namespace GraphEditorAppV2
 
 		public void InitializeGraph()
 		{
+            // load libraries (this should be configurable...)
+            MujocoNodeLibrary.Initialize();
+
+
 			GraphView = new NodeGraphViewport();
 			GraphView.Initialize();
 			// NodeGraphViewport by default sets a kinda hacky backdoor key handler for space key.
