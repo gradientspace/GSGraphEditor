@@ -10,14 +10,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\DerivativeCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
+    <ProjectReference Include="..\..\..\geometry3Sharp\geometry3Sharp.csproj" />
   </ItemGroup>
 
 
 	<!--- This will copy the mujoco.dll the output folder for this project and also any dependent project -->
 	<ItemGroup>
 		<Content Include="mujoco\bin\mujoco.dll">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<TargetPath>mujoco.dll</TargetPath>
+		</Content>
+		<Content Include="mujoco\bin\simulate.exe">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>simulate.exe</TargetPath>
 		</Content>
 	</ItemGroup>	
 	

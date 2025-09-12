@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using static Mujoco.MujocoLib;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+
 
 namespace Mujoco
 {
@@ -14,6 +13,104 @@ namespace Mujoco
         [StructLayout(LayoutKind.Sequential)]
         public unsafe struct mjSpec
         {
+            public mjsElement* element;             // element type
+            public mjString* childclass;            // childclass name
+
+            // compiler data
+            public mjsCompiler compiler;            // compiler options
+            public byte strippath;               // automatically strip paths from mesh files
+            public mjString* meshdir;               // mesh and hfield directory
+            public mjString* texturedir;            // texture directory
+
+            // engine data
+            public mjOption option;                 // physics options
+            //public mjVisual visual;                 // visual options
+            //public mjStatistic stat;                // statistics override (if defined)
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct mjOption
+        {
+            // timing parameters
+            public double timestep;                // timestep
+            public double apirate;                 // update rate for remote API (Hz)
+
+            // solver parameters
+            public double impratio;                // ratio of friction-to-normal contact impedance
+            public double tolerance;               // main solver tolerance
+            public double ls_tolerance;            // CG/Newton linesearch tolerance
+            public double noslip_tolerance;        // noslip solver tolerance
+            public double ccd_tolerance;           // convex collision solver tolerance
+
+            // physical constants
+            public fixed double gravity[3];              // gravitational acceleration
+            public fixed double wind[3];                 // wind (for lift, drag and viscosity)
+            public fixed double magnetic[3];             // global magnetic flux
+            public double density;                 // density of medium
+            public double viscosity;               // viscosity of medium
+
+            // override contact solver parameters (if enabled)
+            public double o_margin;                // margin
+            public fixed double o_solref[2];        // solref
+            public fixed double o_solimp[5];        // solimp
+            public fixed double o_friction[5];           // friction
+
+            // discrete settings
+            public int integrator;                 // integration mode (mjtIntegrator)
+            public int cone;                       // type of friction cone (mjtCone)
+            public int jacobian;                   // type of Jacobian (mjtJacobian)
+            public int solver;                     // solver algorithm (mjtSolver)
+            public int iterations;                 // maximum number of main solver iterations
+            public int ls_iterations;              // maximum number of CG/Newton linesearch iterations
+            public int noslip_iterations;          // maximum number of noslip solver iterations
+            public int ccd_iterations;             // maximum number of convex collision solver iterations
+            public int disableflags;               // bit flags for disabling standard features
+            public int enableflags;                // bit flags for enabling optional features
+            public int disableactuator;            // bit flags for disabling actuators by group id
+
+            // sdf collision settings
+            public int sdf_initpoints;             // number of starting points for gradient descent
+            public int sdf_iterations;             // max number of iterations for gradient descent
+        };
+
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct mjLROpt
+        { 
+            // flags
+            public int mode;                       // which actuators to process (mjtLRMode)
+            public int useexisting;                // use existing length range if available
+            public int uselimit;                   // use joint and tendon limits if available
+
+            // algorithm parameters
+            public double accel;                   // target acceleration used to compute force
+            public double maxforce;                // maximum force; 0: no limit
+            public double timeconst;               // time constant for velocity reduction; min 0.01
+            public double timestep;                // simulation timestep; 0: use mjOption.timestep
+            public double inttotal;                // total simulation time interval
+            public double interval;                // evaluation time interval (at the end)
+            public double tolrange;                // convergence tolerance (relative to range)
+        };
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct mjsCompiler
+        {      // compiler options
+            public byte autolimits;              // infer "limited" attribute based on range
+            public double boundmass;                // enforce minimum body mass
+            public double boundinertia;             // enforce minimum body diagonal inertia
+            public double settotalmass;             // rescale masses and inertias; <=0: ignore
+            public byte balanceinertia;          // automatically impose A + B >= C rule
+            public byte fitaabb;                 // meshfit to aabb instead of inertia box
+            public byte degree;                  // angles in radians or degrees
+            public fixed char eulerseq[3];                // sequence for euler rotations
+            public byte discardvisual;           // discard visual geoms in parser
+            public byte usethread;               // use multiple threads to speed up compiler
+            public byte fusestatic;              // fuse static bodies with parent
+            public int inertiafromgeom;             // use geom inertias (mjtInertiaFromGeom)
+            public fixed int inertiagrouprange[2];        // range of geom groups used to compute inertia
+            public byte saveinertial;            // save explicit inertial clause for all bodies to XML
+            public int alignfree;                   // align free joints with inertial frame
+            mjLROpt LRopt;                   // options for lengthrange computation
         }
 
         // this is std::string...??
@@ -27,20 +124,20 @@ namespace Mujoco
         [StructLayout(LayoutKind.Sequential)]
         public unsafe struct mjsBody
         {
-            mjsElement* element;             // element type
-            mjString* childclass;            // childclass name
+            public mjsElement* element;             // element type
+            public mjString* childclass;            // childclass name
 
             // body frame
             public fixed double pos[3];                   // frame position
             public fixed double quat[4];                  // frame orientation
-            mjsOrientation alt;              // frame alternative orientation
+            public mjsOrientation alt;              // frame alternative orientation
 
             // inertial frame
-            double mass;                     // mass
+            public double mass;                     // mass
             public fixed double ipos[3];                  // inertial frame position
             public fixed double iquat[4];                 // inertial frame orientation
             public fixed double inertia[3];               // diagonal inertia (in i-frame)
-            mjsOrientation ialt;             // inertial frame alternative orientation
+            public mjsOrientation ialt;             // inertial frame alternative orientation
             public fixed double fullinertia[6];           // non-axis-aligned inertia matrix
 
             // other
@@ -61,7 +158,7 @@ namespace Mujoco
         [StructLayout(LayoutKind.Sequential)]
         public unsafe struct mjsOrientation
         {   // alternative orientation specifiers
-            mjtOrientation type;             // active orientation specifier
+            public mjtOrientation type;             // active orientation specifier
             public fixed double axisangle[4];             // axis and angle
             public fixed double xyaxes[6];                // x and y axes
             public fixed double zaxis[3];                 // z axis (minimal rotation)
@@ -93,30 +190,30 @@ namespace Mujoco
             public fixed double size[3];                  // type-specific size
 
             // contact related
-            int contype;                     // contact type
-            int conaffinity;                 // contact affinity
-            int condim;                      // contact dimensionality
-            int priority;                    // contact priority
+            public int contype;                     // contact type
+            public int conaffinity;                 // contact affinity
+            public int condim;                      // contact dimensionality
+            public int priority;                    // contact priority
             public fixed double friction[3];              // one-sided friction coefficients: slide, roll, spin
-            double solmix;                   // solver mixing for contact pairs
+            public double solmix;                   // solver mixing for contact pairs
             public fixed double solref[mjNREF];           // solver reference
             public fixed double solimp[mjNIMP];           // solver impedance
-            double margin;                   // margin for contact detection
-            double gap;                      // include in solver if dist < margin-gap
+            public double margin;                   // margin for contact detection
+            public double gap;                      // include in solver if dist < margin-gap
 
             // inertia inference
-            double mass;                     // used to compute density
-            double density;                  // used to compute mass and inertia from volume or surface
-            mjtGeomInertia typeinertia;      // selects between surface and volume inertia
+            public double mass;                     // used to compute density
+            public double density;                  // used to compute mass and inertia from volume or surface
+            public mjtGeomInertia typeinertia;      // selects between surface and volume inertia
 
             // fluid forces
             double fluid_ellipsoid;          // whether ellipsoid-fluid model is active
             public fixed double fluid_coefs[5];           // ellipsoid-fluid interaction coefs
 
             // visual
-            mjString* material;              // name of material
+            public mjString* material;              // name of material
             public fixed float rgba[4];                   // rgba when material is omitted
-            int group;                       // group
+            public int group;                       // group
 
             // other
             mjString* hfieldname;            // heightfield attached to geom
@@ -130,6 +227,11 @@ namespace Mujoco
 
         [StructLayout(LayoutKind.Sequential)]
         public unsafe struct mjsDefault
+        {
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct mjsJoint
         {
         }
 
@@ -162,12 +264,23 @@ namespace Mujoco
         [DllImport("mujoco", CallingConvention = CallingConvention.Cdecl)]
         public static unsafe extern mjsBody* mjs_findBody(mjSpec* s, [MarshalAs(UnmanagedType.LPStr)]string name);
 
+        // Add geom to body.
+        //mjsGeom* mjs_addGeom(mjsBody* body, const mjsDefault* def);
+        [DllImport("mujoco", CallingConvention = CallingConvention.Cdecl)]
+        public static unsafe extern mjsBody* mjs_addBody(mjsBody* body, mjsDefault* def = null);
+
 
         // Add geom to body.
         //mjsGeom* mjs_addGeom(mjsBody* body, const mjsDefault* def);
         [DllImport("mujoco", CallingConvention = CallingConvention.Cdecl)]
         public static unsafe extern mjsGeom* mjs_addGeom(mjsBody* body, mjsDefault* def = null);
 
+
+        // Add geom to body.
+        //mjsJoint* mjs_addFreeJoint(mjsBody* body);
+        [DllImport("mujoco", CallingConvention = CallingConvention.Cdecl)]
+        public static unsafe extern mjsJoint* mjs_addFreeJoint(mjsBody* body);
+        
 
 
 
