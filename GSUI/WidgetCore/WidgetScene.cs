@@ -85,6 +85,7 @@ namespace Gradientspace.UI
             public WidgetInfo(IWidgetSource source, IWidgetView view) {  Source = source; View = view; }    
         }
 
+        protected object SceneLockable = new object();
         protected List<WidgetSourceSet> AllWidgetInfos = new List<WidgetSourceSet>();
         protected Dictionary<Widget, WidgetInfo> RootWidgetViews = new Dictionary<Widget, WidgetInfo>();
 
@@ -107,7 +108,14 @@ namespace Gradientspace.UI
 
         public IWidgetViewFactory? ActiveCustomFactory { get; set; } = null;
 
+
         public void AddSource(IWidgetSource Source)
+        {
+            lock(SceneLockable) {
+                AddSourceImpl(Source);
+            }
+        }
+        public void AddSourceImpl(IWidgetSource Source)
         {
             WidgetSourceSet info = new WidgetSourceSet(Source);
             foreach (Widget rootWidget in Source.CollectRootWidgets())
@@ -161,9 +169,14 @@ namespace Gradientspace.UI
 
         public bool RemoveSource(IWidgetSource Source)
         {
+            lock (SceneLockable) {
+                return RemoveSourceImpl(Source);
+            }
+        }
+        protected bool RemoveSourceImpl(IWidgetSource Source)
+        {
             int FoundIndex = -1;
-            for (int i = 0; i < AllWidgetInfos.Count && FoundIndex == -1; ++i)
-            {
+            for (int i = 0; i < AllWidgetInfos.Count && FoundIndex == -1; ++i) {
                 if (AllWidgetInfos[i].Source == Source)
                     FoundIndex = i;
             }
@@ -171,8 +184,7 @@ namespace Gradientspace.UI
 
             Source.WidgetsUpdated -= OnWidgetSourceUpdated;
 
-            foreach (Widget rootWidget in AllWidgetInfos[FoundIndex].RootWidgets)
-            {
+            foreach (Widget rootWidget in AllWidgetInfos[FoundIndex].RootWidgets) {
                 DestroyRootWidget(rootWidget);
             }
             AllWidgetInfos.RemoveAt(FoundIndex);
@@ -208,8 +220,10 @@ namespace Gradientspace.UI
 
         public void UpdateScene()
         {
-            if ( PendingUpdates.Count > 0)
-                ProcessPendingUpdates();
+            lock (SceneLockable) {
+                if (PendingUpdates.Count > 0)
+                    ProcessPendingUpdates();
+            }
         }
         protected void ProcessPendingUpdates()
         {
@@ -218,15 +232,15 @@ namespace Gradientspace.UI
             PendingUpdates.Clear();
         }
 
-
-
         public void UpdateLayout(SKStyleCache StyleCache)
         {
-            // todo probably should try to do based on the dictionary somehow or something...
-            foreach (WidgetSourceSet set in AllWidgetInfos)
-            {
-                foreach (Widget rootWidget in set.RootWidgets)
-                    SolveLayout(rootWidget, StyleCache);
+            lock (SceneLockable) {
+                // todo probably should try to do based on the dictionary somehow or something...
+                foreach (WidgetSourceSet set in AllWidgetInfos)
+                {
+                    foreach (Widget rootWidget in set.RootWidgets)
+                        SolveLayout(rootWidget, StyleCache);
+                }
             }
         }
         protected void SolveLayout(Widget rootWidget, SKStyleCache StyleCache)
@@ -267,6 +281,12 @@ namespace Gradientspace.UI
         }
 
         public void Draw(SKStyleCache StyleCache, SKCanvas Canvas)
+        {
+            lock(SceneLockable) {
+                DrawInternal(StyleCache, Canvas);
+            }
+        }
+        protected void DrawInternal(SKStyleCache StyleCache, SKCanvas Canvas)
         {
             DrawSet draws = new DrawSet();
             foreach (WidgetSourceSet set in AllWidgetInfos) 
@@ -311,8 +331,13 @@ namespace Gradientspace.UI
         }
 
 
-
         public bool HitQuery(Vector2f QueryPoint, out WidgetHitResult hitResult, Predicate<Widget>? WidgetPredicateFunc = null)
+        {
+            lock (SceneLockable) {
+                return HitQueryImpl(QueryPoint, out hitResult, WidgetPredicateFunc);
+            }
+        }
+        protected bool HitQueryImpl(Vector2f QueryPoint, out WidgetHitResult hitResult, Predicate<Widget>? WidgetPredicateFunc = null)
         {
             hitResult = WidgetHitResult.None;
 
@@ -355,15 +380,23 @@ namespace Gradientspace.UI
 
         public bool ContainsWidget(Widget widget)
         {
-            Widget rootWidget = widget.FindRoot();
-            foreach (WidgetSourceSet set in AllWidgetInfos)
-                if (set.RootWidgets.Contains(rootWidget)) 
-                    return true;
-            return false;
+            lock (SceneLockable) {
+                Widget rootWidget = widget.FindRoot();
+                foreach (WidgetSourceSet set in AllWidgetInfos)
+                    if (set.RootWidgets.Contains(rootWidget))
+                        return true;
+                return false;
+            }
         }
 
 
         public InputCaptureRequest CheckForHoverCapture(in InputDeviceState deviceState)
+        {
+            lock(SceneLockable) {
+                return CheckForHoverCaptureImpl(in deviceState);
+            }
+        }
+        public InputCaptureRequest CheckForHoverCaptureImpl(in InputDeviceState deviceState)
         {
             InputCaptureRequest BestRequest = InputCaptureRequest.None;
 
@@ -393,6 +426,12 @@ namespace Gradientspace.UI
 
 
         public InputCaptureRequest CheckForDeviceCapture(in InputDeviceState deviceState)
+        {
+            lock(SceneLockable) {
+                return CheckForDeviceCaptureImpl(deviceState);
+            }
+        }
+        protected InputCaptureRequest CheckForDeviceCaptureImpl(in InputDeviceState deviceState)
         {
             InputCaptureRequest BestRequest = InputCaptureRequest.None;
 
