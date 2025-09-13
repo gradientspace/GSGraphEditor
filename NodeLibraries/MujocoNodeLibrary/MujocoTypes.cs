@@ -1,4 +1,5 @@
-﻿using System;
+﻿using g3;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -16,11 +17,6 @@ namespace Mujoco.Nodes
         {
             if (spec == null)
                 spec = mj_makeSpec();                                  // make an empty spec
-
-            // .gravity is off by one double...?!?
-            //spec->option.gravity[0] = 0;
-            //spec->option.gravity[1] = -9.81;
-            //spec->option.gravity[2] = -9.82;
         }
         public void Release()
         {
