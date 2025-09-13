@@ -482,6 +482,16 @@ namespace GSNodeEditor
         public string DrawLabel { get; set; } = string.Empty;
         public Vector2f LabelOrigin { get; set; }
 
+        List<(int, int)> InOutMatches = new List<(int, int)>();
+
+        static SKPaint InOutCurvePaint = new SKPaint() {
+            Color = new SKColor(255, 165, 0, 80),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 2,
+            IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash(new float[] { 3, 3 }, 10)
+        };
+
         public virtual AxisAlignedBox2f BoundsQuery(ILayoutAnchor? RelativeToAnchor = null)
         {
             return (RelativeToAnchor != null) ?
@@ -525,6 +535,7 @@ namespace GSNodeEditor
             const float PinVerticalSpace = 5;
 
             // compute max input and output pin text length
+            InOutMatches.Clear();
             float MaxInputPinWidth = 0;
             for (int k = 0; k < NumInputs; ++k)
             {
@@ -537,6 +548,17 @@ namespace GSNodeEditor
                     ChildWidth += (PinNodeEdgeOffset+PinNodeConstantEdgeOffset);      // otherwise constant val may overlap rhs
 
                 MaxInputPinWidth = MathF.Max(MaxInputPinWidth, ChildWidth);
+
+                // probably should be figured out at Widget level...
+                // (possibly even requires querying the node...)
+                if (SourceNodeWidget.InputWidgets[k].NodeInputInfo.IsInOut) {
+                    for (int j = 0; j < NumOutputs; ++j) {
+                        if ( SourceNodeWidget.OutputWidgets[j].OutputName == SourceNodeWidget.InputWidgets[k].InputName ) {
+                            InOutMatches.Add(new(k, j));
+                            break;
+                        }
+                    }
+                }
             }
 
             float MaxOutputPinWidth = 0;
@@ -709,6 +731,19 @@ namespace GSNodeEditor
 
             string UseLabel = DrawLabel;
             Canvas.DrawText(UseLabel, LabelOrigin.x, LabelOrigin.y, LabelTextPaint);
+
+            // draw little curves beween in and out pins for inout fields
+            if (InOutMatches.Count > 0) {
+                foreach ((int k, int j) in InOutMatches) {
+                    Vector2f Start = SourceNodeWidget.InputWidgetAnchors[k].Box.CenterLeft;
+                    Vector2f End = SourceNodeWidget.OutputWidgetAnchors[j].Box.CenterRight;
+                    float d = (End.x-Start.x) * 0.75f;
+                    SKPath Curve = new SKPath();
+                    Curve.MoveTo(Conversion.ToSkia(Start));
+                    Curve.CubicTo(new SKPoint(Start.x+d, Start.y), new SKPoint(End.x-d, End.y), Conversion.ToSkia(End));
+                    Canvas.DrawPath(Curve, InOutCurvePaint);
+                }
+            }
 
             Canvas.SetMatrix(InitialMatrix);
         }

@@ -57,7 +57,6 @@ Graph Features
 - Color nodes by type
 - overrideable node color?
 - show by-ref vs by-value in pin tooltip
-- by-ref in-to-out dashed lines
 
 
 ===================
