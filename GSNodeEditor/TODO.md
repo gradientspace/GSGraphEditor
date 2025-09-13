@@ -17,6 +17,7 @@ Renaming
 Bugs
 ===================
 
+- why isn't int -> Vector3d a type-conversion warning?
 - 'Missing' pins do not disappear when disconnected
 - Missing pins not necessarily an error when evaluating graph...
 -crash if remove a function input that has values wired to it in call nodes
@@ -25,7 +26,6 @@ Bugs
 -text entry field hotkeys don't always work...
 -ClutchKeyInputBehavior is broken by selection support. Need to add handling for InputBehavior Priority.
 -CustomDataItem API should be moved from NodeBase to INode
--spurious exceptions about collections changing when drawing nodes or connections...probably due to draw running in separate thread. Need to synchronize w/ edits?
 -undo back to last load/save state does not clear dirty flag
 
 ===================
