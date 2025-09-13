@@ -102,7 +102,7 @@ namespace Mujoco
             public byte balanceinertia;          // automatically impose A + B >= C rule
             public byte fitaabb;                 // meshfit to aabb instead of inertia box
             public byte degree;                  // angles in radians or degrees
-            public fixed char eulerseq[3];                // sequence for euler rotations
+            public fixed byte eulerseq[3];                // sequence for euler rotations
             public byte discardvisual;           // discard visual geoms in parser
             public byte usethread;               // use multiple threads to speed up compiler
             public byte fusestatic;              // fuse static bodies with parent
