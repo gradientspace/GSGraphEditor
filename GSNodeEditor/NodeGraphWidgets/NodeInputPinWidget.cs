@@ -547,7 +547,8 @@ namespace GSNodeEditor
                 TextHeightInfo DataTypeTextHeightInfo = SKStyleCache.MeasureTextHeightInfo(DataTypeTextPaint);
                 SKPaint WarningDataTypeFillPaint = new SKPaint { Color = SKColors.DarkOrange };
                 const float Margin = 3;
-                string TypeText = TypeUtils.TypeToString(SourcePinWidget.DataType.CSType) + " -> " + TypeUtils.TypeToString(SourcePinWidget.FromTypeConversion!);
+                //string TypeText = TypeUtils.TypeToString(SourcePinWidget.DataType.CSType) + " -> " + TypeUtils.TypeToString(SourcePinWidget.FromTypeConversion!);
+                string TypeText = TypeUtils.TypeToString(SourcePinWidget.FromTypeConversion!) + " -> " + TypeUtils.TypeToString(SourcePinWidget.DataType.CSType);
                 SKRect Bounds = SKRect.Empty;
                 float Width = DataTypeTextPaint.MeasureText(TypeText, ref Bounds);
                 Bounds.Left -= (Margin + 2); Bounds.Right += (Margin + 1); Bounds.Bottom += Margin; Bounds.Top -= Margin;
