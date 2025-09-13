@@ -43,6 +43,13 @@ namespace Gradientspace.UI
     }
 
 
+    public enum EStyleFontFlags
+    {
+        None = 0,
+        Italic = 1 << 1,
+    }
+
+
     public class WidgetStyle
     {
         public Colorf ForegroundColor { get; set; } = Colorf.DarkRed;
@@ -53,6 +60,7 @@ namespace Gradientspace.UI
         public Colorf TextColor { get; set; } = Colorf.Black;
         public float TextSize { get; set; } = 11.0f;
         public string FontName { get; set; } = "Arial";
+        public EStyleFontFlags FontFlags { get; set; } = EStyleFontFlags.None;
 
         public WidgetMargins Margins = new WidgetMargins(2);
 
@@ -276,6 +284,7 @@ namespace Gradientspace.UI
                 StrokeWidth = 2.0f,
                 Color = Conversion.ToSkia(style.ForegroundColor)
             };
+            SKFontStyleSlant slantStyle = style.FontFlags.HasFlag(EStyleFontFlags.Italic) ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
             CachedPaints.TextPaint = new SKPaint
             {
                 Color = Conversion.ToSkia(style.TextColor),
@@ -285,7 +294,7 @@ namespace Gradientspace.UI
                 TextSize = style.TextSize,
                 Typeface = SKTypeface.FromFamilyName(
                     familyName: style.FontName,
-                    weight: SKFontStyleWeight.Normal, width: SKFontStyleWidth.Normal, slant: SKFontStyleSlant.Upright)
+                    weight: SKFontStyleWeight.Normal, width: SKFontStyleWidth.Normal, slant: slantStyle)
             };
         }
 
