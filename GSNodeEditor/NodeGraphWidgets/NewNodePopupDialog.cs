@@ -1,6 +1,7 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
 using g3;
 using Gradientspace.NodeGraph;
+using Gradientspace.NodeGraph.CodeNodes;
 using Gradientspace.UI;
 using SkiaSharp;
 using System;
@@ -348,12 +349,36 @@ namespace GSNodeEditor
 
 			Dictionary<string, NodesCategory> CategoryMap = new Dictionary<string, NodesCategory>();
 
+            var get_node_label = (NodeType nodeType) => {
+                string nodeText = nodeType.GetNodeTypeUIName();
+
+                if (nodeType.ClassType.IsSubclassOf(typeof(ControlFlowNode)))
+                    return (nodeText, null);
+                if (nodeType.ClassType.IsSubclassOf(typeof(PlaceholderNodeBase)))
+                    return (nodeText, null);
+                if (nodeType.ClassType.IsAssignableTo(typeof(INodeWithInlineCode)))
+                    return (nodeText, null);
+
+                ENodeInputFlags ignoreFlags = ENodeInputFlags.IsNodeConstant | ENodeInputFlags.Hidden;
+                foreach (INodeInputInfo inputInfo in nodeType.NodeArchetype!.EnumerateInputs()) {
+                    if ((inputInfo.Input.GetInputFlags() & ignoreFlags) != 0)
+                        continue;
+                    if (inputInfo.DataType.CSType == typeof(object))
+                        return (nodeText, null);
+                    string typeStr = TypeUtils.TypeToString(inputInfo.DataType);
+                    return (nodeText, $"({typeStr})");
+                }
+                return (nodeText,null);
+            };
+
             // add a node to the menu set. this will dynamically create it's category if it doesn't exist yet.
             var TryAddToCategory = (NodeType nodeType) =>
             {
+                (string nodeLabel, string? nodeHint) = get_node_label(nodeType);
+
                 if ( CategoryMap.TryGetValue(nodeType.UICategory, out NodesCategory? found) )
                 {
-                    found.CategoryMenu.AddItem(new MenuItem() { Text = nodeType.GetNodeTypeUIName(), CustomData = nodeType });
+                    found.CategoryMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
                 }
                 else
                 {
@@ -361,7 +386,7 @@ namespace GSNodeEditor
                     newCategory.CategoryMenu.AnchorTo(NodesCategoryMenuAnchor);
                     newCategory.CategoryMenu.OnMenuItemSelected += NodesMenu_OnMenuItemSelected;
 
-                    newCategory.CategoryMenu.AddItem(new MenuItem() { Text = nodeType.GetNodeTypeUIName(), CustomData = nodeType });
+                    newCategory.CategoryMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
                     CategoryMap.Add(newCategory.Label, newCategory);
 
                     NodesCategories.Add(newCategory);
@@ -373,16 +398,14 @@ namespace GSNodeEditor
 			NodesMenu.ClearItems();
 
             // build out the menus for all nodes with a given input type, or just all nodes
-            if (bHaveValidFromPin) {
-                foreach (NodeType nodeType in Library.EnumerateAllNodesWithFirstAssignablePinType(FromPinGraphDataType)) {
-                    NodesMenu.AddItem( new MenuItem() { Text = nodeType.GetNodeTypeUIName(), CustomData = nodeType } );
-                    TryAddToCategory(nodeType);
-                }
-            } else {
-                foreach (NodeType nodeType in Library.EnumerateAllNodes()) {
-                    NodesMenu.AddItem(new MenuItem() { Text = nodeType.GetNodeTypeUIName(), CustomData = nodeType });
-                    TryAddToCategory(nodeType);
-                }
+            IEnumerable<NodeType> filteredNodes = (bHaveValidFromPin) ?
+                Library.EnumerateAllNodesWithFirstAssignablePinType(FromPinGraphDataType) : Library.EnumerateAllNodes();
+
+            foreach (NodeType nodeType in filteredNodes) 
+            {
+                (string nodeLabel, string? nodeHint) = get_node_label(nodeType);
+                NodesMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
+                TryAddToCategory(nodeType);
             }
 
             // sort everthing
