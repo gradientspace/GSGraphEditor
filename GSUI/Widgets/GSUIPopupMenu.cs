@@ -15,6 +15,7 @@ namespace Gradientspace.UI
     public class MenuItem
     {
         public string Text = "Menu Item";
+        public string? HintText = null;
         public string Tooltip = "";
         public object? CustomData = null;
 
@@ -273,11 +274,14 @@ namespace Gradientspace.UI
         struct CachedItemInfo
         {
             public MenuItem Item;
-            public float TextWidth;
+            public float TotalTextWidth;
+            public float HintTextWidth;
             public AxisAlignedBox2f ItemBounds;
         }
         CachedItemInfo[] CachedItems;
         int NumVisibleItems;
+
+        WidgetStyle? HintTextStyle = null;      // maybe should be in cache...kinda specific to this class though
 
         public PopupMenuView(PopupMenu sourceMenu)
         {
@@ -308,17 +312,32 @@ namespace Gradientspace.UI
             }
             if (NumVisibleItems == 0) return;
 
+            if (HintTextStyle == null) {
+                HintTextStyle = new WidgetStyle();
+                HintTextStyle.Copy(SourceMenu.Style.StandardStyle);
+                HintTextStyle.TextSize -= 2;
+                HintTextStyle.FontFlags = EStyleFontFlags.Italic;
+                HintTextStyle.TextColor = HintTextStyle.TextColor.ClampAdd(.4f, .4f, .4f);
+            }
+
             SKPaint TextPaint = StyleCache.GetCachedPaint(SourceMenu.Style.StandardStyle, SKStyleCache.EPaintType.Text);
+            SKPaint HintTextPaint = StyleCache.GetCachedPaint(HintTextStyle!, SKStyleCache.EPaintType.Text);
 
             TextHeightInfo heightInfo = StyleCache.GetCachedFontHeightInfo(SourceMenu.Style.StandardStyle);
             float TextHeight = heightInfo.MaxTotalHeight;
             float TotalYHeight = TextHeight + SourceMenu.Style.BaseMargins.TotalHeight;
 
             float MaxWidth = 0;
+            float SpaceWidth = TextPaint.MeasureText(" ");
             for ( int i = 0; i < NumVisibleItems; ++i)
             {
-                CachedItems[i].TextWidth = TextPaint.MeasureText(CachedItems[i].Item.Text);
-                MaxWidth = MathF.Max(CachedItems[i].TextWidth, MaxWidth);
+                CachedItems[i].HintTextWidth = 0;
+                CachedItems[i].TotalTextWidth = TextPaint.MeasureText(CachedItems[i].Item.Text);
+                if (CachedItems[i].Item.HintText != null) {
+                    CachedItems[i].HintTextWidth = HintTextPaint.MeasureText(CachedItems[i].Item.HintText);
+                    CachedItems[i].TotalTextWidth += 3*SpaceWidth + CachedItems[i].HintTextWidth;
+                }
+                MaxWidth = MathF.Max(CachedItems[i].TotalTextWidth, MaxWidth);
             }
             MaxWidth += SourceMenu.Style.BaseMargins.TotalWidth;
 
@@ -348,6 +367,7 @@ namespace Gradientspace.UI
 
             if (NumVisibleItems == 0) return;
 
+            SKPaint HintTextPaint = StyleCache.GetCachedPaint(HintTextStyle!, SKStyleCache.EPaintType.Text);
             SKStyleCache.CachedSKPaintSet StandardPaints = StyleCache.GetCachedPaintSet(SourceMenu.Style.StandardStyle);
             SKPaint HoveredPaint = StyleCache.GetCachedPaint(SourceMenu.Style.HoverStyle, SKStyleCache.EPaintType.Background);
             WidgetMargins Margins = SourceMenu.Style.BaseMargins;
@@ -370,6 +390,13 @@ namespace Gradientspace.UI
                     CachedItems[i].ItemBounds.Min.x + Margins.Left,
                     CachedItems[i].ItemBounds.Max.y - Margins.Bottom - heightInfo.BelowBaseline);
                 Canvas.DrawText( CachedItems[i].Item.Text, Conversion.ToSkia(TextOrigin), StandardPaints.TextPaint );
+
+                if (CachedItems[i].HintTextWidth > 0) {
+                    Vector2f HintTextOrigin = new Vector2f(
+                        CachedItems[i].ItemBounds.Max.x - Margins.Left - CachedItems[i].HintTextWidth,
+                        CachedItems[i].ItemBounds.Max.y - Margins.Bottom - heightInfo.BelowBaseline );
+                    Canvas.DrawText( CachedItems[i].Item.HintText, Conversion.ToSkia(HintTextOrigin), HintTextPaint);
+                }
             }
 
             Canvas.SetMatrix(SaveMatrix);
