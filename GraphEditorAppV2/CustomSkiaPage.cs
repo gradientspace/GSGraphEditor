@@ -24,6 +24,7 @@ using Gradientspace.NodeGraph;
 using Avalonia.Win32.Input;
 using Avalonia.Interactivity;
 using Mujoco.Nodes;
+using Meshmixer.Nodes;
 
 
 
@@ -64,6 +65,7 @@ namespace GraphEditorAppV2
 		{
             // load libraries (this should be configurable...)
             MujocoNodeLibrary.Initialize();
+            MeshmixerNodeLibrary.Initialize();
 
 
 			GraphView = new NodeGraphViewport();

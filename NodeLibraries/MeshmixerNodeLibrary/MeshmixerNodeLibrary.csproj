@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Meshmixer.Nodes</RootNamespace>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="mm\mmapi.exp" />
+    <None Remove="mm\mmapi.lib" />
+    <None Remove="mm\mmapi.pdb" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\DerivativeCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
+    <ProjectReference Include="..\..\..\DerivativeEngine\GSNodeGraph\GSNodeGraph.csproj" />
+    <ProjectReference Include="..\..\..\geometry3Sharp\geometry3Sharp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="mm\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="mmapi_csharp">
+      <HintPath>mm\mmapi_csharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+	<!--- This will copy the mmapi.dll the output folder for this project and also any dependent project -->
+	<ItemGroup>
+		<Content Include="mm\mmapi.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>mmapi.dll</TargetPath>
+		</Content>
+	</ItemGroup>
+
+
+</Project>
