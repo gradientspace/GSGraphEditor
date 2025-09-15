@@ -14,9 +14,7 @@ namespace Meshmixer.Nodes
 
 
 
-
-
-    public class MeshmixerConnection : IDisposable
+    public class MMConnection : IDisposable
     {
         public mm.RemoteControl Connection = null;
         public bool Open()
@@ -37,7 +35,7 @@ namespace Meshmixer.Nodes
             Connection = null;
         }
 
-        ~MeshmixerConnection() {
+        ~MMConnection() {
             Close();
         }
         public void Dispose() {
@@ -67,7 +65,7 @@ namespace Meshmixer.Nodes
                 MMUtil.TryLaunchMeshMixerInstance(TempFileName);
                 return;
             }
-            MeshmixerConnection c = new MeshmixerConnection();
+            MMConnection c = new MMConnection();
             if ( c.Open() == false ) {
                 GlobalGraphOutput.AppendError($"Could not connect to Meshmixer");
                 return;
@@ -88,10 +86,10 @@ namespace Meshmixer.Nodes
 
 
         [NodeFunction(ReturnName = "Connection")]
-        public static MeshmixerConnection ConnectToMeshmixer(
+        public static MMConnection ConnectToMeshmixer(
             bool StartIfNeeded = true )
         {
-            MeshmixerConnection c = new MeshmixerConnection();
+            MMConnection c = new MMConnection();
 
             bool bRunning = MMUtil.IsMeshmixerRunning();
             if ( !bRunning && !StartIfNeeded ) {
@@ -111,7 +109,7 @@ namespace Meshmixer.Nodes
 
 
         [NodeFunction(ReturnName = "Connection")]
-        public static void MMImportFile(ref MeshmixerConnection MM, string FilePath, bool bNewScene = true)
+        public static void MMImportFile(ref MMConnection MM, string FilePath, bool bNewScene = true)
         {
             if (MM == null)
                 return;
@@ -123,7 +121,7 @@ namespace Meshmixer.Nodes
 
         [NodeFunction(ReturnName = "Connection")]
         public static void MMPlaneCut(
-            ref MeshmixerConnection MM,
+            ref MMConnection MM,
             Vector3d Location,
             Vector3d Normal )
         {

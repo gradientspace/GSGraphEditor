@@ -31,6 +31,8 @@ Bugs
 ===================
 Graph Features
 ===================
+- add some heuristics for handling name changes in inputs and outputs, when missing on load
+- add pin-name-redirector attributes
 - docking branch node  (to simplify common bool/branch pattern)
 - nodeconstant default values  (copy from archetype?)
 - support for serializing NodeFlags? required if they are used to store edit states...could compare w/ archetype? (but then delta-serialize issues...)
