@@ -30,9 +30,11 @@ namespace Mujoco.Nodes
 
 
         [NodeFunction(ReturnName="WorldBody")]
-        public static MujocoBody mjFindWorld(MujocoSpec Spec)
+        public static MujocoBody? mjFindWorld(ref MujocoSpec Spec)
         {
             mjsBody* world = mjs_findBody(Spec.spec, "world");
+            if (world == null)
+                return null;
             return new MujocoBody(world);
         }
 
