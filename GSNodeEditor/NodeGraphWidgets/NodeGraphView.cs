@@ -5,6 +5,7 @@ using Gradientspace.UI;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -340,13 +341,17 @@ namespace GSNodeEditor
 
             foreach (IConnectionInfo connectionInfo in SourceGraph.EnumerateConnections(EConnectionType.Data)) {
                 ConnectionView? NewConnection = AddConnection(connectionInfo);
-                if (NewConnection == null)
-                    throw new Exception("SourceGraph.ConnectToGraph: failed to add connection!");
+                if (NewConnection == null) {
+                    Debugger.Break();
+                    GlobalGraphOutput.AppendError($"SourceGraph.ConnectToGraph: failed to add connection from {connectionInfo.FromNodeIdentifier}:{connectionInfo.FromNodeOutputName} to {connectionInfo.ToNodeIdentifier}:{connectionInfo.ToNodeInputName}!");
+                }
             }
             foreach (IConnectionInfo connectionInfo in SourceGraph.EnumerateConnections(EConnectionType.Sequence)) {
                 ConnectionView? NewConnection = AddConnection(connectionInfo);
-                if (NewConnection == null)
-                    throw new Exception("SourceGraph.ConnectToGraph: failed to add connection!");
+                if (NewConnection == null) {
+                    Debugger.Break();
+                    GlobalGraphOutput.AppendError($"SourceGraph.ConnectToGraph: failed to add connection from {connectionInfo.FromNodeIdentifier}:{connectionInfo.FromNodeOutputName} to {connectionInfo.ToNodeIdentifier}:{connectionInfo.ToNodeInputName}!");
+                }
             }
 
 			// run full-graph validation...
