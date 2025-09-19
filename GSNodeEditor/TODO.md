@@ -17,6 +17,7 @@ Renaming
 Bugs
 ===================
 
+- Type input on static function node does not result in a type picker
 - why isn't int -> Vector3d a type-conversion warning?
 - 'Missing' pins do not disappear when disconnected
 - Missing pins not necessarily an error when evaluating graph...
