@@ -10,6 +10,18 @@ namespace Mujoco
 {
     public static class MujocoSpecLib
     {
+
+        const int mjNEQDATA = 11;        // number of eq_data fields
+        const int mjNDYN = 10;        // number of actuator dynamics parameters
+        const int mjNGAIN = 10;        // number of actuator gain parameters
+        const int mjNBIAS = 10;        // number of actuator bias parameters
+        const int mjNFLUID = 12;        // number of fluid interaction parameters
+        const int mjNREF = 2;        // number of solver reference parameters
+        const int mjNIMP = 5;         // number of solver impedance parameters
+        const int mjNSENS = 3;         // number of sensor parameters
+        const int mjNSOLVER = 200;       // size of one mjData.solver array
+        const int mjNISLAND = 20;        // number of mjData.solver arrays
+
         [StructLayout(LayoutKind.Sequential)]
         public unsafe struct mjSpec
         {
@@ -233,6 +245,83 @@ namespace Mujoco
         [StructLayout(LayoutKind.Sequential)]
         public unsafe struct mjsJoint
         {
+            public mjsElement* element;             // element type
+            public mjtJoint type;                   // joint type
+
+            // kinematics
+            public fixed double pos[3];                   // anchor position
+            public fixed double axis[3];                  // joint axis
+            public double refValue;                      // value at reference configuration: qpos0
+            public int align;                       // align free joint with body com (mjtAlignFree)
+
+            // stiffness
+            public double stiffness;                // stiffness coefficient
+            public double springref;                // spring reference value: qpos_spring
+            public fixed double springdamper[2];          // timeconst, dampratio
+
+            // limits
+            public int limited;                     // does joint have limits (mjtLimited)
+            public fixed double range[2];                 // joint limits
+            public double margin;                   // margin value for joint limit detection
+            public fixed double solref_limit[mjNREF];     // solver reference: joint limits
+            public fixed double solimp_limit[mjNIMP];     // solver impedance: joint limits
+            public int actfrclimited;               // are actuator forces on joint limited (mjtLimited)
+            public fixed double actfrcrange[2];           // actuator force limits
+
+            // dof properties
+            public double armature;                 // armature inertia (mass for slider)
+            public double damping;                  // damping coefficient
+            public double frictionloss;             // friction loss
+            public fixed double solref_friction[mjNREF];  // solver reference: dof friction
+            public fixed double solimp_friction[mjNIMP];  // solver impedance: dof friction
+
+            // other
+            public int group;                       // group
+            public byte actgravcomp;             // is gravcomp force applied via actuators
+            void* userdata;           // user data
+            mjString* info;                  // message appended to compiler errors
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct mjsActuator
+        {
+            public mjsElement* element;             // element type
+
+            // gain, bias
+            public mjtGain gaintype;                // gain type
+            public fixed double gainprm[mjNGAIN];         // gain parameters
+            public mjtBias biastype;                // bias type
+            public fixed double biasprm[mjNGAIN];         // bias parameters
+
+            // activation state
+            public mjtDyn dyntype;                  // dynamics type
+            public fixed double dynprm[mjNDYN];           // dynamics parameters
+            public int actdim;                      // number of activation variables
+            public byte actearly;                // apply next activations to qfrc
+
+            // transmission
+            public mjtTrn trntype;                  // transmission type
+            public fixed double gear[6];                  // length and transmitted force scaling
+            public mjString* target;                // name of transmission target
+            public mjString* refsite;               // reference site, for site transmission
+            public mjString* slidersite;            // site defining cylinder, for slider-crank
+            public double cranklength;              // crank length, for slider-crank
+            public fixed double lengthrange[2];           // transmission length range
+            public double inheritrange;             // automatic range setting for position and intvelocity
+
+            // input/output clamping
+            public int ctrllimited;                 // are control limits defined (mjtLimited)
+            public fixed double ctrlrange[2];             // control range
+            public int forcelimited;                // are force limits defined (mjtLimited)
+            public fixed double forcerange[2];            // force range
+            public int actlimited;                  // are activation limits defined (mjtLimited)
+            public fixed double actrange[2];              // activation range
+
+            // other
+            public int group;                       // group
+            void* userdata;           // user data
+            public mjsPlugin plugin;                // actuator plugin
+            public mjString* info;                  // message appended to compiler errors
         }
 
 
@@ -276,11 +365,22 @@ namespace Mujoco
         public static unsafe extern mjsGeom* mjs_addGeom(mjsBody* body, mjsDefault* def = null);
 
 
-        // Add geom to body.
+        // Add free joint to body.
         //mjsJoint* mjs_addFreeJoint(mjsBody* body);
         [DllImport("mujoco", CallingConvention = CallingConvention.Cdecl)]
         public static unsafe extern mjsJoint* mjs_addFreeJoint(mjsBody* body);
-        
+
+
+        // Add joint to body.
+        //mjsJoint* mjs_addJoint(mjsBody* body, const mjsDefault* def);
+        [DllImport("mujoco", CallingConvention = CallingConvention.Cdecl)]
+        public static unsafe extern mjsJoint* mjs_addJoint(mjsBody* body, mjsDefault* def = null);
+
+
+        // Add joint to body.
+        //mjsActuator* mjs_addActuator(mjSpec* spec, const mjsDefault* def);
+        [DllImport("mujoco", CallingConvention = CallingConvention.Cdecl)]
+        public static unsafe extern mjsActuator* mjs_addActuator(mjSpec* spec, mjsDefault* def = null);
 
 
 
@@ -289,7 +389,14 @@ namespace Mujoco
         [DllImport("mujoco", CallingConvention = CallingConvention.Cdecl)]
         public static unsafe extern int mjs_setName(mjsElement* element, [MarshalAs(UnmanagedType.LPStr)] string name);
 
+        // Get element's name.
+        // mjString* mjs_getName(mjsElement* element);
+        // can do this for return string... [return: MarshalAs(UnmanagedType.LPStr)]
+        [DllImport("mujoco", CallingConvention = CallingConvention.Cdecl)]
+        public static unsafe extern mjString* mjs_getName(mjsElement* element);
 
+        [DllImport("mujoco", CallingConvention = CallingConvention.Cdecl)]
+        public static unsafe extern void mjs_setString(mjString* dest, [MarshalAs(UnmanagedType.LPStr)] string text);
 
 
         // const char* mjs_getError(mjSpec* s);

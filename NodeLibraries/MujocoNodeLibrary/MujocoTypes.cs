@@ -13,6 +13,8 @@ namespace Mujoco.Nodes
     {
         public mjSpec* spec = null;
 
+        public bool IsValid => spec != null;
+
         public void Initialize()
         {
             if (spec == null)
@@ -44,6 +46,8 @@ namespace Mujoco.Nodes
         public MujocoBody(mjsBody* body) {
             this.body = body;
         }
+
+        public bool IsValid => body != null;
     }
 
 
@@ -54,6 +58,37 @@ namespace Mujoco.Nodes
         public MujocoGeom(mjsGeom* geom) {
             this.geom = geom;
         }
+
+        public bool IsValid => geom != null;
+    }
+
+
+
+    public unsafe class MujocoJoint
+    {
+        public mjsJoint* joint = null;
+
+        public MujocoJoint(mjsJoint* joint)
+        {
+            this.joint = joint;
+        }
+
+        public bool IsValid => joint != null;
+    }
+
+
+
+
+    public unsafe class MujocoActuator
+    {
+        public mjsActuator* actuator = null;
+
+        public MujocoActuator(mjsActuator* actuator)
+        {
+            this.actuator = actuator;
+        }
+
+        public bool IsValid => actuator != null;
     }
 
 

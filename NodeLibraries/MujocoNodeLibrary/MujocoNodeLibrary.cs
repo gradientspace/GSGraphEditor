@@ -41,6 +41,9 @@ namespace Mujoco.Nodes
 
 
 
+
+
+
         [NodeFunction(ReturnName = "New Body")]
         public static MujocoBody mjAddBody(MujocoBody ParentBody,
             string name = "Body",
@@ -66,30 +69,43 @@ namespace Mujoco.Nodes
 
 
 
+        static void configure_geom_transform(mjsGeom* geom, Vector3d Position, Quaterniond Rotation)
+        {
+            geom->pos[0] = Position.x; geom->pos[1] = Position.y; geom->pos[2] = Position.z;
+            geom->alt.type = mjtOrientation.mjORIENTATION_QUAT;
+            geom->quat[0] = Rotation.w; geom->quat[1] = Rotation.x; geom->quat[2] = Rotation.y; geom->quat[3] = Rotation.z;
+        }
+        static void configure_geom_transform(mjsGeom* geom, Vector3d Position, Vector3d Angles)
+        {
+            geom->pos[0] = Position.x; geom->pos[1] = Position.y; geom->pos[2] = Position.z;
+            geom->alt.type = mjtOrientation.mjORIENTATION_EULER;
+            geom->alt.euler[0] = Angles[0]; geom->alt.euler[1] = Angles[1]; geom->alt.euler[2] = Angles[2];
+        }
+        static void configure_geom_attribs(mjsGeom* geom, string name, Vector3d Color)
+        {
+            if (name.Length > 0)
+                mjs_setName(geom->element, name);
+            geom->rgba[0] = (float)Math.Clamp(Color.x, 0, 1);
+            geom->rgba[1] = (float)Math.Clamp(Color.y, 0, 1);
+            geom->rgba[2] = (float)Math.Clamp(Color.z, 0, 1);
+            geom->rgba[3] = 1.0f;
+        }
+
         [NodeFunction(ReturnName="BoxGeom")]
-        public static MujocoGeom mjAddBox(MujocoBody Body,
+        public static MujocoGeom mjAddBox(ref MujocoBody Body,
             string name = "Box",
             double DimensionX = 0.5,
             double DimensionY = 0.5,
             double DimensionZ = 0.5,
             Vector3d Position = default,
+            Vector3d EulerAngles = default,
             Vector3d Color = default)
         {
             mjsGeom* boxGeom = mjs_addGeom(Body.body, null);
-            mjs_setName(boxGeom->element, name);
-
             boxGeom->type = mjtGeom.mjGEOM_BOX;
-            boxGeom->size[0] = DimensionX;
-            boxGeom->size[1] = DimensionY;
-            boxGeom->size[2] = DimensionZ;
-            boxGeom->pos[0] = Position.x; boxGeom->pos[1] = Position.y; boxGeom->pos[2] = Position.z;
-            boxGeom->mass = DimensionX*DimensionY*DimensionZ;
-
-            boxGeom->rgba[0] = (float)Math.Clamp(Color.x, 0, 1);
-            boxGeom->rgba[1] = (float)Math.Clamp(Color.y, 0, 1);
-            boxGeom->rgba[2] = (float)Math.Clamp(Color.z, 0, 1);
-            boxGeom->rgba[3] = 1.0f;
-
+            boxGeom->size[0] = DimensionX; boxGeom->size[1] = DimensionY; boxGeom->size[2] = DimensionZ;
+            configure_geom_attribs(boxGeom, name, Color);
+            configure_geom_transform(boxGeom, Position, EulerAngles);
             return new MujocoGeom(boxGeom);
         }
 
@@ -98,17 +114,129 @@ namespace Mujoco.Nodes
         [NodeFunction(ReturnName = "PlaneGeom")]
         public static MujocoGeom mjAddPlane(MujocoBody Body,
             string name = "Plane",
-            Vector3d Position = default)
+            Vector3d Position = default,
+            Vector3d EulerAngles = default,
+            Vector3d Color = default)
         {
             mjsGeom* planeGeom = mjs_addGeom(Body.body, null);
-            mjs_setName(planeGeom->element, name);
-
             planeGeom->type = mjtGeom.mjGEOM_PLANE;
             planeGeom->size[0] = planeGeom->size[1] = 0; planeGeom->size[2] = 1;
-            planeGeom->pos[0] = Position.x; planeGeom->pos[1] = Position.y; planeGeom->pos[2] = Position.z;
-
+            configure_geom_attribs(planeGeom, name, Color);
+            configure_geom_transform(planeGeom, Position, EulerAngles);
             return new MujocoGeom(planeGeom);
         }
+
+
+
+        [NodeFunction]
+        public static void mjDisableCollision(ref MujocoGeom Geom)
+        {
+            if (Geom == null || Geom.IsValid == false) {
+                GlobalGraphOutput.AppendError("[mjDisableCollision] - Geom is invalid");
+                throw new Exception("Geom is invalid");
+            }
+            Geom.geom->conaffinity = 0;
+            Geom.geom->contype = 0;
+        }
+
+        [NodeFunction]
+        public static void mjSetMass(ref MujocoGeom Geom, double mass)
+        {
+            if (Geom == null || Geom.IsValid == false) {
+                GlobalGraphOutput.AppendError("[mjSetMass] - Geom is invalid");
+                throw new Exception("Geom is invalid");
+            }
+            Geom.geom->mass = mass;
+        }
+
+        [NodeFunction]
+        public static void mjSetGeomTransformQuat(ref MujocoGeom Geom, Vector3d Position, Quaterniond Rotation)
+        {
+            if (Geom == null || Geom.IsValid == false) {
+                GlobalGraphOutput.AppendError("[mjSetGeomTransformQuat] - Geom is invalid");
+                throw new Exception("mjSetGeomTransformQuat is invalid");
+            }
+            configure_geom_transform(Geom.geom, Position, Rotation);
+        }
+
+
+
+
+
+        [NodeFunction(ReturnName = "Joint")]
+        public static MujocoJoint mjAddSlideJoint(ref MujocoBody Body,
+            string name = "Slide",
+            Vector3d Position = default,
+            Vector3d Axis = default,
+            double RangeMin = -1,
+            double RangeMax = 1,
+            double FrictionLoss = 0.1)
+        {
+            mjsJoint* joint = mjs_addJoint(Body.body);
+            if (name.Length > 0)
+                mjs_setName(joint->element, name);
+            joint->type = mjtJoint.mjJNT_SLIDE;
+            joint->pos[0] = Position.x; joint->pos[1] = Position.y; joint->pos[2] = Position.z;
+            joint->axis[0] = Axis.x; joint->axis[1] = Axis.y; joint->axis[2] = Axis.z;
+            joint->range[0] = RangeMin;
+            joint->range[1] = RangeMax;
+            joint->frictionloss = FrictionLoss;
+            return new MujocoJoint(joint);
+        }
+
+
+        [NodeFunction(ReturnName = "Joint")]
+        public static MujocoJoint mjAddHingeJoint(ref MujocoBody Body,
+            string name = "Hinge",
+            Vector3d Position = default,
+            Vector3d Axis = default,
+            double RangeMinDeg = -360,
+            double RangeMaxDeg = 360,
+            double FrictionLoss = 0.1)
+        {
+            mjsJoint* joint = mjs_addJoint(Body.body);
+            if (name.Length > 0)
+                mjs_setName(joint->element, name);
+            joint->type = mjtJoint.mjJNT_HINGE;
+            joint->pos[0] = Position.x; joint->pos[1] = Position.y; joint->pos[2] = Position.z;
+            joint->axis[0] = Axis.x; joint->axis[1] = Axis.y; joint->axis[2] = Axis.z;
+            if (RangeMinDeg == -360 && RangeMaxDeg == 360) {
+                joint->limited = 0;
+            } else {
+                joint->range[0] = RangeMinDeg;
+                joint->range[1] = RangeMaxDeg;
+            }
+            joint->frictionloss = FrictionLoss;
+            return new MujocoJoint(joint);
+        }
+
+
+
+        [NodeFunction(ReturnName = "Actuator")]
+        public static MujocoActuator mjAddActuator(
+            ref MujocoSpec Spec,
+            MujocoJoint Joint,
+            string name = "Actuator",
+            double CtrlRangeMin = -1,
+            double CtrlRangeMax = 1)
+        {
+            if (Spec.IsValid == false) GlobalGraphOutput.AppendError("[mjAddActuator] - Spec is null/invalid");
+            if (Joint.IsValid == false) GlobalGraphOutput.AppendError("[mjAddActuator] - Joint is null/invalid");
+
+            mjsActuator* actuator = mjs_addActuator(Spec.spec);
+            if (name.Length > 0)
+                mjs_setName(actuator->element, name);
+            mjString* joint_name = mjs_getName(Joint.joint->element);
+            string? jn = Marshal.PtrToStringAnsi((nint)joint_name);
+            //actuator->target = joint_name;
+            mjs_setString(actuator->target, jn!);
+            actuator->trntype = mjtTrn.mjTRN_JOINT;
+            actuator->ctrlrange[0] = CtrlRangeMin;
+            actuator->ctrlrange[1] = CtrlRangeMax;
+            actuator->ctrllimited = 1;
+            return new MujocoActuator(actuator);
+        }
+
 
 
 
