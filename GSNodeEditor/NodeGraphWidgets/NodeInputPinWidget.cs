@@ -36,6 +36,7 @@ namespace GSNodeEditor
     {
         public INodeInputInfo NodeInputInfo { get; private set; }
         public string InputName { get; set; } = "";
+        public string? DisplayName { get; set; } = null;
 
         public EInlineWidgetType InlineType { get; set; } = EInlineWidgetType.None;
         public object? InlineValue { get; set; } = null;
@@ -51,6 +52,9 @@ namespace GSNodeEditor
             NodeInputInfo = sourceInputInfo;
             InputName = sourceInputInfo.InputName;
             DataType = sourceInputInfo.DataType;
+
+            if (sourceInputInfo.Input is StandardNodeInputBase standardInput)
+                DisplayName = standardInput.DisplayName;
 
             WidgetStyle = PinWidgetStyles.DefaultInputStyleSet;
 
@@ -88,10 +92,11 @@ namespace GSNodeEditor
 
         public string GetPinLabel()
         {
+            string useName = DisplayName ?? InputName;
             if (InlineType == EInlineWidgetType.Nullable)
-                return InputName + "?";
+                return useName + "?";
             else
-                return InputName;
+                return useName;
         }
 
         public void UpdateInlineInfo(INodeGraph Graph, int OwningNodeIdentifier)

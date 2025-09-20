@@ -316,7 +316,7 @@ namespace GSNodeEditor
             Vector2f CurLocalCursorPos = TransformWindowToViewport(newState.CurrentPosition);
 
             // only using for zoom right now
-            ViewportScale = Math.Clamp(ViewportScale + 0.25f * newState.WheelDelta, 0.1f, 10.0f);
+            ViewportScale = Math.Clamp(ViewportScale + 0.05f * newState.WheelDelta, 0.1f, 10.0f);
 
             Vector2f PrevCursorPosInNew = TransformViewportToWindow(CurLocalCursorPos);
             Vector2f Delta = (newState.CurrentPosition - PrevCursorPosInNew);

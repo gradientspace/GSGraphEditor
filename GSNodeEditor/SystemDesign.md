@@ -97,6 +97,23 @@ Then DefaultTypeInfoLibrary is checked, and then finally struct types are checke
 for a parameterless constructor. This is implemented in 
 ``FunctionNodeUtils.BuildInputNodeForMethodArgument()``
 
+**NodeParameter Attribute Default Values**
+
+NodeFunction static library functions can have ``[NodeParameter]`` attributes which allow
+a custom default value to be specified for a function parameter. This can be used in cases
+where standard C# defaults aren't suitable or supported. 
+
+A custom NodeParameter handler can also be registered with **DefaultTypeInfoLibrary**, when
+node libraries register their types. This allows (limited) struct default values to be specified, 
+which C# does not support otherwise. For example a Vector3d default value can be done like this:
+```
+[NodeParameter("MyVecParam1", DefaultRealVec = [1.0,0.0,1.0])]
+```
+Note that C# Attributes do not allow very much here...there is an object? field that can
+contain POD types or a string, a double[] array, and an int[] array. But nontrivial defaults
+could be encoded in this data in clever ways...
+
+
 **Inline-Editable Constants**
 
 A **NodeInputPinWidget** can create sub-widgets which allow certain types to be directly "inline"

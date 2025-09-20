@@ -403,6 +403,9 @@ namespace GSNodeEditor
 
             foreach (NodeType nodeType in filteredNodes) 
             {
+                if (nodeType.Flags.HasFlag(ENodeFlags.Hidden))
+                    continue;
+
                 (string nodeLabel, string? nodeHint) = get_node_label(nodeType);
                 NodesMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
                 TryAddToCategory(nodeType);
