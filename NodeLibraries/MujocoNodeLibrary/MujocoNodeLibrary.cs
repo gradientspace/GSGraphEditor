@@ -110,6 +110,24 @@ namespace Mujoco.Nodes
         }
 
 
+        [NodeFunction(ReturnName = "Geom")]
+        public static MujocoGeom mjAddCylinder(ref MujocoBody Body,
+            string name = "Cylinder",
+            double Radius = 0.1,
+            double Height = 0.5,
+            Vector3d Position = default,
+            Vector3d EulerAngles = default,
+            Vector3d Color = default)
+        {
+            mjsGeom* boxGeom = mjs_addGeom(Body.body, null);
+            boxGeom->type = mjtGeom.mjGEOM_CYLINDER;
+            boxGeom->size[0] = Radius; boxGeom->size[1] = Height/2; boxGeom->size[2] = 1.0;
+            configure_geom_attribs(boxGeom, name, Color);
+            configure_geom_transform(boxGeom, Position, EulerAngles);
+            return new MujocoGeom(boxGeom);
+        }
+
+
 
         [NodeFunction(ReturnName = "PlaneGeom")]
         public static MujocoGeom mjAddPlane(MujocoBody Body,

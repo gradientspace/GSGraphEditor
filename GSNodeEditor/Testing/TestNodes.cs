@@ -76,6 +76,14 @@ namespace Gradientspace.NodeGraph.Nodes
     public static class G3TestFunctions
     {
         [NodeFunction]
+        [NodeParameter("vecParam", DisplayName = "vec3vec", DefaultRealVec = [2.0,3.0,4.2])]
+        public static Vector3d TestVec3Default(Vector3d vecParam)
+        {
+            return vecParam;
+        }
+
+
+        [NodeFunction(ReturnName ="monkey")]
         [NodeReturnValue(DisplayName = "Mesh")]
         public static DMesh3? TestDMesh3Attribs()
         {
