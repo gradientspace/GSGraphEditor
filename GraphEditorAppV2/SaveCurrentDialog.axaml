@@ -1,0 +1,41 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:pages="using:GraphEditorAppV2"
+        x:Class="GraphEditorAppV2.SaveCurrentDialog"
+		SizeToContent="WidthAndHeight"
+		CanResize="False"
+		WindowStartupLocation="CenterOwner"
+		ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        Title="Save current file?"
+		x:Name="SaveCurrentWin">
+
+	<Border BorderThickness="0.5" BorderBrush="#DD571C">
+		<Border BorderThickness="5" BorderBrush="Black" Padding="20">
+			<StackPanel>
+				<TextBlock>The current file is unsaved. Would you like to save it?</TextBlock>
+				<Border BorderThickness="10">
+					<StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+						<Button Name="SaveButton" Background="#50C878" Click="Save_OnClick">
+							<TextBlock>
+								<Underline>S</Underline>ave
+							</TextBlock>
+						</Button>
+						<Button Name="SaveAsButton" Background="#50C878" Click="SaveAs_OnClick">
+							<TextBlock>
+								Save <Underline>A</Underline>s
+							</TextBlock>
+						</Button>
+						<Button Name="DontSaveButton" Background="red" Click="DontSave_OnClick">
+							<TextBlock><Underline>D</Underline>on't Save</TextBlock>
+						</Button>
+						<Button Name="CancelButton" Background="red" Click="Cancel_OnClick">Cancel</Button>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+		</Border>
+	</Border>
+
+</Window>

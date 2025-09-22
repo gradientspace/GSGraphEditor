@@ -67,22 +67,34 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-		Canvas.SetLeft(myButton, 10);
-		Canvas.SetTop(myButton, 900);
+		//Canvas.SetLeft(myButton, 10);
+		//Canvas.SetTop(myButton, 900);
 
 		RegisterGlobalKeyBindings();
 
 		this.Loaded += MainWindow_Loaded;
+        this.Closing += MainWindow_OnClosing;
 	}
 
-	protected override void OnClosing(WindowClosingEventArgs e)
+	protected async void MainWindow_OnClosing(object? o, WindowClosingEventArgs e)
 	{
+        e.Cancel = true;
+        this.Closing -= MainWindow_OnClosing;
+
+        bool bCancel = await TrySaveUnsavedGraph();
+        if (bCancel == true) {
+            this.Closing += MainWindow_OnClosing;
+            return;
+        }
+
 		// tbd do this at app level?
 		PythonSetup.PythonShutdown();
-		base.OnClosing(e);
-	}
 
-	private void MainWindow_Loaded(object? sender, RoutedEventArgs e)
+        Close();
+        //base.OnClosing(e);
+    }
+
+    private void MainWindow_Loaded(object? sender, RoutedEventArgs e)
 	{
 		PythonSetup.InitializePython();
 
@@ -99,7 +111,7 @@ public partial class MainWindow : Window
 
 		UpdateRecentFilesMenu();
 		if (NodeEditorConfig.LoadLastGraphOnStartup)
-			TryLoadGraphFromPath( NodeEditorConfig.EnumerateRecentFiles().FirstOrDefault() );
+			TryLoadGraphFromPath( NodeEditorConfig.EnumerateRecentFiles().FirstOrDefault(), false );
 	}
 
     protected override void OnGotFocus(GotFocusEventArgs e)
@@ -164,7 +176,7 @@ public partial class MainWindow : Window
 	{
 		var MakeItem = (string path) => {
 			Avalonia.Controls.MenuItem TmpItem = new() { Header = path };
-			TmpItem.Click += (object? sender, RoutedEventArgs e) => { TryLoadGraphFromPath(path); };
+			TmpItem.Click += (object? sender, RoutedEventArgs e) => { TryLoadGraphFromPath(path, true); };
 			return TmpItem;
 		};
 		RecentFilesMenu.Items.Clear();
@@ -197,23 +209,51 @@ public partial class MainWindow : Window
 	//	MyTabControl.Items.Add(newItem);
 	//}
 
+
+    private async Task<bool> TrySaveUnsavedGraph()
+    {
+        bool bCancelOp = false;
+        if (SkiaView.ActiveViewport.CurrentGraphIsSaved == false) {
+            var dialog = new SaveCurrentDialog();
+            if (SkiaView.ActiveViewport.CanSaveCurrentGraph == false)
+                dialog.HideSaveButton();
+            await dialog.ShowDialog(this);
+            if (dialog.Selected == SaveCurrentDialog.ESelectedOptions.Save) {
+                if (SkiaView.ActiveViewport.TrySave() == false)
+                    bCancelOp = true;
+            } else if (dialog.Selected == SaveCurrentDialog.ESelectedOptions.SaveAs) {
+                if (SkiaView.ActiveViewport.TrySaveAs() == false)
+                    bCancelOp = true;
+            } else if (dialog.Selected == SaveCurrentDialog.ESelectedOptions.Cancel) { 
+                bCancelOp = true;
+            }
+        }
+        return bCancelOp;
+    }
+
 	private void Exit_OnClick(object? sender, RoutedEventArgs e)
 	{
 		if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopApp)
 			desktopApp.Shutdown();
 		// otherwise on mobile??
 	}
-	private void New_OnClick(object? sender, RoutedEventArgs e)
+	private async void New_OnClick(object? sender, RoutedEventArgs e)
 	{
-		SkiaView.ActiveViewport.TryNewExecutionGraph();
-		SkiaView.Focus(NavigationMethod.Pointer);
+        bool bCanceled = await TrySaveUnsavedGraph();
+        if (!bCanceled) {
+            SkiaView.ActiveViewport.TryNewExecutionGraph();
+            SkiaView.Focus(NavigationMethod.Pointer);
+        }
 	}
-	private void Open_OnClick(object? sender, RoutedEventArgs e)
+	private async void Open_OnClick(object? sender, RoutedEventArgs e)
 	{
-		if (SkiaView.ActiveViewport.TryOpen())
-			UpdateRecentFilesMenu();
-		SkiaView.Focus(NavigationMethod.Pointer);
-	}
+        bool bCanceled = await TrySaveUnsavedGraph();
+        if (!bCanceled) {
+            if (SkiaView.ActiveViewport.TryOpen())
+                UpdateRecentFilesMenu();
+            SkiaView.Focus(NavigationMethod.Pointer);
+        }
+    }
     private void Import_OnClick(object? sender, RoutedEventArgs e)
     {
         SkiaView.ActiveViewport.TryImport();
@@ -231,8 +271,15 @@ public partial class MainWindow : Window
 			UpdateRecentFilesMenu();
 		SkiaView.Focus(NavigationMethod.Pointer);
 	}
-	private void TryLoadGraphFromPath(string? path)
+	private async void TryLoadGraphFromPath(string? path, bool bIsInteractive)
 	{
+        bool bCanceled = false;
+        if (bIsInteractive) {
+            bCanceled = await TrySaveUnsavedGraph();
+            if (bCanceled)
+                return;
+        }
+
 		if (path != null && File.Exists(path) )
 			SkiaView.ActiveViewport.OpenGraphFile(path);
 	}

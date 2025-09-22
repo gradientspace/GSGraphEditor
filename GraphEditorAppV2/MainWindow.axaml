@@ -74,10 +74,11 @@
 				<Panel/> <!-- last item in DockPanel fills the rest of the space... -->
 			</DockPanel>
 			
-			<!--- temporary... -->
+			<!--- temporary... 
 			<Canvas Name="MyCanvas">
 				<Button Name="myButton" Content="Movable Button"/>
 			</Canvas>
+			-->
 			
 		</Grid>
 
