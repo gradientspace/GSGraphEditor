@@ -23,6 +23,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Shapes;
 using System.Text;
 using System.Threading.Tasks;
+using g3;
 
 
 namespace GraphEditorAppV2;
@@ -235,6 +236,15 @@ public partial class MainWindow : Window
 		if (path != null && File.Exists(path) )
 			SkiaView.ActiveViewport.OpenGraphFile(path);
 	}
+
+
+    private void OpenCurrentFolder_OnClick(object? sender, RoutedEventArgs e)
+    {
+        // todo could fall back to default user graph folder...
+        if (File.Exists(SkiaView.ActiveViewport.CurrentGraphFilePath) ) {
+            System.Diagnostics.Process.Start("explorer.exe", "/select," + SkiaView.ActiveViewport.CurrentGraphFilePath);
+        }
+    }
 
 
     private void Copy_OnClick(object? sender, RoutedEventArgs e)
