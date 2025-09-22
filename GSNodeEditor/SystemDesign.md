@@ -146,14 +146,14 @@ Connections are always stored as (node,pin)->(node,pin), rather than having thei
 The **INodeGraph** interfaces and implementations like **BaseGraph** operate on **IConnectionInfo** objects.
 This means (eg) to "find" a connection, a search has to be done to find matching nodes/pins.
 
-**Connection State**
+### Connection State
 
 There is a concept of the 'State' of a connection, via **EConnectionState**, which can be used to
 tag connections as having some kind of error/etc (eg a type mismatch). The **IConnectionInfo** doesn't
 have this information, as it is allowed to be transient. It is tracked/stored by the graph implementation (eg BaseGraph)
 and queried via ``INodeGraph.GetConnectionState()``
 
-**UI Level / Connection View**
+### UI Level / Connection View
 
 At the Editor/UI level, a **ConnectionView** is created for each **IConnectionInfo** and owned by the **NodeGraphView**.
 A **ConnectionView** *does* have an integer ID, which (currently) is used by the Selection system.
@@ -183,6 +183,68 @@ Inside this function, ``library.AddConversion()`` can be used to add conversions
 Both these types of functions are automatically discovered by ``DataConversionLibrary.Build()``. 
 Currently a global singleton instance **GlobalDataConversionLibrary** is being used, with
 the static ``GlobalDataConversionLibrary.Find()`` being the main way that code finds/applies these conversions.
+
+
+
+# Renaming
+
+``[MappedNodeFunctionName("old_name")]``
+
+``[MappedFunctionLibraryName("old_name")]``
+
+``[MappedNodeTypeName("old_name")]``
+
+
+
+# Versioning
+
+Every node has a Version number (**NodeType.Version**) and is serialized with that version.
+When loading, the stored version number is compared against the current version number for
+that NodeType. If the numbers do not match, version resolution is performed.
+
+The primary goal of this approach is to avoid having to rename the Node. The newest
+version of the function gets to have the core Name, and old versions get new names. 
+So the goal of version resolution is to map from (main-name,old-version) to the correct 
+(modified-name/old-version).
+
+If Version resolution fails, currently we fall back to using the new node.
+GraphError output is generated for any failed version parsing or mismatching.
+
+The Version tag defaults to 1.0. So version tags only need be added when a new version 
+of a node is required, and the first "old" version should be tagged as "1.0".
+Only Major.Minor is supported, and it's strongly recommended to increment the Major version.
+The Minor version is intended to support bugfixes in old nodes that need to be kept 
+for breaking-change reasons. *(This is not supported in any automatic way yet)*
+
+### static NodeLibrary functions
+
+For LibraryNodeFunction nodes, the node version is specified in the ``[NodeFunction]`` tag.
+The "current" version of a function would be tagged like so:
+```
+[NodeFunction(Version="1.1")]
+public static double MyVersionedFunc(double a) { ... }
+```
+An older version of this node would be tagged like this:
+```
+[NodeFunction(Version="1.0", VersionOf= "MyLibrary.MyVersionedFunc", Hidden=true)]
+public static double MyVersionedFunc_v1p0(double a, int b)
+```
+The VersionOf field is critical as when the loader discovers a node named **MyVersionedFunc** with
+version "1.0", it can search the NodeLibrary for a matching (Version/VersionOf) pair, 
+and then **MyVersionedFunc_v1p0** will be instantiated in the graph instead.
+
+The flag ``[NodeFunction(Hidden=true)]`` should be added to old nodes to prevent them from
+being shown in the new-node dialog.
+
+### Node subclasses
+
+*(todo)*
+
+###  UI Support
+
+If the UI name of the old version ends with a "_v1p2"-style suffix, this will be stripped
+off from the main node name and shown as "v1.2" in a small indicator.
+
 
 
 

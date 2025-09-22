@@ -1,8 +1,8 @@
 ==================
 Versioning
 ==================
-- how? want to minimize renaming hassles...
 
+- implement for node types
 
 
 ==================
@@ -11,7 +11,7 @@ Renaming
 
 - rename Gradientspace. libraries to Core.
 - remove concept of a Sink node? This could be handled with a NodeFlag...
-- make Format of standard Print node be a nodeconstant? And add alternative version that isn't? then wiring will work properly...
+
 
 ===================
 Bugs

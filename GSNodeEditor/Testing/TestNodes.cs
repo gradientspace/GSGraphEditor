@@ -37,6 +37,19 @@ namespace Gradientspace.NodeGraph.Nodes
     [NodeFunctionLibrary("AAAATest")]
     public static class TestNodeFunctionLibrary
     {
+        [NodeFunction(Version="1.1")]
+        public static double MyVersionedFunc(double a)
+        {
+            return a + a;
+        }
+
+        [NodeFunction(Version="1.0", VersionOf= "AAAATest.MyVersionedFunc", Hidden=true)]
+        public static double MyVersionedFunc_v1p0(double a, int b)
+        {
+            return a + b;
+        }
+
+
         [NodeFunction]
         public static TestGraphData MakeTestData()
         {
