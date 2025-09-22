@@ -33,6 +33,7 @@ namespace GSNodeEditor
 
         public Vector2f Size { get; set; }
         public string Label { get; set; }
+        public string VersionLabel { get; set; } = "";
         public int GraphNodeIdentifier { get; set; }
 
 
@@ -95,7 +96,15 @@ namespace GSNodeEditor
         {
             GraphNodeIdentifier = nodeInfo.Identifier;
 
-            ParentGraphWidget.UpdateNodeWidgetLabel(this);
+            // for old-version nodes, strip off trailing "_v1p1" and convert to a label we show in the corner
+            VersionLabel = "";
+            string? overrideLabel = null, version = null;
+            if ( nodeInfo.Node is NodeBase baseNode && (baseNode.LibraryNodeType?.IsOldVersion ?? false) ) {
+                (overrideLabel, version) = NodeVersion.ParseNodeNameWithVersion(baseNode.GetNodeName());
+                VersionLabel = (version != null) ? $"v{version}" : "";
+            }
+
+            ParentGraphWidget.UpdateNodeWidgetLabel(this, overrideLabel);
 
             INode node = nodeInfo.Node!;
             foreach ( INodeInputInfo inputInfo in node.EnumerateInputs() )
@@ -362,20 +371,28 @@ namespace GSNodeEditor
             if (ParentNode == null)
                 return false;
 
-            string ShowNamespace = ParentNode!.GetNodeNamespace();
+            int NumStrings = 2;
+            string ShowNamespace = ParentNode!.GetNodeNamespace() ?? "(namespace missing)";
+            string? VersionOf = null;
             if (ParentNode is NodeBase baseNode) {
                 if ( baseNode.LibraryNodeType != null)
                     ShowNamespace = baseNode.LibraryNodeType.UICategory;
+                if (baseNode.LibraryNodeType != null && baseNode.LibraryNodeType.VersionOf != null) {
+                    VersionOf = $"{baseNode.LibraryNodeType.VersionOf.ToString()} v{baseNode.LibraryNodeType.Version}";
+                    NumStrings++;
+                }
             }
             tooltip =  $"[{ShowNamespace}] {ParentNode!.GetNodeName()}";
 
-            extendedTooltip = new string[2];
+            extendedTooltip = new string[NumStrings];
 
             if ( ParentNode is LibraryFunctionNodeBase libNode )
                 extendedTooltip[0] = $"{libNode.LibraryClass!.Namespace}.{libNode.LibraryClass!.Name}.{libNode.Function!.Name}";
             else
                 extendedTooltip[0] = ParentNode.GetType().ToString();
             extendedTooltip[1] = $"NodeID: {ParentNodeInfo.Identifier}";
+            if (VersionOf != null)
+                extendedTooltip[2] = $"Version Of: {VersionOf}";
             return true;
         }
 
@@ -480,6 +497,7 @@ namespace GSNodeEditor
         public AxisAlignedBox2f ChildBounds { get; set; }
         public AxisAlignedBox2f LocalNodeBounds { get; set; }
         public string DrawLabel { get; set; } = string.Empty;
+        public string VersionLabel { get; set; } = string.Empty;
         public Vector2f LabelOrigin { get; set; }
 
         List<(int, int)> InOutMatches = new List<(int, int)>();
@@ -515,6 +533,7 @@ namespace GSNodeEditor
             WidgetMargins PinMargins = PinWidgetStyles.DefaultInputStandardStyle.Margins;
 
             string UseLabel = (SourceNodeWidget.Label.Length > 0) ? SourceNodeWidget.Label : "(Node)";
+            VersionLabel = SourceNodeWidget.VersionLabel;
 
             TextHeightInfo LabelTextHeightInfo = StyleCache.GetCachedFontHeightInfo(SourceNodeWidget.WidgetStyle.NodeStyle.StandardStyle);
             float LabelWidth = LabelTextPaint.MeasureText(UseLabel);
@@ -744,6 +763,26 @@ namespace GSNodeEditor
                     Canvas.DrawPath(Curve, InOutCurvePaint);
                 }
             }
+
+            // todo same code as InputPinWidget, w/ different offset - should refactor...
+            if (VersionLabel.Length > 0) {
+                SKPaint DataTypeTextPaint = new SKPaint { Color = SKColors.White, IsAntialias = true, LcdRenderText = true, SubpixelText = true, TextSize = 10 };
+                TextHeightInfo DataTypeTextHeightInfo = SKStyleCache.MeasureTextHeightInfo(DataTypeTextPaint);
+                SKPaint WarningDataTypeFillPaint = new SKPaint { Color = SKColors.DarkOrange };
+                const float Margin = 3;
+                string TypeText = VersionLabel;
+                SKRect Bounds = SKRect.Empty;
+                float Width = DataTypeTextPaint.MeasureText(TypeText, ref Bounds);
+                Bounds.Left -= (Margin + 2); Bounds.Right += (Margin + 1); Bounds.Bottom += Margin; Bounds.Top -= Margin;
+                SKMatrix CurMatrix = Canvas.TotalMatrix;
+                SKPoint Offset = Conversion.ToSkia(new Vector2f(LocalNodeBounds.Width - Width, LocalNodeBounds.Height+3));
+                Canvas.Translate(Offset);
+                Canvas.DrawRoundRect(Bounds, 8.0f, 8.0f, WarningDataTypeFillPaint);
+                Canvas.DrawText(TypeText, new SKPoint(0, 0), DataTypeTextPaint);
+                Canvas.SetMatrix(CurMatrix);
+            }
+
+
 
             Canvas.SetMatrix(InitialMatrix);
         }
