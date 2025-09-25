@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:pages="using:GraphEditorAppV2"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+		Icon="/Assets/favicon.ico"
         x:Class="GraphEditorAppV2.MainWindow"
         Title="GraphEditorAppV2"
 		x:Name="MainAppWindow">
