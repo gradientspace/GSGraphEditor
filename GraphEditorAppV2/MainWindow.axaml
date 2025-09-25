@@ -3,7 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:pages="using:GraphEditorAppV2"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
 		Icon="/Assets/favicon.ico"
         x:Class="GraphEditorAppV2.MainWindow"
         Title="GraphEditorAppV2"
@@ -13,6 +13,23 @@
 			<KeyBinding Gesture="F3" Command="{Binding MyCommand}" />
 		</Window.KeyBindings>-->
 
+	<Window.Styles>
+		<Style Selector="MenuItem.topMenu">
+			<Setter Property="TextBlock.Foreground" Value="#CCCCCC"/>
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="TextBlock.Foreground" Value="#BBBBBB"/>
+			</Style>
+		</Style>
+		<Style Selector="Button.runButton">
+			<Setter Property="Background" Value="#29AB87"/>
+			<Setter Property="TextBlock.Foreground" Value="#EEEEEE"/>
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="#00A86B"/>
+				<Setter Property="TextBlock.Foreground" Value="#EEEEEE"/>
+			</Style>
+		</Style>		
+	</Window.Styles>
+	
 
 		<SplitView PanePlacement="Right" IsPaneOpen="False" DisplayMode="CompactOverlay" CompactPaneLength="20">
 
@@ -23,8 +40,14 @@
 			
 			<!-- full-viewport DockPanel, used to dock menu at top, log area at bottom -->
 			<DockPanel>
-				<Menu DockPanel.Dock="Top">
-					<MenuItem Header="_File">
+				<Menu DockPanel.Dock="Top" HorizontalAlignment="Left" Width="350"> <!--- hardcoded width is no good -->
+					<Menu.Styles>
+						<Style Selector="Button">
+							<Setter Property="FontWeight" Value="Bold"/>
+						</Style>
+					</Menu.Styles>
+
+					<MenuItem Header="_File" Classes="topMenu">
 						<MenuItem Header="_New" Click="New_OnClick" />
 						<Separator/>
 						<MenuItem Header="_Open..." Click="Open_OnClick" />
@@ -37,7 +60,7 @@
 						<Separator/>
 						<MenuItem Header="_Exit" Click="Exit_OnClick"/>
 					</MenuItem>
-					<MenuItem Header="_Edit">
+					<MenuItem Header="_Edit" Classes="topMenu">
 						<MenuItem Header="_Copy" Click="Copy_OnClick" />
 						<MenuItem Header="_Paste" Click="Paste_OnClick" />
 						<Separator/>
@@ -45,11 +68,25 @@
 						<Separator/>
 						<MenuItem Header="_Generate Code" Click="GenerateCode_OnClick" />
 					</MenuItem>
-					<MenuItem Header="Settings">
+					<MenuItem Header="Settings" Classes="topMenu">
 						<CheckBox Name="Option_LoadLastOnStartup" Click="LoadLastOnStartup_OnToggle">Load Last Graph On Startup</CheckBox>
-						<Separator/>
-						<CheckBox Name="Option_EnableGraphDebug" Click="GraphDebugging_OnToggle">Enable Graph Debug</CheckBox>
 					</MenuItem>
+					<MenuItem Header="Debug" Classes="topMenu">
+						<CheckBox Name="Option_EnableGraphDebug" Click="GraphDebugging_OnToggle">Enable Graph Debug</CheckBox>
+						<CheckBox Name="Option_EnableDebugSingleStep" Click="GraphDebugSingleStep_OnToggle">Enable Single Stepping</CheckBox>
+						<MenuItem Header="Debug Delay">
+							<MenuItem Header="0" Click="DebugDelay_OnClick" Tag="debugdelay_0"/>
+							<MenuItem Header="100ms" Click="DebugDelay_OnClick" Tag="debugdelay_100ms"/>
+							<MenuItem Header="500ms" Click="DebugDelay_OnClick" Tag="debugdelay_500ms"/>
+							<MenuItem Header="1 second" Click="DebugDelay_OnClick" Tag="debugdelay_1s"/>
+							<MenuItem Header="2 seconds" Click="DebugDelay_OnClick" Tag="debugdelay_2s"/>
+						</MenuItem>
+					</MenuItem>
+					<Button
+						Classes="runButton"
+						Content=" Start "
+						ToolTip.Tip="Begin executing graph (spacebar)" Click="Run_OnClick">
+					</Button>
 				</Menu>
 
 				<Border DockPanel.Dock="Bottom" Background="#CCCCCC" BorderBrush="Black" BorderThickness="2" Margin="0" Height="150">

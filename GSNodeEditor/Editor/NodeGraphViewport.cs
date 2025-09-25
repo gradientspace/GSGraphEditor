@@ -821,7 +821,11 @@ namespace GSNodeEditor
         
         public async void RunGraphEvaluation()
         {
-            if (InGraphEvaluation) return;
+            if (InGraphEvaluation) {
+                if (DebugManager.Instance.IsWaitingForStep)
+                    DebugManager.Instance.SignalInteractiveStep();
+                return;
+            }
 
             InGraphEvaluation = true;
 

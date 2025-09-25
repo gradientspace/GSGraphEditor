@@ -108,8 +108,9 @@ public partial class MainWindow : Window
 
 		Option_LoadLastOnStartup.IsChecked = NodeEditorConfig.LoadLastGraphOnStartup;
 		Option_EnableGraphDebug.IsChecked = DebugManager.GlobalEnableGraphDebugging;
+        Option_EnableDebugSingleStep.IsChecked = DebugManager.Instance.EnableStepByStep;
 
-		UpdateRecentFilesMenu();
+        UpdateRecentFilesMenu();
 		if (NodeEditorConfig.LoadLastGraphOnStartup)
 			TryLoadGraphFromPath( NodeEditorConfig.EnumerateRecentFiles().FirstOrDefault(), false );
 	}
@@ -332,7 +333,12 @@ public partial class MainWindow : Window
 		DebugManager.GlobalEnableGraphDebugging = !DebugManager.GlobalEnableGraphDebugging;
 		Option_EnableGraphDebug.IsChecked = DebugManager.GlobalEnableGraphDebugging;
 	}
-	private void LoadLastOnStartup_OnToggle(object? sender, RoutedEventArgs e)
+    private void GraphDebugSingleStep_OnToggle(object? sender, RoutedEventArgs e)
+    {
+        DebugManager.Instance.EnableStepByStep = !DebugManager.Instance.EnableStepByStep;
+        Option_EnableDebugSingleStep.IsChecked = DebugManager.Instance.EnableStepByStep;
+    }
+    private void LoadLastOnStartup_OnToggle(object? sender, RoutedEventArgs e)
 	{
 		NodeEditorConfig.LoadLastGraphOnStartup = !NodeEditorConfig.LoadLastGraphOnStartup;
 		Option_LoadLastOnStartup.IsChecked = NodeEditorConfig.LoadLastGraphOnStartup;
@@ -340,7 +346,29 @@ public partial class MainWindow : Window
 	}
 
 
-	protected override void OnTextInput(TextInputEventArgs e)
+    protected void DebugDelay_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Avalonia.Controls.MenuItem menuItem && menuItem.Tag is string tag) {
+            if (tag == "debugdelay_0")
+                DebugManager.DebugDelayMS = 1;      // sleep at least 1 ms means render thread will update
+            else if (tag == "debugdelay_100ms")
+                DebugManager.DebugDelayMS = 100;
+            else if (tag == "debugdelay_500ms")
+                DebugManager.DebugDelayMS = 500;
+            else if (tag == "debugdelay_1s")
+                DebugManager.DebugDelayMS = 1000;
+            else if (tag == "debugdelay_2s")
+                DebugManager.DebugDelayMS = 2000;
+        }
+    }
+
+    protected void Run_OnClick(object? sender, RoutedEventArgs e)
+    {
+        RunGraphEvaluationCommand();
+    }
+
+
+    protected override void OnTextInput(TextInputEventArgs e)
 	{
 		// handle space-to-evaluate hotkey at window level so that it works even if skia page does not have focus
 		// (todo: figure out cleaner way to handle that as we will want other hotkeys...)
