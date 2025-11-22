@@ -33,4 +33,9 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <Folder Include="Dialogs\" />
+  </ItemGroup>
+
 </Project>

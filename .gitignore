@@ -3,6 +3,11 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+
+# don't include additional node libraries folder, it's populated by build
+AdditionalNodeLibraries
+
+
 # User-specific files
 *.rsuser
 *.suo

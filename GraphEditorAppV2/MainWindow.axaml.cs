@@ -1,29 +1,29 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Shapes;
 using Avalonia.Dialogs;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
+using Avalonia.Threading;
+using g3;
+using Gradientspace.NodeGraph;
+using Gradientspace.NodeGraph.Util;
+using Gradientspace.UI;
 using GSNodeEditor;
+using GSPython;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Diagnostics.Tracing;
-using System.Windows.Input;
-
-using Avalonia.Platform.Storage;
-using System.Collections.Generic;
-using Gradientspace.NodeGraph;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Gradientspace.UI;
-using System.IO;
-using Avalonia.Threading;
-using GSPython;
-using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Controls.Shapes;
 using System.Text;
 using System.Threading.Tasks;
-using g3;
+using System.Windows.Input;
 
 
 namespace GraphEditorAppV2;
@@ -293,7 +293,11 @@ public partial class MainWindow : Window
             System.Diagnostics.Process.Start("explorer.exe", "/select," + SkiaView.ActiveViewport.CurrentGraphFilePath);
         }
     }
-
+    private void OpenCurrentFile_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if ( File.Exists(SkiaView.ActiveViewport.CurrentGraphFilePath) )
+            System.Diagnostics.Process.Start("explorer.exe", SkiaView.ActiveViewport.CurrentGraphFilePath);
+    }
 
     private void Copy_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -366,6 +370,51 @@ public partial class MainWindow : Window
     {
         RunGraphEvaluationCommand();
     }
+
+
+
+    private void OpenSettingsFolder_OnClick(object? sender, RoutedEventArgs e)
+    {
+        string ConfigDir = System.IO.Path.GetDirectoryName(NodeEditorConfig.UserConfigFilePath) ?? "";
+        if (Directory.Exists(ConfigDir)) {
+            System.Diagnostics.Process.Start("explorer.exe", ConfigDir);
+        }
+    }
+    private void EditSettingsFile_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (File.Exists(NodeEditorConfig.UserConfigFilePath)) {
+            System.Diagnostics.Process.Start("explorer.exe", NodeEditorConfig.UserConfigFilePath);
+        }
+    }
+    private async void ReloadSettings_OnClick(object? sender, RoutedEventArgs e)
+    {
+        bool bCanceled = await TrySaveUnsavedGraph();
+        if (!bCanceled) {
+            // reload the config file
+            NodeEditorConfig.LoadConfig();
+
+            // find and load all node libraries
+            NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.NodeLibraryPaths);
+
+            // reload / re-instance active graph
+            SkiaView.ActiveViewport.RebuildGraphLibraryWithActiveGraph();
+            SkiaView.Focus(NavigationMethod.Pointer);
+        }
+    }
+    public void TryLoadNewLibrariesAndReinstanceGraph()
+    {
+        if (NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.NodeLibraryPaths) > 0) {
+            SkiaView.ActiveViewport.RebuildGraphLibraryWithActiveGraph();
+        }
+    }
+
+
+    protected async void NodeLibraries_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var dialog = new NodeLibrariesDialog();
+        await dialog.ShowDialog(this);
+    }
+    
 
 
     protected override void OnTextInput(TextInputEventArgs e)

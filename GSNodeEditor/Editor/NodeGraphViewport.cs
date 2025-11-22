@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis;
 using SkiaSharp;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Pipes;
 using System.Text;
 
 //using Gradientspace.NodeGraph.Testing;
@@ -49,16 +50,13 @@ namespace GSNodeEditor
 
         public void Initialize()
         {
-            DebugManager.GlobalEnableGraphDebugging = true;
-            GlobalGraphOutput.SetCurrentOutput(new DefaultGraphOutputImpl());
-
 			GlobalGraphOutput.AppendLine($"Default User Files Path is {NodeEditorConfig.DefaultUserFilesPath}", EGraphOutputType.Logging);
 
             viewportUI = new NodeEditorViewportUI(this);
 
             // these just force assemblies to be loaded so that the nodes will show up in the library
             NodeGraphCoreLibrary.Initialize();
-            NodeGraphGeometryLibrary.Initialize();
+            //NodeGraphGeometryLibrary.Initialize();
             GeometryViewerNodeLibrary.Initialize();
             //NodeGraphUnrealEngineLibrary.Initialize();
             //NodeGraphTestingLibrary.Initialize();
@@ -591,27 +589,34 @@ namespace GSNodeEditor
             }
         }
 
+
+        protected bool RestoreActiveGraphFromStream(Stream stream)
+        {
+            NodeLayoutCache layoutCache = new NodeLayoutCache();
+            ExecutionGraphSerializer.RestoreGraphOptions options = new ExecutionGraphSerializer.RestoreGraphOptions() { LayoutProvider = layoutCache };
+
+            ExecutionGraph readGraph = new ExecutionGraph();
+            bool bRestoreOK = ExecutionGraphSerializer.Restore(stream, readGraph, options);
+
+            UsingExecutionGraph = readGraph;
+            UsingExecutionGraphEvaluator = new ExecutionGraphEvaluator(UsingExecutionGraph);
+            UsingExecutionGraphEvaluator.EnableDebugPrinting = true;
+            CurrentGraph = UsingExecutionGraph;
+
+            RebuildGraphView();
+            layoutCache.ApplyToGraphView(CurrentGraphView);
+
+            return bRestoreOK;
+        }
+
         public bool LoadGraphFromFile(string Filename)
         {
             try {
-                ExecutionGraph readGraph = new ExecutionGraph();
                 using (FileStream fileStream = File.OpenRead(Filename))
                 {
-                    NodeLayoutCache layoutCache = new NodeLayoutCache();
-                    ExecutionGraphSerializer.RestoreGraphOptions options = new ExecutionGraphSerializer.RestoreGraphOptions() { LayoutProvider = layoutCache };
-                    bool bOK = ExecutionGraphSerializer.Restore(fileStream, readGraph, options);
-
-                    UsingExecutionGraph = readGraph;
-                    UsingExecutionGraphEvaluator = new ExecutionGraphEvaluator(UsingExecutionGraph);
-                    UsingExecutionGraphEvaluator.EnableDebugPrinting = true;
-                    CurrentGraph = UsingExecutionGraph;
-
-                    RebuildGraphView();
-                    layoutCache.ApplyToGraphView(CurrentGraphView);
-
+                    RestoreActiveGraphFromStream(fileStream);
 					NodeEditorConfig.AddToRecentFiles(Filename);
 					NodeEditorConfig.SetLastFilePath(Path.GetDirectoryName(Filename) ?? "");
-
 					return true;
                 }
             } catch (Exception e) {
@@ -872,5 +877,39 @@ namespace GSNodeEditor
         {
             throw new NotImplementedException();
         }
+
+
+
+        public void RebuildGraphLibraryWithActiveGraph()
+        {
+            // if the current graph is saved, it's safer to just reload it
+            if ( File.Exists(CurrentGraphFilePath) && CurrentGraphIsSaved ) {
+                DefaultNodeLibrary.ForceFullRebuild();
+                LoadGraphFromFile(CurrentGraphFilePath);
+                return;
+            }
+
+            // otherwise try serialize/deserialize, but this seems to break missing nodes, currently...
+
+            MemoryStream savedStream = new MemoryStream();
+
+            try {
+                // serialize current graph
+                ExecutionGraphSerializer.SaveGraphOptions options = new ExecutionGraphSerializer.SaveGraphOptions();
+                options.LayoutProvider = CurrentGraphView;
+                ExecutionGraphSerializer.Save(UsingExecutionGraph!, savedStream, options);
+                savedStream.Seek(0, SeekOrigin.Begin);
+
+                // do we need to clear current graph?
+
+                // rebuild library
+                DefaultNodeLibrary.ForceFullRebuild();
+
+                RestoreActiveGraphFromStream(savedStream);
+            } catch (Exception e) {
+                GlobalGraphOutput.AppendError($"ERROR REBUILDING GRAPH LIBRARY : {e.Message}");
+            }
+        }
+
     }
 }

@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:pages="using:GraphEditorAppV2"
+        x:Class="GraphEditorAppV2.NodeLibrariesDialog"
+		SizeToContent="WidthAndHeight"
+		WindowStartupLocation="CenterOwner"
+        Title="Node Libraries"
+		x:Name="NodeLibrariesWin">
+
+	<Border BorderThickness="10">
+			<StackPanel>
+				<Label>Search Paths:</Label>
+				<TextBox Name="SearchPaths" AcceptsReturn="True" TextWrapping="Wrap" MinWidth="300" MinHeight="120" MaxWidth="600"/>
+				<TextBlock Name="SearchPathErrors" />
+				<Border BorderThickness="10">
+					<StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+						<Button Name="ApplyButton" Background="#50C878" Click="Apply_OnClick">Apply</Button>
+						<Button Name="DoneButton" Background="red" Click="Done_OnClick">Done</Button>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+	</Border>
+
+</Window>

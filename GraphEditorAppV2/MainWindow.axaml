@@ -57,6 +57,7 @@
 						<Separator/>
 						<MenuItem Header="Recent Files..." Name="RecentFilesMenu"/>
 						<MenuItem Header="Open Current Folder" Click="OpenCurrentFolder_OnClick"/>
+						<MenuItem Header="Open Current File" Click="OpenCurrentFile_OnClick"/>
 						<Separator/>
 						<MenuItem Header="_Exit" Click="Exit_OnClick"/>
 					</MenuItem>
@@ -70,6 +71,12 @@
 					</MenuItem>
 					<MenuItem Header="Settings" Classes="topMenu">
 						<CheckBox Name="Option_LoadLastOnStartup" Click="LoadLastOnStartup_OnToggle">Load Last Graph On Startup</CheckBox>
+						<Separator/>
+						<MenuItem Header="Node Libraries" Click="NodeLibraries_OnClick" />
+						<Separator/>
+						<MenuItem Header="Open Settings Folder" Click="OpenSettingsFolder_OnClick"/>
+						<MenuItem Header="Edit Settings File" Click="EditSettingsFile_OnClick"/>
+						<MenuItem Header="Reload Settings" Click="ReloadSettings_OnClick"/>
 					</MenuItem>
 					<MenuItem Header="Debug" Classes="topMenu">
 						<CheckBox Name="Option_EnableGraphDebug" Click="GraphDebugging_OnToggle">Enable Graph Debug</CheckBox>

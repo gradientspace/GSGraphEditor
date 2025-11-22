@@ -24,7 +24,8 @@ using Gradientspace.NodeGraph;
 using Avalonia.Win32.Input;
 using Avalonia.Interactivity;
 using Mujoco.Nodes;
-using Meshmixer.Nodes;
+using Gradientspace.NodeGraph.Util;
+//using Meshmixer.Nodes;
 
 
 
@@ -63,12 +64,15 @@ namespace GraphEditorAppV2
 
 		public void InitializeGraph()
 		{
-            // load libraries (this should be configurable...)
-            MujocoNodeLibrary.Initialize();
-            MeshmixerNodeLibrary.Initialize();
+            // initialize here so that setup code can log things
+            DebugManager.GlobalEnableGraphDebugging = true;
+            GlobalGraphOutput.SetCurrentOutput(new DefaultGraphOutputImpl());
+
+            // load node libraries from settings file
+            NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.NodeLibraryPaths);
 
 
-			GraphView = new NodeGraphViewport();
+            GraphView = new NodeGraphViewport();
 			GraphView.Initialize();
 			// NodeGraphViewport by default sets a kinda hacky backdoor key handler for space key.
 			// Remove that in this usage (better fix tbd)

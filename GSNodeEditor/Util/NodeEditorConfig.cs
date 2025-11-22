@@ -83,7 +83,15 @@ namespace GSNodeEditor
 		}
 
 
-		[GSConfigValue]
+
+        [GSConfigValue]
+        public static List<string> NodeLibraryPaths = new List<string>();
+
+
+
+
+
+        [GSConfigValue]
 		public static string LastFilePath { get; private set; } = "";
 
 
