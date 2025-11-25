@@ -53,34 +53,41 @@ namespace Gradientspace.UI
 
         public void AddItem(MenuItem item, int sortGroupIndex = 0)
         {
-            Items.Add(new MenuListItem() { ItemType = EMenuItemType.StandardEntry, Item = item, SortGroupIndex = sortGroupIndex });
-            ClearHighlightedItemIndex();
+            lock (items_lock) {
+                Items.Add(new MenuListItem() { ItemType = EMenuItemType.StandardEntry, Item = item, SortGroupIndex = sortGroupIndex });
+                ClearHighlightedItemIndex();
+            }
         }
 
         public MenuItem AddItem(string text, Action clickedAction, int sortGroupIndex = 0)
         {
-            MenuItem item = new MenuItem() { Text = text, OnClicked = clickedAction };
-            Items.Add(new MenuListItem() { ItemType = EMenuItemType.StandardEntry, Item = item, SortGroupIndex = sortGroupIndex });
-            ClearHighlightedItemIndex();
-            return item;
+            lock (items_lock) {
+                MenuItem item = new MenuItem() { Text = text, OnClicked = clickedAction };
+                Items.Add(new MenuListItem() { ItemType = EMenuItemType.StandardEntry, Item = item, SortGroupIndex = sortGroupIndex });
+                ClearHighlightedItemIndex();
+                return item;
+            }
         }
 
         public void ClearItems()
         {
-            Items.Clear();
-            ClearHighlightedItemIndex();
-            HoveredItem = null;
+            lock (items_lock) {
+                Items.Clear();
+                ClearHighlightedItemIndex();
+                HoveredItem = null;
+            }
         }
 
         public void SortItems()
         {
-            Items.Sort((x,y) =>
-            {
-                if (x.SortGroupIndex != y.SortGroupIndex)
-                    return x.SortGroupIndex.CompareTo(y.SortGroupIndex);
-                return x.Item?.Text.CompareTo(y.Item?.Text) ?? 0;
-            });
-            ClearHighlightedItemIndex();
+            lock (items_lock) {
+                Items.Sort((x, y) => {
+                    if (x.SortGroupIndex != y.SortGroupIndex)
+                        return x.SortGroupIndex.CompareTo(y.SortGroupIndex);
+                    return x.Item?.Text.CompareTo(y.Item?.Text) ?? 0;
+                });
+                ClearHighlightedItemIndex();
+            }
         }
 
 
@@ -96,6 +103,7 @@ namespace Gradientspace.UI
             public MenuListItem() { }
         }
 
+        protected object items_lock = new object();
         protected List<MenuListItem> Items;
         protected List<MenuListItem> FilteredItems;
         protected List<MenuListItem> ActiveItems { get { return (HasFilterApplied) ? FilteredItems : Items; } }
@@ -103,27 +111,39 @@ namespace Gradientspace.UI
 
         public int NumItems { get { return Items.Count; } }
 
+        /// <summary>
+        /// Enumerate menu items. This locks the item set for the duration of the enumeration
+        /// </summary>
         public IEnumerable<MenuItem> EnumerateItems()
         {
-            foreach (MenuListItem item in ActiveItems)
-                if (item.ItemType != EMenuItemType.Separator && item.Item != null)
-                    yield return item.Item;
+            lock (items_lock) {
+                foreach (MenuListItem item in ActiveItems)
+                    if (item.ItemType != EMenuItemType.Separator && item.Item != null)
+                        yield return item.Item;
+            }
         }
 
-        //! this Predicate should be constant
+        /// <summary>
+        /// Apply a filter to the menu items
+        /// </summary>
         public void FilterItems(Predicate<MenuItem> filter) {
-            FilteredItems.Clear();
-            foreach (MenuListItem item in Items)
-                if (item.ItemType != EMenuItemType.Separator && item.Item != null && filter(item.Item) == true)
-                    FilteredItems.Add(item);
-            HasFilterApplied = true;
-            ClearHighlightedItemIndex();
-        }
-        public void ResetFilteredItems() {
-            if (HasFilterApplied) {
+            lock (items_lock) {
                 FilteredItems.Clear();
-                HasFilterApplied = false;
+                foreach (MenuListItem item in Items)
+                    if (item.ItemType != EMenuItemType.Separator && item.Item != null && filter(item.Item) == true)
+                        FilteredItems.Add(item);
+                HasFilterApplied = true;
                 ClearHighlightedItemIndex();
+            }
+        }
+
+        public void ResetFilteredItems() {
+            lock (items_lock) {
+                if (HasFilterApplied) {
+                    FilteredItems.Clear();
+                    HasFilterApplied = false;
+                    ClearHighlightedItemIndex();
+                }
             }
         }
 
@@ -165,23 +185,28 @@ namespace Gradientspace.UI
 
         public void HighlightNextItem(bool bWrap = true)
         {
-            if (HighlightedItemIndex == -1 && HoveredItem != null)
-                HighlightedItemIndex = Items.FindIndex(0, (item) => { return item.Item == HoveredItem; });
+            lock (items_lock) {
 
-            HighlightedItemIndex++;
-            if (HighlightedItemIndex >= ActiveItems.Count)
-                HighlightedItemIndex = 0;
-            HoveredItem = null;
+                if (HighlightedItemIndex == -1 && HoveredItem != null)
+                    HighlightedItemIndex = Items.FindIndex(0, (item) => { return item.Item == HoveredItem; });
+
+                HighlightedItemIndex++;
+                if (HighlightedItemIndex >= ActiveItems.Count)
+                    HighlightedItemIndex = 0;
+                HoveredItem = null;
+            }
         }
         public void HighlightPreviousItem(bool bWrap = true)
         {
-            if (HighlightedItemIndex == -1 && HoveredItem != null)
-                HighlightedItemIndex = Items.FindIndex(0, (item) => { return item.Item == HoveredItem; });
+            lock (items_lock) {
+                if (HighlightedItemIndex == -1 && HoveredItem != null)
+                    HighlightedItemIndex = Items.FindIndex(0, (item) => { return item.Item == HoveredItem; });
 
-            HighlightedItemIndex--;
-            if (HighlightedItemIndex < 0)
-                HighlightedItemIndex = ActiveItems.Count-1;
-            HoveredItem = null;
+                HighlightedItemIndex--;
+                if (HighlightedItemIndex < 0)
+                    HighlightedItemIndex = ActiveItems.Count-1;
+                HoveredItem = null;
+            }
         }
 
         public void SelectHighlightedItem()
