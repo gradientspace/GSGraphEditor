@@ -72,10 +72,11 @@
 					<MenuItem Header="Settings" Classes="topMenu">
 						<CheckBox Name="Option_LoadLastOnStartup" Click="LoadLastOnStartup_OnToggle">Load Last Graph On Startup</CheckBox>
 						<Separator/>
-						<MenuItem Header="Node Libraries" Click="NodeLibraries_OnClick" />
+						<MenuItem Header="Node Libraries..." Click="NodeLibraries_OnClick" />
+						<MenuItem Header="Refresh Node Libraries" Click="RefreshNodeLibraries_OnClick" />
 						<Separator/>
-						<MenuItem Header="Open Settings Folder" Click="OpenSettingsFolder_OnClick"/>
-						<MenuItem Header="Edit Settings File" Click="EditSettingsFile_OnClick"/>
+						<MenuItem Header="Open Settings Folder..." Click="OpenSettingsFolder_OnClick"/>
+						<MenuItem Header="Edit Settings File..." Click="EditSettingsFile_OnClick"/>
 						<MenuItem Header="Reload Settings" Click="ReloadSettings_OnClick"/>
 					</MenuItem>
 					<MenuItem Header="Debug" Classes="topMenu">

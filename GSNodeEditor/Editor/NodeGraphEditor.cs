@@ -10,7 +10,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using static Gradientspace.NodeGraph.SerializationUtil;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxTokenParser;
 
 namespace GSNodeEditor
 {

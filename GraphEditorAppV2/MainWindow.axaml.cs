@@ -414,7 +414,14 @@ public partial class MainWindow : Window
         var dialog = new NodeLibrariesDialog();
         await dialog.ShowDialog(this);
     }
-    
+    protected async void RefreshNodeLibraries_OnClick(object? sender, RoutedEventArgs e)
+    {
+        bool bCanceled = await TrySaveUnsavedGraph();
+        if (!bCanceled) {
+            NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.NodeLibraryPaths);
+            SkiaView.ActiveViewport.RebuildGraphLibraryWithActiveGraph();
+        }
+    }
 
 
     protected override void OnTextInput(TextInputEventArgs e)

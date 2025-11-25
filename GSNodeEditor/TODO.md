@@ -1,4 +1,12 @@
 ==================
+WIP
+==================
+- abort/stop/cancel eval button
+- inline variable/alias node to simplify complex graphs
+- refreshing node library marks it dirty...
+
+
+==================
 Versioning
 ==================
 
@@ -23,7 +31,6 @@ Bugs
 - Missing pins not necessarily an error when evaluating graph...
 -crash if remove a function input that has values wired to it in call nodes
 -call and return constants get wiped out if funcdef node is modified
--ask to save on close if graph is modified
 -text entry field hotkeys don't always work...
 -ClutchKeyInputBehavior is broken by selection support. Need to add handling for InputBehavior Priority.
 -CustomDataItem API should be moved from NodeBase to INode
@@ -61,6 +68,14 @@ Graph Features
 - overrideable node color?
 - show by-ref vs by-value in pin tooltip
 
+====================
+Library Handling
+====================
+- support for calling .Initialize() functions of libraries to register types/etc
+    - currently hardcoded in NodeGraphViewport.Initialize() and DerivativeCL.Initialize()
+- support for enabling/disabling discovered libraries (currently always loads all)
+
+
 
 ===================
 CodeGen
@@ -80,7 +95,7 @@ Core Editor
 - Undo/Redo
     - need to expire low-level textedit changes after it goes out of focus
     - code nodes text
-- Mac support (seems to be working
+- Mac support (seems to be working...)
 - Linux support
 - open graph on drag/drop
 
@@ -150,5 +165,4 @@ Debugging Improvements
 Utility
 =================
 
-- Command-Line graph executor   (need argc/argv nodes, maybe a library for them?)
 - NodeBuilder functions that can emit a set of dynamically-generated node definitions for existing code
