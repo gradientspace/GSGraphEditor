@@ -54,9 +54,12 @@ namespace GSNodeEditor
 
             viewportUI = new NodeEditorViewportUI(this);
 
-            // these just force assemblies to be loaded so that the nodes will show up in the library
+            // Need to initialize libraries so that types can be registered
             NodeGraphCoreLibrary.Initialize();
-            //NodeGraphGeometryLibrary.Initialize();
+            NodeGraphGeometryLibrary.Initialize();
+
+            // these just force assemblies to be loaded so that the nodes will show up in the library
+            // (should convert this to dynamic-discovery...)
             GeometryViewerNodeLibrary.Initialize();
             //NodeGraphUnrealEngineLibrary.Initialize();
             //NodeGraphTestingLibrary.Initialize();
