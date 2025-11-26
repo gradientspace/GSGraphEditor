@@ -23,11 +23,21 @@
 		<Style Selector="Button.runButton">
 			<Setter Property="Background" Value="#29AB87"/>
 			<Setter Property="TextBlock.Foreground" Value="#EEEEEE"/>
+			<Setter Property="HorizontalContentAlignment" Value="Center"/>
 			<Style Selector="^:pointerover /template/ ContentPresenter">
 				<Setter Property="Background" Value="#00A86B"/>
 				<Setter Property="TextBlock.Foreground" Value="#EEEEEE"/>
 			</Style>
-		</Style>		
+		</Style>
+		<Style Selector="Button.stopButton">
+			<Setter Property="Background" Value="#FF0000"/>
+			<Setter Property="TextBlock.Foreground" Value="#EEEEEE"/>
+			<Setter Property="HorizontalContentAlignment" Value="Center"/>
+			<Style Selector="^:pointerover /template/ ContentPresenter">
+				<Setter Property="Background" Value="#DD0000"/>
+				<Setter Property="TextBlock.Foreground" Value="#EEEEEE"/>
+			</Style>
+		</Style>
 	</Window.Styles>
 	
 
@@ -90,11 +100,17 @@
 							<MenuItem Header="2 seconds" Click="DebugDelay_OnClick" Tag="debugdelay_2s"/>
 						</MenuItem>
 					</MenuItem>
-					<Button
+					<!--- Having these be part of the Menu causes some problems w/ visibility changes... -->
+					<Button Width="75" Name="RunButton"
 						Classes="runButton"
 						Content=" Start "
 						ToolTip.Tip="Begin executing graph (spacebar)" Click="Run_OnClick">
 					</Button>
+					<Button Width="75" Name="StopButton"
+						Classes="stopButton"
+						Content=" Stop "
+						ToolTip.Tip="Stop executing graph" Click="Stop_OnClick">
+					</Button>					
 				</Menu>
 
 				<Border DockPanel.Dock="Bottom" Background="#CCCCCC" BorderBrush="Black" BorderThickness="2" Margin="0" Height="150">

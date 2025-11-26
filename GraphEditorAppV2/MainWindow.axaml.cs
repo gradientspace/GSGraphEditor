@@ -6,6 +6,7 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Dialogs;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using g3;
@@ -74,9 +75,13 @@ public partial class MainWindow : Window
 
 		this.Loaded += MainWindow_Loaded;
         this.Closing += MainWindow_OnClosing;
-	}
 
-	protected async void MainWindow_OnClosing(object? o, WindowClosingEventArgs e)
+        if (RunButton.Parent is Menu MainMenu) {
+            MainMenu.Items.Remove(StopButton);
+        }
+    }
+
+    protected async void MainWindow_OnClosing(object? o, WindowClosingEventArgs e)
 	{
         e.Cancel = true;
         this.Closing -= MainWindow_OnClosing;
@@ -113,7 +118,10 @@ public partial class MainWindow : Window
         UpdateRecentFilesMenu();
 		if (NodeEditorConfig.LoadLastGraphOnStartup)
 			TryLoadGraphFromPath( NodeEditorConfig.EnumerateRecentFiles().FirstOrDefault(), false );
-	}
+
+        SkiaView.ActiveViewport.OnGraphEvalStarted += ActiveViewport_OnGraphEvalStarted;
+        SkiaView.ActiveViewport.OnGraphEvalEnded += ActiveViewport_OnGraphEvalEnded; 
+    }
 
     protected override void OnGotFocus(GotFocusEventArgs e)
     {
@@ -200,15 +208,38 @@ public partial class MainWindow : Window
 	{
 		SkiaView.ActiveViewport.RunGraphEvaluation();
 	}
+    private void CancelGraphEvaluationCommand()
+    {
+        SkiaView.ActiveViewport.CancelGraphEvaluation();
+    }
+
+    private void ActiveViewport_OnGraphEvalEnded(object? sender, EventArgs e)
+    {
+        // note: changing visibility doesn't seem to work here because 
+        // the Menu will still draw a little rectangle that can be hovered
+        // (Seems like the Button is a child of some kind of MenuItem that is not exposed)
+        if (StopButton.Parent is Menu MainMenu) {
+            MainMenu.Items.Remove(StopButton);
+            MainMenu.Items.Add(RunButton);
+        }
+    }
+    private void ActiveViewport_OnGraphEvalStarted(object? sender, EventArgs e)
+    {
+        if ( RunButton.Parent is Menu MainMenu) {
+            MainMenu.Items.Remove(RunButton);
+            MainMenu.Items.Add(StopButton);
+        }
+    }
 
 
-	// add tab to a tab control
-	//public void MainThing_ClickHandler(object sender, RoutedEventArgs args)
-	//{
-	//	TabItem newItem = new TabItem();
-	//	newItem.Header = "Meep";
-	//	MyTabControl.Items.Add(newItem);
-	//}
+
+    // add tab to a tab control
+    //public void MainThing_ClickHandler(object sender, RoutedEventArgs args)
+    //{
+    //	TabItem newItem = new TabItem();
+    //	newItem.Header = "Meep";
+    //	MyTabControl.Items.Add(newItem);
+    //}
 
 
     private async Task<bool> TrySaveUnsavedGraph()
@@ -370,7 +401,10 @@ public partial class MainWindow : Window
     {
         RunGraphEvaluationCommand();
     }
-
+    protected void Stop_OnClick(object? sender, RoutedEventArgs e)
+    {
+        CancelGraphEvaluationCommand(); 
+    }
 
 
     private void OpenSettingsFolder_OnClick(object? sender, RoutedEventArgs e)

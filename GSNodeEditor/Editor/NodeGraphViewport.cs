@@ -48,6 +48,9 @@ namespace GSNodeEditor
 
 		protected EditorHostAPI? HostAPI;
 
+        public event EventHandler? OnGraphEvalStarted;
+        public event EventHandler? OnGraphEvalEnded;
+
         public void Initialize()
         {
 			GlobalGraphOutput.AppendLine($"Default User Files Path is {NodeEditorConfig.DefaultUserFilesPath}", EGraphOutputType.Logging);
@@ -847,7 +850,9 @@ namespace GSNodeEditor
             // invalidate before launching graph
             HostAPI?.RequestRepaint();
 
-			Task<bool> GraphExecTask = Task.Run(() =>
+            OnGraphEvalStarted?.Invoke(this, EventArgs.Empty);
+
+            Task<bool> GraphExecTask = Task.Run(() =>
             {
                 if (UsingDataFlowGraphEvaluator != null)
                 {
@@ -866,6 +871,8 @@ namespace GSNodeEditor
             // return to main thread, and then re-enter here when graph exec is done
             bool done_eval = await GraphExecTask;
 
+            OnGraphEvalEnded?.Invoke(this, EventArgs.Empty);
+
             foreach (var errInfo in Errors) {
                 if (errInfo.Item2 != null) {
                     CurrentGraphView.FindNode(errInfo.Item2.GraphIdentifier)?.SetNodeErrorState(new List<string> { errInfo.Item1 });
@@ -875,6 +882,16 @@ namespace GSNodeEditor
 
             InGraphEvaluation = false;
         }
+
+        public void CancelGraphEvaluation()
+        {
+            if (!InGraphEvaluation)
+                return;
+            if (UsingExecutionGraphEvaluator != null) {
+                UsingExecutionGraphEvaluator.PendingCancel = true;
+            }
+        }
+
 
         public static implicit operator WeakReference<object>(NodeGraphViewport v)
         {

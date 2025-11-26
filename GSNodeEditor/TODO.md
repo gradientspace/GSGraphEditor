@@ -1,8 +1,7 @@
 ==================
 WIP
 ==================
-- abort/stop/cancel eval button
-- inline variable/alias node to simplify complex graphs
+- alias node to simplify complex graphs
 - refreshing node library marks it dirty...
 
 
