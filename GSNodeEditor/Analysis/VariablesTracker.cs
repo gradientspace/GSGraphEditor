@@ -1,43 +1,39 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
 using Gradientspace.NodeGraph;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace GSNodeEditor
 {
-	public class VariablesTracker
-	{
-		public ExecutionGraph Graph { get; protected set; }
+    public class VariablesTracker
+    {
+        public ExecutionGraph Graph { get; protected set; }
 
-		public VariablesTracker(ExecutionGraph graph)
-		{
-			Graph = graph;
-		}
+        public bool FindUnlinkedVariables = true;
 
-
-		public void Rebuild()
-		{
-			rebuild_internal();
-		}
-
-		public struct VariableInfo
-		{
-			public string Name;
-			public Type VariableType;
-			public int CreatedAtNodeID;
-		}
+        public VariablesTracker(ExecutionGraph graph)
+        {
+            Graph = graph;
+        }
 
 
-		public IEnumerable<VariableInfo> EnumerateAllVariables()
-		{
-			foreach (VariableInfo variableInfo in Variables)
-				yield return variableInfo;
-		}
+        public void Rebuild()
+        {
+            rebuild_internal();
+        }
+
+        public struct VariableInfo
+        {
+            public string Name;
+            public Type VariableType;
+            public int CreatedAtNodeID;
+        }
+
+
+        public IEnumerable<VariableInfo> EnumerateAllVariables()
+        {
+            foreach (VariableInfo variableInfo in Variables)
+                yield return variableInfo;
+        }
 
 
         public bool GetVariableInfoAtNode(int NodeID, out VariableInfo varInfo)
@@ -55,7 +51,7 @@ namespace GSNodeEditor
         public bool FindVariableByName(string Name, out VariableInfo varInfo)
         {
             foreach (VariableInfo variableInfo in Variables) {
-                if ( String.Compare(variableInfo.Name, Name, true) == 0 ) {
+                if (String.Compare(variableInfo.Name, Name, true) == 0) {
                     varInfo = variableInfo;
                     return true;
                 }
@@ -73,7 +69,7 @@ namespace GSNodeEditor
             if (GetVariableInfoAtNode(NodeIdentifier, out var varInfo) == false)
                 return false;
 
-            if (FindVariableByName(ToName, out var existingVarWithName)) 
+            if (FindVariableByName(ToName, out var existingVarWithName))
                 return false;
 
             return true;
@@ -82,36 +78,47 @@ namespace GSNodeEditor
         protected List<VariableInfo> Variables = new List<VariableInfo>();
 
 
-		void add_new_variable(DefineVariableBaseNode variableNode)
-		{
-			VariableInfo v = new VariableInfo();
-			v.Name = variableNode.GetVariableName();
-			v.VariableType = variableNode.GetVariableType();
-			v.CreatedAtNodeID = variableNode.GraphIdentifier;
-			Variables.Add(v);
-		}
+        void add_new_variable(DefineVariableBaseNode variableNode)
+        {
+            VariableInfo v = new VariableInfo();
+            v.Name = variableNode.GetVariableName();
+            v.VariableType = variableNode.GetVariableType();
+            v.CreatedAtNodeID = variableNode.GraphIdentifier;
+            Variables.Add(v);
+        }
 
 
 
-		void rebuild_internal()
-		{
-			Variables = new List<VariableInfo>();
+        void rebuild_internal()
+        {
+            Variables = new List<VariableInfo>();
 
-			bool bPrintDebug = false;
+            bool bPrintDebug = false;
 
-			GraphTraversalUtils.TraverseAllSequencePaths(Graph, 
-				(NodeBase node) => {
-					if (node is DefineVariableBaseNode varNode)
-						add_new_variable(varNode);
-				},
-				(NodeBase node, IConnectionInfo connInfo, GraphTraversalUtils.ScopeType scopeType, bool bIsOpeningScope) => {
+            HashSet<NodeBase> SawNodes = new();
+
+            GraphTraversalUtils.TraverseAllSequencePaths(Graph,
+                (NodeBase node) => {
+                    if (node is DefineVariableBaseNode varNode)
+                        add_new_variable(varNode);
+                    SawNodes.Add(node);
+                },
+                (NodeBase node, IConnectionInfo connInfo, GraphTraversalUtils.ScopeType scopeType, bool bIsOpeningScope) => {
                     string PushPop = bIsOpeningScope ? "Push" : "Pop";
                     if (bPrintDebug)
-						Debug.WriteLine($"{PushPop}Scope: {node.GetNodeName()}:{connInfo.FromNodeOutputName}"); 
-				}
-			);
-		}
+                        Debug.WriteLine($"{PushPop}Scope: {node.GetNodeName()}:{connInfo.FromNodeOutputName}");
+                }
+            );
+
+            // find any unlinked variable nodes...
+            if (FindUnlinkedVariables) {
+                foreach (DefineVariableBaseNode varNode in Graph.EnumerateNodesOfType<DefineVariableBaseNode>()) {
+                    if (SawNodes.Contains(varNode) == false)
+                        add_new_variable(varNode);
+                }
+            }
+        }
 
 
-	}
+    }
 }

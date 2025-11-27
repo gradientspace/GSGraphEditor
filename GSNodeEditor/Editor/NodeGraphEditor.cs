@@ -552,6 +552,11 @@ namespace GSNodeEditor
             VariablesTracker varTracker = new VariablesTracker(execGraph);
             varTracker.Rebuild();
 
+            if ( varTracker.GetVariableInfoAtNode(NodeIdentifier, out VariablesTracker.VariableInfo varInfo) == false ) {
+                GlobalGraphOutput.AppendLog($"Rename variable {FromName} to {ToName} ignored variable {FromName} at Node {NodeIdentifier} not found");
+                return false;
+            }
+
             // make sure we can complete this rename
             if ( varTracker.CanRenameVariable(NodeIdentifier, FromName, ToName) == false) {
                 GlobalGraphOutput.AppendLog($"Rename variable {FromName} to {ToName} ignored because a variable named {ToName} already exists");
