@@ -21,6 +21,11 @@ namespace GSNodeEditor
             WidgetStyle = PinWidgetStyles.DefaultOutputStyleSet;
 
             SetInputBehavior(new ExtendableWidgetInputBehavior(this, this) { Depth = 0 });
+
+            // set CompactMode on the pin if the input is marked HiddenLabel
+            // (maybe not ideal way to do this...)
+            if ((sourceOutputInfo.Output.GetOutputFlags() & ENodeOutputFlags.HiddenLabel) != 0)
+                CompactMode = true;
         }
 
 
@@ -128,7 +133,7 @@ namespace GSNodeEditor
 
         public void Draw(SKStyleCache StyleCache, SKCanvas Canvas, ILayoutAnchor Anchor)
         {
-            NodePinWidgetStyle UseStyle = PinWidgetStyles.DefaultOutputStyleSet;
+            NodePinWidgetStyle UseStyle = SourcePinWidget.WidgetStyle; //PinWidgetStyles.DefaultOutputStyleSet;
             if (SourcePinWidget.IsSequenceOutputPin)
                 UseStyle = PinWidgetStyles.OutputStyleSet_ControlFlow;
 

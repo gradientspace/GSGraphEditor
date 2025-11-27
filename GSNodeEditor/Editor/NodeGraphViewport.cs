@@ -79,7 +79,9 @@ namespace GSNodeEditor
                 typeof(FunctionDefinitionNode), new FunctionDefnNodeWidgetProvider());
             NodeWidgetCustomizationSystem.Instance.RegisterProvider(
                 typeof(CodeFunctionNode), new CodeFunctionNodeWidgetProvider());
-			NodeWidgetCustomizationSystem.Instance.RegisterProvider(
+            NodeWidgetCustomizationSystem.Instance.RegisterProvider(
+                typeof(RerouteNode), new RerouteNodeWidgetProvider());
+            NodeWidgetCustomizationSystem.Instance.RegisterProvider(
 				typeof(PythonFunctionCodeNode), new CodeFunctionNodeWidgetProvider());
 
             //UsingDataFlowGraph = MakeInitialDataflowGraph();

@@ -2,6 +2,7 @@
 using g3;
 using Gradientspace.NodeGraph;
 using Gradientspace.UI;
+using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -762,6 +763,44 @@ namespace GSNodeEditor
             }
         }
 
+
+
+        /// <summary>
+        /// Insert a RerouteNode at the specified Position. The provided Connection
+        /// is rewrite to go to/from the Reroute.
+        /// </summary>
+        public virtual bool InsertReroute(IConnectionInfo connectionInfo, Vector2f Position)
+        {
+            Debug.Assert(IsInGraphEdits);
+
+            bool bTypeOK = Graph.GetNodeOutputType(connectionInfo.FromNodeIdentifier, connectionInfo.FromNodeOutputName, out GraphDataType DataType);
+
+            NodeWidget fromWidget = GraphView.FindNode(connectionInfo.FromNodeIdentifier)!;
+            int OutputPinIndex = fromWidget.FindOutputPinIndexByName(connectionInfo.FromNodeOutputName);
+            NodeWidget toWidget = GraphView.FindNode(connectionInfo.ToNodeIdentifier)!;
+            int InputPinIndex = toWidget.FindInputPinIndexByName(connectionInfo.ToNodeInputName);
+
+            // todo error checking...
+
+            // remove existing connection
+            RemoveConnection(connectionInfo);
+
+            // create reroute
+            NodeType rerouteType = DefaultNodeLibrary.Instance.FindNodeType(typeof(RerouteNode)) !;
+            NodeWidget rerouteNodeWidget = AddNodeOfType(rerouteType, Position,
+                    (INodeInfo nodeInfo) => {
+                        if (nodeInfo.Node is RerouteNode rerouteNode)
+                            rerouteNode.Initialize(DataType.CSType);
+                    });
+
+            // connect output to reroute
+            AddConnection(fromWidget, OutputPinIndex, rerouteNodeWidget, 0, EConnectionType.Data, true, false);
+
+            // connect reroute to input
+            AddConnection(rerouteNodeWidget, 0, toWidget, InputPinIndex, EConnectionType.Data, true, false);
+
+            return true;
+        }
 
 
     }

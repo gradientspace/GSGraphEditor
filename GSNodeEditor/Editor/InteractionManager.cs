@@ -17,7 +17,7 @@ namespace GSNodeEditor
         public bool EnableCaptureDebugging = false;
 
         NewNodePopupDialog? ActiveNewNodePopupDialog = null;
-        SimplePopupMenuDialog? ActiveNodePopupDialog = null;
+        SimplePopupMenuDialog? ActiveContextMenuPopupDialog = null;
 		Widget? ActivePopupDialog = null;
 		SimpleWidgetSource ActivePopupMenuWidgetSet;
 
@@ -585,9 +585,12 @@ namespace GSNodeEditor
             ActiveNewNodePopupDialog.OnGetSetVariableSelected += (NewNodePopupDialog dialog, VariablesTracker.VariableInfo varInfo, bool bSet) => {
                 OnGetSetVariableSelected(varInfo, bSet, ViewportPopupLocation, FromNodeAndPin);
             };
-            ActiveNewNodePopupDialog.OnNewVariableSelected += (NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, int type) => {
+            ActiveNewNodePopupDialog.OnNewVariableSelected += (NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, NewNodePopupDialog.NewVariableEventType type) => {
                 // note: do not use outer FromNodeAndPin here, the event sends null for types that can't be used as a variable
-                OnNewVariableSelected(ViewportPopupLocation, nodeAndPin, type);
+                if (type == NewNodePopupDialog.NewVariableEventType.CreateSplitter)
+                    OnNewSplitterSelected(ViewportPopupLocation, nodeAndPin);
+                else
+                    OnNewVariableSelected(ViewportPopupLocation, nodeAndPin);
             };
             ActiveNewNodePopupDialog.OnCreateFunctionCallSelected += (NewNodePopupDialog dialog, FunctionDefinitionNode funcNode) => {
                 OnNewFunctionCallSelected(ViewportPopupLocation, FromNodeAndPin, funcNode);
@@ -626,7 +629,7 @@ namespace GSNodeEditor
             DismissActivePopupDialogs();
         }
 
-        protected void OnNewVariableSelected(Vector2f Location, NodeAndPin? FromNode, int type)
+        protected void OnNewVariableSelected(Vector2f Location, NodeAndPin? FromNode)
         {
 			PendingNextFrameAction = () => {
                 Type useNodeType = typeof(CreateGlobalVariableNode);
@@ -640,6 +643,23 @@ namespace GSNodeEditor
 			};
             DismissActivePopupDialogs();
 		}
+
+        protected void OnNewSplitterSelected(Vector2f Location, NodeAndPin? FromNode)
+        {
+            if (FromNode == null)       // shouldn't be possible
+                return;
+            PendingNextFrameAction = () => {
+                Type useNodeType = typeof(RerouteNode);
+                NodeWidget? NewWidget = AppendNewNodeAtLocation(
+                    new NodeType(useNodeType), Location, FromNode,
+                    (INodeInfo nodeInfo) => {
+                        if (nodeInfo.Node is RerouteNode rerouteNode)
+                            rerouteNode.Initialize(FromNode.Pin.DataType.CSType);
+                    });
+
+            };
+            DismissActivePopupDialogs();
+        }
 
 
         protected void OnNewFunctionCallSelected(Vector2f Location, NodeAndPin? FromNode, FunctionDefinitionNode funcNode)
@@ -664,25 +684,22 @@ namespace GSNodeEditor
             //GraphViewport.WidgetScene.RemoveSource(ActivePopupMenuWidgetSet);
             GraphViewport.ViewportUI.WidgetScene.RemoveSource(ActivePopupMenuWidgetSet);
             ActivePopupMenuWidgetSet.Clear();
+
+            if (ActivePopupDialog is IHotkeyTarget target)
+                SystemKeyboardRouter.Instance.PopHotkeyTarget(target);
+
             ActivePopupDialog = null;
+            ActiveNewNodePopupDialog = null;
+            ActiveContextMenuPopupDialog = null;
 
-			// this should work but it doesn't update something in widgetscene...
-			//if (ActiveNewNodePopupDialog != null)
-			//    ActivePopupMenuWidgetSet.RemoveRootWidget(ActiveNewNodePopupDialog);
+            // this should work but it doesn't update something in widgetscene...
+            //if (ActiveNewNodePopupDialog != null)
+            //    ActivePopupMenuWidgetSet.RemoveRootWidget(ActiveNewNodePopupDialog);
 
-			//interactionState = EInteractionState.NoInteraction;
+            //interactionState = EInteractionState.NoInteraction;
 
-			// somehow need to handle the case where we remove widget that is actively capturing...
-			EndActiveHover();
-
-            if (ActiveNewNodePopupDialog != null) {
-                SystemKeyboardRouter.Instance.PopHotkeyTarget(ActiveNewNodePopupDialog!);
-                ActiveNewNodePopupDialog = null;
-            }
-            if (ActiveNodePopupDialog != null) {
-				SystemKeyboardRouter.Instance.PopHotkeyTarget(ActiveNodePopupDialog!);
-				ActiveNodePopupDialog = null; 
-			}
+            // somehow need to handle the case where we remove widget that is actively capturing...
+            EndActiveHover();
         }
 
 
@@ -731,39 +748,60 @@ namespace GSNodeEditor
 
         public void RequestShowContextMenu(in InputDeviceState deviceState)
         {
-			Type WidgetHitType = typeof(NodeWidget);
-			bool bClickHitNode = GraphViewport.WidgetScene.HitQuery(deviceState.CurrentPosition, out var hitResult,
-				(Widget w) => { return w.GetType().IsSubclassOf(WidgetHitType); });
+            // TODO: this is not good. CheckSelectionRequirement() doesn't ensure that
+            // the one selected thing is the one we have right-clicked, for example.
+            // Need to plan out desired behavior more carefully...
+
+            bool bHitItem = GraphViewport.WidgetScene.HitQuery(deviceState.CurrentPosition, out var hitResult);
+            bool bClickHitNode = (bHitItem && TypeUtils.IsOfBaseClass<NodeWidget>(hitResult.HitWidget));
+
+            ConnectionView? hitConnection = (bClickHitNode == false) ?
+                GraphViewport.CurrentGraphView.ConnectionHitTest(deviceState.CurrentPosition, out WidgetHitResult connectionHitResult, null) : null;
 
             bool bIsMaxOneNodeSelected = 
                 GraphViewport.SelectionManager.HasSelection == false 
                 || GraphViewport.SelectionManager.CheckSelectionRequirement(1, 0);
+            bool bIsMaxOneWireSelected =
+                GraphViewport.SelectionManager.HasSelection == false
+                || GraphViewport.SelectionManager.CheckSelectionRequirement(0, 1);
 
-			if (bClickHitNode && bIsMaxOneNodeSelected)
+            if (bClickHitNode && bIsMaxOneNodeSelected)
 				PendingNextFrameAction = () => { BeginShowNodeContextMenu( (hitResult.HitWidget as NodeWidget)! ); };
-			else
+            else if (hitConnection != null && bIsMaxOneWireSelected)
+                PendingNextFrameAction = () => { BeginShowWireContextMenu(hitConnection!); };
+            else
                 PendingNextFrameAction = () => { BeginShowNewNodePopupMenu(null); };
         }
 
 
 
+        private SimplePopupMenuDialog init_context_menu_dialog()
+        {
+            Vector2f UIPopupLocation = GetDeviceStateInSpace(EInteractionSpace.UILayer).CurrentPosition;
+            Vector2f ViewportPopupLocation = GetDeviceStateInSpace(EInteractionSpace.GraphViewport).CurrentPosition;
+
+            SimplePopupMenuDialog newDialog = new SimplePopupMenuDialog();
+            newDialog.Position = UIPopupLocation;
+            newDialog.OnDismissDialogClick = () => { DismissActivePopupDialogs(); };
+            newDialog.OnItemSelected += (SimplePopupMenuDialog dialog, MenuItem item) => {
+                DismissActivePopupDialogs();
+            };
+
+            ActivePopupDialog = newDialog;
+            ActivePopupMenuWidgetSet.AddRootWidget(newDialog);
+            GraphViewport.ViewportUI.WidgetScene.AddSource(ActivePopupMenuWidgetSet);
+            SystemKeyboardRouter.Instance.PushHotkeyTarget(newDialog);
+
+            return newDialog;
+        }
+
 
         public void BeginShowNodeContextMenu(NodeWidget nodeWidget)
         {
             DismissActivePopupDialogs();
+            ActiveContextMenuPopupDialog = init_context_menu_dialog();
 
-			Vector2f UIPopupLocation = GetDeviceStateInSpace(EInteractionSpace.UILayer).CurrentPosition;
-			Vector2f ViewportPopupLocation = GetDeviceStateInSpace(EInteractionSpace.GraphViewport).CurrentPosition;
-
-			ActiveNodePopupDialog = new SimplePopupMenuDialog();
-			ActivePopupDialog = ActiveNodePopupDialog;
-			ActiveNodePopupDialog.Position = UIPopupLocation;
-			ActiveNodePopupDialog.OnDismissDialogClick = () => { DismissActivePopupDialogs(); };
-            ActiveNodePopupDialog.OnItemSelected += (SimplePopupMenuDialog dialog, MenuItem item) => {
-                DismissActivePopupDialogs();
-            };
-
-            ActiveNodePopupDialog.AddItem(new MenuItem() {
+            ActiveContextMenuPopupDialog.AddItem(new MenuItem() {
                 Text = "Delete Node",
                 OnClicked = () => {
                     GraphViewport.ExecuteGraphEdit((NodeGraphEditor Editor) => { Editor.RemoveNode(nodeWidget); });
@@ -771,7 +809,7 @@ namespace GSNodeEditor
             });
 
             if (nodeWidget is FunctionDefNodeWidget functionNodeWidget) {
-                ActiveNodePopupDialog.AddItem(new MenuItem() {
+                ActiveContextMenuPopupDialog.AddItem(new MenuItem() {
                     Text = "Add Return",
                     OnClicked = () => {
                         GraphViewport.ExecuteGraphEdit((NodeGraphEditor Editor) => { 
@@ -785,18 +823,39 @@ namespace GSNodeEditor
                 });
             }
 
-			ActiveNodePopupDialog.AddItem(new MenuItem() {
+            ActiveContextMenuPopupDialog.AddItem(new MenuItem() {
 				Text = "Log Node Info",
 				OnClicked = () => {
                     GlobalGraphOutput.AppendLog($"{nodeWidget.ParentNode!.ToString()} - NodeID {nodeWidget.GraphNodeIdentifier}");
 				}
 			});
-
-			ActivePopupMenuWidgetSet.AddRootWidget(ActiveNodePopupDialog);
-			GraphViewport.ViewportUI.WidgetScene.AddSource(ActivePopupMenuWidgetSet);
-			SystemKeyboardRouter.Instance.PushHotkeyTarget(ActiveNodePopupDialog);
-
 		}
+
+
+        public void BeginShowWireContextMenu(ConnectionView connectionView)
+        {
+            DismissActivePopupDialogs();
+            ActiveContextMenuPopupDialog = init_context_menu_dialog();
+
+            Vector2f Position = GraphViewport.TransformUIToViewport(ActiveContextMenuPopupDialog.Position);
+
+            ActiveContextMenuPopupDialog.AddItem(new MenuItem() {
+                Text = "Delete Connection",
+                OnClicked = () => {
+                    GraphViewport.ExecuteGraphEdit((NodeGraphEditor Editor) => { Editor.RemoveConnection(connectionView.ConnectionInfo); });
+                }
+            });
+
+            // only allow splitter for data connections for now...need some other way for sequence connections...
+            if (connectionView.ConnectionInfo.ConnectionType == EConnectionType.Data) {
+                ActiveContextMenuPopupDialog.AddItem(new MenuItem() {
+                    Text = "Insert Split/Reroute",
+                    OnClicked = () => {
+                        GraphViewport.ExecuteGraphEdit((NodeGraphEditor Editor) => { Editor.InsertReroute(connectionView.ConnectionInfo, Position); });
+                    }
+                });
+            }
+        }
 
 	}
 }

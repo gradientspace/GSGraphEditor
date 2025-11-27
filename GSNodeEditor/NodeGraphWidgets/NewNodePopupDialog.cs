@@ -38,7 +38,13 @@ namespace GSNodeEditor
         public delegate void CreateFunctionCallEventHandler(NewNodePopupDialog dialog, FunctionDefinitionNode functionNode);
         public event CreateFunctionCallEventHandler? OnCreateFunctionCallSelected;
 
-        public delegate void NewVariableSelectedEventHandler(NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, int type);
+        public enum NewVariableEventType
+        {
+            NewGlobal = 0, CreateSplitter = 5
+        }
+        const string CreateSplitterLabel = "Reroute/Splitter";
+
+        public delegate void NewVariableSelectedEventHandler(NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, NewVariableEventType type);
 		public event NewVariableSelectedEventHandler? OnNewVariableSelected;
 
 		public delegate void GetSetVariableSelectedEventHandler(NewNodePopupDialog dialog, VariablesTracker.VariableInfo varInfo, bool bSet);
@@ -240,7 +246,11 @@ namespace GSNodeEditor
             else 
             {
                 NodeAndPin? nodeAndPin = selectedItem.CustomData as NodeAndPin;
-                OnNewVariableSelected?.Invoke(this, nodeAndPin, 0);
+
+                NewVariableEventType type = NewVariableEventType.NewGlobal;
+                if (selectedItem.Text == CreateSplitterLabel)
+                    type = NewVariableEventType.CreateSplitter;
+                OnNewVariableSelected?.Invoke(this, nodeAndPin, type);
             }
 		}
 
@@ -434,10 +444,14 @@ namespace GSNodeEditor
 			VariablesCategory.CategoryMenu.AnchorTo(NodesCategoryMenuAnchor);
 			VariablesCategory.CategoryMenu.OnMenuItemSelected += VariablesMenu_OnMenuItemSelected;
 
+            if (FromPinDataType != null) {
+                VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = CreateSplitterLabel, CustomData = FromNodeAndPin }, -10);
+            }
+
             if (FromPinDataType == null)
 			    VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = "New Global", CustomData = null }, -1);
             else
-				VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = "New Global " + FromNodeAndPin.Pin.GetDataTypeAsString() , CustomData = FromNodeAndPin }, -1);
+				VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = "New Global " + FromNodeAndPin!.Pin.GetDataTypeAsString() , CustomData = FromNodeAndPin }, -1);
 
 			foreach ( var varInfo in GraphAnalysis.Variables.EnumerateAllVariables())
             {

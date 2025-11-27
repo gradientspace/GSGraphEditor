@@ -24,6 +24,7 @@ Renaming
 Bugs
 ===================
 
+- SelectionManager active selection is not updated when deleting selected node, leaving an invalid selection
 - Type input on static function node does not result in a type picker
 - why isn't int -> Vector3d a type-conversion warning?
 - 'Missing' pins do not disappear when disconnected
