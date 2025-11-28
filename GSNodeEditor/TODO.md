@@ -1,7 +1,9 @@
 ==================
 WIP
 ==================
-- alias node to simplify complex graphs
+- Rename Alias - need to propagate to GetAliasNode(s)
+- CreateAlias widget
+- Alias node color
 - refreshing node library marks it dirty...
 
 
@@ -67,7 +69,8 @@ Graph Features
 - Color nodes by type
 - overrideable node color?
 - show by-ref vs by-value in pin tooltip
-
+- pin contextmenu option to replace all output wires w/ an Alias...
+ 
 ====================
 Library Handling
 ====================

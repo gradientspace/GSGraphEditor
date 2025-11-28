@@ -28,6 +28,11 @@ namespace GSNodeEditor
             return TypeUtils.TypeToString(DataType.CSType);
         }
 
+        public virtual string GetPinName()
+        {
+            return "(no name)";
+        }
+
 
         protected NodeGraphView? FindParentGraphView()
         {

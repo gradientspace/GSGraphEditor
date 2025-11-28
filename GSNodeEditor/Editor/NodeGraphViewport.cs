@@ -81,6 +81,11 @@ namespace GSNodeEditor
                 typeof(CodeFunctionNode), new CodeFunctionNodeWidgetProvider());
             NodeWidgetCustomizationSystem.Instance.RegisterProvider(
                 typeof(RerouteNode), new RerouteNodeWidgetProvider());
+            // todo support base classes...
+            NodeWidgetCustomizationSystem.Instance.RegisterProvider(
+                typeof(CreateAliasNode), new AliasNodeWidgetProvider());
+            NodeWidgetCustomizationSystem.Instance.RegisterProvider(
+                typeof(GetAliasNode), new AliasNodeWidgetProvider());
             NodeWidgetCustomizationSystem.Instance.RegisterProvider(
 				typeof(PythonFunctionCodeNode), new CodeFunctionNodeWidgetProvider());
 

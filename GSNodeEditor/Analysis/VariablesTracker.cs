@@ -21,20 +21,37 @@ namespace GSNodeEditor
             rebuild_internal();
         }
 
+
+        public enum VariableType
+        {
+            Global = 0,
+            Alias = 1
+        }
+
         public struct VariableInfo
         {
             public string Name;
-            public Type VariableType;
+            public VariableType VarType;
+            public Type DataType;
             public int CreatedAtNodeID;
         }
 
 
         public IEnumerable<VariableInfo> EnumerateAllVariables()
         {
-            foreach (VariableInfo variableInfo in Variables)
-                yield return variableInfo;
+            foreach (VariableInfo variableInfo in Variables) {
+                if (variableInfo.VarType != VariableType.Alias)
+                    yield return variableInfo;
+            }
         }
 
+        public IEnumerable<VariableInfo> EnumerateAllAliases()
+        {
+            foreach (VariableInfo variableInfo in Variables) {
+                if (variableInfo.VarType == VariableType.Alias)
+                    yield return variableInfo;
+            }
+        }
 
         public bool GetVariableInfoAtNode(int NodeID, out VariableInfo varInfo)
         {
@@ -60,6 +77,17 @@ namespace GSNodeEditor
             return false;
         }
 
+        public string MakeUniqueVariableName(string InitialName)
+        {
+            string UniqueName = InitialName;
+            int Count = 1;
+            while ( FindVariableByName(UniqueName, out VariableInfo varInfo) == true ) {
+                UniqueName = $"{InitialName}_{Count}";
+                Count++;
+            }
+            return UniqueName;
+        }
+
 
         public bool CanRenameVariable(int NodeIdentifier, string FromName, string ToName)
         {
@@ -82,11 +110,20 @@ namespace GSNodeEditor
         {
             VariableInfo v = new VariableInfo();
             v.Name = variableNode.GetVariableName();
-            v.VariableType = variableNode.GetVariableType();
+            v.VarType = VariableType.Global;
+            v.DataType = variableNode.GetVariableType();
             v.CreatedAtNodeID = variableNode.GraphIdentifier;
             Variables.Add(v);
         }
-
+        void add_new_alias(CreateAliasNode aliasNode)
+        {
+            VariableInfo v = new VariableInfo();
+            v.Name = aliasNode.GetAliasName();
+            v.VarType = VariableType.Alias;
+            v.DataType = aliasNode.GetAliasDataType();
+            v.CreatedAtNodeID = aliasNode.GraphIdentifier;
+            Variables.Add(v);
+        }
 
 
         void rebuild_internal()
@@ -101,6 +138,8 @@ namespace GSNodeEditor
                 (NodeBase node) => {
                     if (node is DefineVariableBaseNode varNode)
                         add_new_variable(varNode);
+                    else if (node is CreateAliasNode aliasNode)
+                        add_new_alias(aliasNode);
                     SawNodes.Add(node);
                 },
                 (NodeBase node, IConnectionInfo connInfo, GraphTraversalUtils.ScopeType scopeType, bool bIsOpeningScope) => {
@@ -115,6 +154,10 @@ namespace GSNodeEditor
                 foreach (DefineVariableBaseNode varNode in Graph.EnumerateNodesOfType<DefineVariableBaseNode>()) {
                     if (SawNodes.Contains(varNode) == false)
                         add_new_variable(varNode);
+                }
+                foreach (CreateAliasNode aliasNode in Graph.EnumerateNodesOfType<CreateAliasNode>()) {
+                    if (SawNodes.Contains(aliasNode) == false)
+                        add_new_alias(aliasNode);
                 }
             }
         }

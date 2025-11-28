@@ -70,6 +70,8 @@ namespace GSNodeEditor
         }
 
         public override bool IsOutputPin { get { return false; } }
+        public override string GetPinName() { return DisplayName ?? InputName; }
+
 
         public override string GetDataTypeAsString()
         {

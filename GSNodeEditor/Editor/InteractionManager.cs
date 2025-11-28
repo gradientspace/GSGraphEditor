@@ -585,10 +585,15 @@ namespace GSNodeEditor
             ActiveNewNodePopupDialog.OnGetSetVariableSelected += (NewNodePopupDialog dialog, VariablesTracker.VariableInfo varInfo, bool bSet) => {
                 OnGetSetVariableSelected(varInfo, bSet, ViewportPopupLocation, FromNodeAndPin);
             };
+            ActiveNewNodePopupDialog.OnGetAliasSelected += (NewNodePopupDialog dialog, VariablesTracker.VariableInfo varInfo) => {
+                OnGetAliasSelected(varInfo, ViewportPopupLocation, FromNodeAndPin);
+            };
             ActiveNewNodePopupDialog.OnNewVariableSelected += (NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, NewNodePopupDialog.NewVariableEventType type) => {
                 // note: do not use outer FromNodeAndPin here, the event sends null for types that can't be used as a variable
                 if (type == NewNodePopupDialog.NewVariableEventType.CreateSplitter)
                     OnNewSplitterSelected(ViewportPopupLocation, nodeAndPin);
+                else if (type == NewNodePopupDialog.NewVariableEventType.CreateAlias)
+                    OnNewAliasSelected(ViewportPopupLocation, nodeAndPin);
                 else
                     OnNewVariableSelected(ViewportPopupLocation, nodeAndPin);
             };
@@ -622,7 +627,7 @@ namespace GSNodeEditor
                     new NodeType(useNodeType), Location, FromNode,
                     (INodeInfo nodeInfo) => {
                         if (nodeInfo.Node is AccessVariableNode varNode)
-                            varNode.Initialize(varInfo.Name, varInfo.VariableType, true);
+                            varNode.Initialize(varInfo.Name, varInfo.DataType, true);
 					});
 
             };
@@ -644,10 +649,47 @@ namespace GSNodeEditor
             DismissActivePopupDialogs();
 		}
 
+
+        protected void OnNewAliasSelected(Vector2f Location, NodeAndPin? FromNode)
+        {
+            if (FromNode == null) return;      // shouldn't be possible
+
+            string pinName = FromNode.Pin.GetPinName();
+            string InitialName = GraphViewport.GraphAnalysis.Variables.MakeUniqueVariableName(pinName);
+            
+            PendingNextFrameAction = () => {
+                Type useNodeType = typeof(CreateAliasNode);
+                NodeWidget? NewWidget = AppendNewNodeAtLocation(
+                    new NodeType(useNodeType), Location, FromNode,
+                    (INodeInfo nodeInfo) => {
+                        if (nodeInfo.Node is CreateAliasNode aliasNode)
+                            aliasNode.Initialize(FromNode.Pin.DataType.CSType, InitialName);
+                    });
+                
+
+            };
+            DismissActivePopupDialogs();
+        }
+
+        protected void OnGetAliasSelected(VariablesTracker.VariableInfo varInfo, Vector2f Location, NodeAndPin? FromNode)
+        {
+            PendingNextFrameAction = () => {
+                Type useNodeType = typeof(GetAliasNode);
+                NodeWidget? NewWidget = AppendNewNodeAtLocation(
+                    new NodeType(useNodeType), Location, FromNode,
+                    (INodeInfo nodeInfo) => {
+                        if (nodeInfo.Node is GetAliasNode varNode)
+                            varNode.Initialize(varInfo.DataType, varInfo.Name);
+                    });
+
+            };
+            DismissActivePopupDialogs();
+        }
+
         protected void OnNewSplitterSelected(Vector2f Location, NodeAndPin? FromNode)
         {
-            if (FromNode == null)       // shouldn't be possible
-                return;
+            if (FromNode == null) return;      // shouldn't be possible
+
             PendingNextFrameAction = () => {
                 Type useNodeType = typeof(RerouteNode);
                 NodeWidget? NewWidget = AppendNewNodeAtLocation(

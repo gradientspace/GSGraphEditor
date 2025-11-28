@@ -30,6 +30,8 @@ namespace GSNodeEditor
 
 
         public override bool IsOutputPin { get { return true; } }
+        public override string GetPinName() { return OutputName; }
+
 
         public bool IsSequenceOutputPin { get { return DataType.CSType == typeof(ControlFlowOutputID); } }
 

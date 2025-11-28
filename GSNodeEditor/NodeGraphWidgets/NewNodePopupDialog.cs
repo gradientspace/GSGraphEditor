@@ -40,9 +40,12 @@ namespace GSNodeEditor
 
         public enum NewVariableEventType
         {
-            NewGlobal = 0, CreateSplitter = 5
+            NewGlobal = 0, 
+            CreateAlias = 1,
+            CreateSplitter = 5
         }
         const string CreateSplitterLabel = "Reroute/Splitter";
+        const string CreateAliasLabel = "Create Alias";
 
         public delegate void NewVariableSelectedEventHandler(NewNodePopupDialog dialog, NodeAndPin? nodeAndPin, NewVariableEventType type);
 		public event NewVariableSelectedEventHandler? OnNewVariableSelected;
@@ -50,7 +53,10 @@ namespace GSNodeEditor
 		public delegate void GetSetVariableSelectedEventHandler(NewNodePopupDialog dialog, VariablesTracker.VariableInfo varInfo, bool bSet);
 		public event GetSetVariableSelectedEventHandler? OnGetSetVariableSelected;
 
-		internal WidgetRelativeBoxAnchor SearchBoxAnchor;
+        public delegate void GetAliasSelectedEventHandler(NewNodePopupDialog dialog, VariablesTracker.VariableInfo varInfo);
+        public event GetAliasSelectedEventHandler? OnGetAliasSelected;
+
+        internal WidgetRelativeBoxAnchor SearchBoxAnchor;
         internal TextEntryField SearchBox;
 
         internal WidgetRelativeBoxAnchor NodesMenuAnchor;
@@ -241,7 +247,11 @@ namespace GSNodeEditor
 		{
             if (selectedItem.CustomData is VariablesTracker.VariableInfo variableInfo)
             {
-                OnGetSetVariableSelected?.Invoke(this, variableInfo, variableInfo.CreatedAtNodeID == 1);
+                if ( variableInfo.CreatedAtNodeID <= 1)
+                    OnGetSetVariableSelected?.Invoke(this, variableInfo, variableInfo.CreatedAtNodeID == 1);
+                else
+                    OnGetAliasSelected?.Invoke(this, variableInfo);
+
             } 
             else 
             {
@@ -250,6 +260,8 @@ namespace GSNodeEditor
                 NewVariableEventType type = NewVariableEventType.NewGlobal;
                 if (selectedItem.Text == CreateSplitterLabel)
                     type = NewVariableEventType.CreateSplitter;
+                else if (selectedItem.Text == CreateAliasLabel)
+                    type = NewVariableEventType.CreateAlias;
                 OnNewVariableSelected?.Invoke(this, nodeAndPin, type);
             }
 		}
@@ -448,24 +460,32 @@ namespace GSNodeEditor
                 VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = CreateSplitterLabel, CustomData = FromNodeAndPin }, -10);
             }
 
-            if (FromPinDataType == null)
-			    VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = "New Global", CustomData = null }, -1);
-            else
-				VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = "New Global " + FromNodeAndPin!.Pin.GetDataTypeAsString() , CustomData = FromNodeAndPin }, -1);
+            if (FromPinDataType == null) {
+                VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = "New Global", CustomData = null }, -1);
+            } else {
+                VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = CreateAliasLabel, CustomData = FromNodeAndPin }, -1);
+                VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = "New Global " + FromNodeAndPin!.Pin.GetDataTypeAsString(), CustomData = FromNodeAndPin }, -1);
+            }
 
-			foreach ( var varInfo in GraphAnalysis.Variables.EnumerateAllVariables())
-            {
+            foreach (var varInfo in GraphAnalysis.Variables.EnumerateAllAliases()) {
+                VariablesTracker.VariableInfo getInfo = varInfo;
+                getInfo.CreatedAtNodeID = 2;
+                VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = varInfo.Name + " (alias)", CustomData = getInfo });
+            }
+
+            foreach (var varInfo in GraphAnalysis.Variables.EnumerateAllVariables()) {
                 VariablesTracker.VariableInfo getInfo = varInfo;
                 getInfo.CreatedAtNodeID = 0;
-				VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = varInfo.Name + " (get)", CustomData = getInfo } );
-				VariablesTracker.VariableInfo setInfo = varInfo;
-				setInfo.CreatedAtNodeID = 1;
-				VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = varInfo.Name + " (set)", CustomData = setInfo });
-			}
+                VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = varInfo.Name + " (get)", CustomData = getInfo });
+                VariablesTracker.VariableInfo setInfo = varInfo;
+                setInfo.CreatedAtNodeID = 1;
+                VariablesCategory.CategoryMenu.AddItem(new MenuItem() { Text = varInfo.Name + " (set)", CustomData = setInfo });
+            }
 
-			NodesCategoryMenu.AddItem(new MenuItem() { Text = VariablesCategory.Label, CustomData = VariablesCategory }, -1);
-			NodesCategoryMenu.SortItems();
-		}
+
+            NodesCategoryMenu.AddItem(new MenuItem() { Text = VariablesCategory.Label, CustomData = VariablesCategory }, -1);
+            NodesCategoryMenu.SortItems();
+        }
 
 
         public void PopulateFunctions(ExecutionGraph execGraph, NodeAndPin? FromNodeAndPin = null)
