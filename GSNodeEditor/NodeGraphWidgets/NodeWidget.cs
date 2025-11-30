@@ -5,7 +5,6 @@ using Gradientspace.UI;
 using SkiaSharp;
 using System;
 using System.Diagnostics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace GSNodeEditor
@@ -17,6 +16,10 @@ namespace GSNodeEditor
 
         bool _CompactMode = false;
         public bool CompactMode { get { return _CompactMode; } set { UpdateCompactMode(value); } }
+
+        public bool HideLabel { get; set; } = false;
+
+
 
         public NodeGraphView ParentGraphWidget { get; private set; }
         public INodeInfo ParentNodeInfo { get; private set; }
@@ -31,10 +34,11 @@ namespace GSNodeEditor
         }
 
 
-        public Vector2f Size { get; set; }
-        public string Label { get; set; }
-        public string VersionLabel { get; set; } = "";
-        public int GraphNodeIdentifier { get; set; }
+        public string Label { get; set; }       // in some cases the View wants to update the Label... (fix this?)
+        public Vector2f Size { get; set; }      // NodeGraphView currently updates the Size...
+
+        public string VersionLabel { get; protected set; } = "";
+        public int GraphNodeIdentifier { get; protected set; }
 
 
         public enum NodeStates
@@ -748,8 +752,10 @@ namespace GSNodeEditor
 
             Canvas.DrawRoundRect(Rect, Radius, NodePaint);
 
-            string UseLabel = DrawLabel;
-            Canvas.DrawText(UseLabel, LabelOrigin.x, LabelOrigin.y, LabelTextPaint);
+            if ( SourceNodeWidget.HideLabel == false ) {
+                string UseLabel = DrawLabel;
+                Canvas.DrawText(UseLabel, LabelOrigin.x, LabelOrigin.y, LabelTextPaint);
+            }
 
             // draw little curves beween in and out pins for inout fields
             if (InOutMatches.Count > 0) {

@@ -32,6 +32,10 @@ namespace GSNodeEditor
         {
             return "(no name)";
         }
+        public virtual string GetPinLabel()
+        {
+            return GetPinName();
+        }
 
 
         protected NodeGraphView? FindParentGraphView()

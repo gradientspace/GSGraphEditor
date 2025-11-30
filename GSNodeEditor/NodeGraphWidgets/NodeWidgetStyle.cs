@@ -44,6 +44,8 @@ namespace GSNodeEditor
         public static WidgetStyle VariableAccessNodeStyle = new WidgetStyle() { BackgroundColor = new Colorf(96, 164, 164), TextSize = NodeTextSize, FontName = NodeFont, Margins = NodeMargins };
         public static WidgetStateStyle VariableAccessNodeStyleSet = new WidgetStateStyle(VariableAccessNodeStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
 
+        public static WidgetStyle AliasNodeStyle = new WidgetStyle() { BackgroundColor = new Colorf(128, 128, 32, 255), TextSize = NodeTextSize, FontName = NodeFont, Margins = NodeMargins };
+        public static WidgetStateStyle AliasNodeStyleSet = new WidgetStateStyle(AliasNodeStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
 
         public static WidgetStyle FunctionDefNodeStyle = new WidgetStyle() { BackgroundColor = new Colorf(161, 64, 193), TextSize = NodeTextSize, FontName = NodeFont, Margins = NodeMargins };
         public static WidgetStateStyle FunctionDefNodeStyleSet = new WidgetStateStyle(FunctionDefNodeStyle, DefaultNodeHoverStyle, DefaultNodePressedStyle);
@@ -58,6 +60,7 @@ namespace GSNodeEditor
         public static NodeWidgetStyle PlaceholderNode = new NodeWidgetStyle() { NodeStyle = NodePlaceholderStyleSet };
         public static NodeWidgetStyle VariableNode = new NodeWidgetStyle() { NodeStyle = VariableDefNodeStyleSet };
         public static NodeWidgetStyle VariableAccessNode = new NodeWidgetStyle() { NodeStyle = VariableAccessNodeStyleSet };
+        public static NodeWidgetStyle AliasNode = new NodeWidgetStyle() { NodeStyle = AliasNodeStyleSet };
         public static NodeWidgetStyle FunctionDefNode = new NodeWidgetStyle() { NodeStyle = FunctionDefNodeStyleSet };
         public static NodeWidgetStyle FunctionCallNode = new NodeWidgetStyle() { NodeStyle = FunctionCallNodeStyleSet };
 
@@ -76,6 +79,8 @@ namespace GSNodeEditor
                 return NodeWidgetStyles.VariableNode;
             else if (Node is AccessVariableNode)
                 return NodeWidgetStyles.VariableAccessNode;
+            else if (Node is AliasNodeBase)
+                return NodeWidgetStyles.AliasNode;
 
             return NodeWidgetStyles.DefaultNode;
         }

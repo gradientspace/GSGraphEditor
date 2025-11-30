@@ -92,7 +92,7 @@ namespace GSNodeEditor
             return true;
         }
 
-        public string GetPinLabel()
+        public override string GetPinLabel()
         {
             string useName = DisplayName ?? InputName;
             if (InlineType == EInlineWidgetType.Nullable)

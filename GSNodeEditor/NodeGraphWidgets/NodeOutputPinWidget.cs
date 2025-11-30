@@ -11,6 +11,7 @@ namespace GSNodeEditor
     {
         public INodeOutputInfo NodeOutputInfo { get; private set; }
         public string OutputName { get; set; } = "";
+        public string OverrideName { get; set; } = "";
 
         public NodeOutputPinWidget(INodeOutputInfo sourceOutputInfo)
         {
@@ -31,6 +32,10 @@ namespace GSNodeEditor
 
         public override bool IsOutputPin { get { return true; } }
         public override string GetPinName() { return OutputName; }
+        public override string GetPinLabel()
+        {
+            return (OverrideName.Length > 0) ? OverrideName : OutputName;
+        }
 
 
         public bool IsSequenceOutputPin { get { return DataType.CSType == typeof(ControlFlowOutputID); } }
@@ -103,7 +108,8 @@ namespace GSNodeEditor
                 StyleCache.GetCachedPaint(SourcePinWidget.WidgetStyle.StandardStyle, SKStyleCache.EPaintType.Text);
             WidgetMargins PinMargins = SourcePinWidget.WidgetStyle.BaseMargins;
 
-            float OutputTextWidth = (SourcePinWidget.CompactMode) ? 5 : PinTextPaint.MeasureText(SourcePinWidget.OutputName);
+            string UseText = SourcePinWidget.GetPinLabel();
+            float OutputTextWidth = (SourcePinWidget.CompactMode) ? 5 : PinTextPaint.MeasureText(UseText);
 
             TextHeightInfo PinTextHeightInfo = StyleCache.GetCachedFontHeightInfo(SourcePinWidget.WidgetStyle.StandardStyle);
             float OutputPinRight = (OutputTextWidth + PinMargins.TotalWidth);
@@ -165,7 +171,7 @@ namespace GSNodeEditor
             }
             Vector2f TextCorner = PlacedBounds.Min + new Vector2f(PinMargins.Left, PinMargins.Top + PinTextHeightInfo.AboveBaseline);
             if (SourcePinWidget.CompactMode == false)
-                Canvas.DrawText(SourcePinWidget.OutputName, Conversion.ToSkia(TextCorner), PinTextPaint);
+                Canvas.DrawText(SourcePinWidget.GetPinLabel(), Conversion.ToSkia(TextCorner), PinTextPaint);
         }
 
     }
