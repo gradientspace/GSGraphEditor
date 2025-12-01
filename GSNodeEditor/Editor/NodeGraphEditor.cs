@@ -565,21 +565,27 @@ namespace GSNodeEditor
             }
 
             // update constant value on variable node
-            Graph.SetNodeConstantValue(NodeIdentifier, DefineVariableBaseNode.NameInputName, ToName);
-            ActiveHistory?.AppendChange(new NodeConstantValueChange(this, NodeIdentifier,
-                new InputConstant() { InputName = DefineVariableBaseNode.NameInputName, Value = FromName },
-                new InputConstant() { InputName = DefineVariableBaseNode.NameInputName, Value = ToName }));
+            if ( Graph.FindNodeFromIdentifier(NodeIdentifier).Node is IDefineVariableNode defVarNode) {
+                string NameInput = defVarNode.GetVariableNameInputName();
+
+                Graph.SetNodeConstantValue(NodeIdentifier, NameInput, ToName);
+                ActiveHistory?.AppendChange(new NodeConstantValueChange(this, NodeIdentifier,
+                    new InputConstant() { InputName = NameInput, Value = FromName },
+                    new InputConstant() { InputName = NameInput, Value = ToName }));
+
+            }
 
             // update constant value on all other graph nodes using this variable name
             // (TODO: should this be based on scope? ie could use same local variable name in multiple places....)
             // ((maybe each variable should have a GUID like functions?))
             foreach (INodeInfo nodeInfo in execGraph.EnumerateNodes()) {
-                if ( nodeInfo.Node is AccessVariableNode accessNode) {
+                if ( nodeInfo.Node is IAccessVariableNode accessNode) {
                     if ( String.Compare(accessNode.GetVariableName(), FromName, true) == 0) {
-                        Graph.SetNodeConstantValue(nodeInfo.Identifier, AccessVariableNode.NameInputName, ToName);
+                        string NameInput = accessNode.GetVariableNameInputName();
+                        Graph.SetNodeConstantValue(nodeInfo.Identifier, NameInput, ToName);
                         ActiveHistory?.AppendChange(new NodeConstantValueChange(this, nodeInfo.Identifier,
-                            new InputConstant() { InputName = AccessVariableNode.NameInputName, Value = FromName },
-                            new InputConstant() { InputName = AccessVariableNode.NameInputName, Value = ToName }));
+                            new InputConstant() { InputName = NameInput, Value = FromName },
+                            new InputConstant() { InputName = NameInput, Value = ToName }));
                     }
                 }
             }
