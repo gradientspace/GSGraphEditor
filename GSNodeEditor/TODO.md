@@ -1,9 +1,6 @@
 ==================
 WIP
 ==================
-- Rename Alias - need to propagate to GetAliasNode(s)
-- CreateAlias widget
-- Alias node color
 - refreshing node library marks it dirty...
 
 
