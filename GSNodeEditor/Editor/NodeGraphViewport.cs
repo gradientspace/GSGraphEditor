@@ -3,9 +3,11 @@ using g3;
 using Gradientspace.NodeGraph;
 using Gradientspace.NodeGraph.CodeNodes;
 using Gradientspace.NodeGraph.Geometry;
+using Gradientspace.NodeGraph.Image;
 using Gradientspace.NodeGraph.Nodes;
 using Gradientspace.NodeGraph.PythonNodes;
 using Gradientspace.UI;
+using GSNodeEditor.NodeGraphWidgets;
 using Microsoft.CodeAnalysis;
 using SkiaSharp;
 using System.Diagnostics;
@@ -60,6 +62,7 @@ namespace GSNodeEditor
             // Need to initialize libraries so that types can be registered
             NodeGraphCoreLibrary.Initialize();
             NodeGraphGeometryLibrary.Initialize();
+            NodeGraphImageLibrary.Initialize();
 
             // these just force assemblies to be loaded so that the nodes will show up in the library
             // (should convert this to dynamic-discovery...)
@@ -88,6 +91,8 @@ namespace GSNodeEditor
                 typeof(GetAliasNode), new AliasNodeWidgetProvider());
             NodeWidgetCustomizationSystem.Instance.RegisterProvider(
 				typeof(PythonFunctionCodeNode), new CodeFunctionNodeWidgetProvider());
+            NodeWidgetCustomizationSystem.Instance.RegisterProvider(
+                typeof(ImageViewNode), new ImageViewNodeWidgetProvider());
 
             //UsingDataFlowGraph = MakeInitialDataflowGraph();
             //UsingDataFlowGraphEvaluator = new DataFlowGraphEvaluator(UsingDataFlowGraph);

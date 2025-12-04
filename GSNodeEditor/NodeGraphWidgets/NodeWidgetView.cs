@@ -41,13 +41,20 @@ namespace GSNodeEditor
                 AnchorLocation.GetAnchoredBounds(LocalNodeBounds, RelativeToAnchor, GetWidget().AnchorPlacement) : LocalNodeBounds;
         }
 
+        protected virtual Vector2f getCustomMinDimensions()
+        {
+            return Vector2f.One;
+        }
+
         public virtual void UpdateLayout(SKStyleCache StyleCache)
         {
             // TODO: this lays out all the pins by creating an Anchor for each one.
             // Probably could just be using offsets...
             // (this was some of the oldest layout code and is probably crufty)
 
-            AxisAlignedBox2f InitialBox = new AxisAlignedBox2f(Vector2f.Zero, SourceNodeWidget.Size);
+            // box size is fully determined by code below and so we don't need NodeWidget to have a size...
+            //AxisAlignedBox2f InitialBox = new AxisAlignedBox2f(Vector2f.Zero, SourceNodeWidget.Size);
+            AxisAlignedBox2f InitialBox = new AxisAlignedBox2f(Vector2f.Zero, getCustomMinDimensions());
 
             SKPaint LabelTextPaint = 
                 StyleCache.GetCachedPaint(SourceNodeWidget.WidgetStyle.NodeStyle.StandardStyle, SKStyleCache.EPaintType.Text);
@@ -189,25 +196,46 @@ namespace GSNodeEditor
 
             if ( MaxY > InitialBox.Max.y )
                 InitialBox.Max.y = MaxY;
+
+            updateLayout_Customize(StyleCache, ref InitialBox);
+
             this.LocalNodeBounds = InitialBox;
             this.ChildBounds = InitialBox;
 
+            updateLayout_SequencePins(StyleCache, LocalNodeBounds);
+            updateLayout_FeedbackDecorators(StyleCache, LocalNodeBounds);
+            updateLayout_VariableInOutWidgets(StyleCache, LocalNodeBounds);
+        }
+
+        protected virtual void updateLayout_Customize(SKStyleCache StyleCache, ref AxisAlignedBox2f NodeBounds)
+        {
+            // this is for subclases to implement
+        }
+
+        protected virtual void updateLayout_SequencePins(SKStyleCache StyleCache, AxisAlignedBox2f NodeBounds)
+        {
             SourceNodeWidget.InputSequenceWidget?.GetActiveView()?.UpdateLayout(StyleCache);
             SourceNodeWidget.OutputSequenceWidget?.GetActiveView()?.UpdateLayout(StyleCache);
 
             if (SourceNodeWidget.InputSequenceWidgetAnchor != null)
-                SourceNodeWidget.InputSequenceWidgetAnchor.Box = LocalNodeBounds;
+                SourceNodeWidget.InputSequenceWidgetAnchor.Box = NodeBounds;
             if (SourceNodeWidget.OutputSequenceWidgetAnchor != null)
-                SourceNodeWidget.OutputSequenceWidgetAnchor.Box = LocalNodeBounds;
+                SourceNodeWidget.OutputSequenceWidgetAnchor.Box = NodeBounds;
+        }
 
+        protected virtual void updateLayout_FeedbackDecorators(SKStyleCache StyleCache, AxisAlignedBox2f NodeBounds)
+        {
             if (SourceNodeWidget.ErrorWidget.ParentWidget != null) {
                 SourceNodeWidget.ErrorWidget.GetActiveView()?.UpdateLayout(StyleCache);
-                SourceNodeWidget.ErrorWidgetAnchor.Box = LocalNodeBounds;
+                SourceNodeWidget.ErrorWidgetAnchor.Box = NodeBounds;
             }
+        }
 
+        protected virtual void updateLayout_VariableInOutWidgets(SKStyleCache StyleCache, AxisAlignedBox2f NodeBounds)
+        {
             if (SourceNodeWidget.AddInputWidget?.ParentWidget != null) {
                 SourceNodeWidget.AddInputWidget.GetActiveView()?.UpdateLayout(StyleCache);
-                SourceNodeWidget.AddInputWidgetAnchor!.Box = LocalNodeBounds;
+                SourceNodeWidget.AddInputWidgetAnchor!.Box = NodeBounds;
             }
             if (SourceNodeWidget.RemoveInputWidget?.ParentWidget != null) {
                 SourceNodeWidget.RemoveInputWidget.GetActiveView()?.UpdateLayout(StyleCache);
@@ -215,7 +243,7 @@ namespace GSNodeEditor
             }
             if (SourceNodeWidget.AddOutputWidget?.ParentWidget != null) {
                 SourceNodeWidget.AddOutputWidget.GetActiveView()?.UpdateLayout(StyleCache);
-                SourceNodeWidget.AddOutputWidgetAnchor!.Box = LocalNodeBounds;
+                SourceNodeWidget.AddOutputWidgetAnchor!.Box = NodeBounds;
             }
             if (SourceNodeWidget.RemoveOutputWidget?.ParentWidget != null) {
                 SourceNodeWidget.RemoveOutputWidget.GetActiveView()?.UpdateLayout(StyleCache);
@@ -309,13 +337,16 @@ namespace GSNodeEditor
                 Canvas.SetMatrix(CurMatrix);
             }
 
-
+            draw_Customize(StyleCache, Canvas, Anchor);
 
             Canvas.SetMatrix(InitialMatrix);
         }
 
 
+        protected virtual void draw_Customize(SKStyleCache StyleCache, SKCanvas Canvas, ILayoutAnchor Anchor)
+        {
 
+        }
 
     }
 

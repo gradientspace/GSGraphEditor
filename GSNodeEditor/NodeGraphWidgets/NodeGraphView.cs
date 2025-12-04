@@ -133,15 +133,11 @@ namespace GSNodeEditor
             return NewNodeWidget;
         }
 
-        // set the node label and update sizing information
         public void UpdateNodeWidgetLabel(NodeWidget nodeWidget, string? overrideName = null)
         {
             if (nodeWidget.ParentNode == null) return;
             string Label = (overrideName != null) ? overrideName : nodeWidget.ParentNode.GetNodeName();
             nodeWidget.Label = Label;
-            float NodeWidthFromLabel = (Label.Length > 0) ? (NodeLabelTextPaint.MeasureText(Label) + 2 * LabelMargins.x) : 0;
-            float UseWidth = MathF.Max(NodeWidthFromLabel, DefaultNodeWidth);
-            nodeWidget.Size = new(UseWidth, DefaultNodeHeight);
         }
 
         // configure sequence pins on the node

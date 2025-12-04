@@ -29,10 +29,7 @@ namespace GSNodeEditor
             }
         }
 
-
         public string Label { get; set; }       // in some cases the View wants to update the Label... (fix this?)
-        public Vector2f Size { get; set; }      // NodeGraphView currently updates the Size...
-
         public string VersionLabel { get; protected set; } = "";
         public int GraphNodeIdentifier { get; protected set; }
 
@@ -352,11 +349,6 @@ namespace GSNodeEditor
             OutputSequenceWidget?.UpdateInlineInfo(Graph, GraphNodeIdentifier);
         }
 
-
-        public AxisAlignedBox2f Bounds 
-        {
-            get { return new(Position, Position + Size); }
-        }
 
 
         public override IWidgetView CreateDefaultView()
