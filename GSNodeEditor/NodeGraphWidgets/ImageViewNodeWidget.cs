@@ -1,8 +1,8 @@
-﻿using Gradientspace.NodeGraph;
+﻿using g3;
+using Gradientspace.NodeGraph;
 using Gradientspace.NodeGraph.Image;
 using Gradientspace.UI;
 using SkiaSharp;
-using g3;
 
 namespace GSNodeEditor.NodeGraphWidgets
 {
@@ -16,10 +16,9 @@ namespace GSNodeEditor.NodeGraphWidgets
 
     public class ImageViewNodeWidget : NodeWidget
     {
-        SKImage? CurImage = null;
-        internal SKBitmap? CurBitmap = null;
+        internal SKImage? CurSKImage = null;
 
-        public int ImageSize { get; set; } = 400;
+        public int ImageSize { get; set; } = 200;
 
         public ImageViewNodeWidget(NodeGraphView graphView, INodeInfo node) : base(graphView, node)
         {
@@ -34,21 +33,17 @@ namespace GSNodeEditor.NodeGraphWidgets
         }
 
 
-        private void ImageNode_OnImageUpdate(ReadOnlySpan<byte> ImageBytes)
+        private void ImageNode_OnImageUpdate(PixelImage Image)
         {
-            CurImage = SKImage.FromEncodedData(ImageBytes);
-
-            // todo: View should create this bitmap. Widget should keep track of if it has changed and signal view (or keep timestamp)
-            int UseWidth = CurImage.Width;
-            int UseHeight = CurImage.Height;
-            CurBitmap = new SKBitmap(UseWidth, UseHeight);
-            using (SKCanvas canvas = new SKCanvas(CurBitmap)) {
-                SKRect sourceRect = new SKRect(0, 0, CurBitmap.Width, CurBitmap.Height);
-                SKRect destRect = new SKRect(0, 0, UseWidth, UseHeight); ;
-                canvas.DrawImage(CurImage, sourceRect, destRect);
-                canvas.Flush();
-                canvas.Save();
-            }
+            CurSKImage = ImageUtil.PixelImageToSKImage(Image);
+            //if (Image.Format != PixelImage.EPixelFormat.Encoded) {
+            //    if (Image.Format != PixelImage.EPixelFormat.RGBA8)
+            //        throw new NotImplementedException($"ImageViewNodeWidget: unsupported pixel format {Image.Format}");
+            //    var info = new SKImageInfo(Image.Width, Image.Height, SKColorType.Rgba8888, SKAlphaType.Unpremul);
+            //    CurSKImage = SKImage.FromPixelCopy(info, Image.AccessDataUnsafe());
+            //} else {
+            //    CurSKImage = SKImage.FromEncodedData(Image.AccessDataUnsafe());
+            //}
         }
 
 
@@ -98,8 +93,8 @@ namespace GSNodeEditor.NodeGraphWidgets
         protected override void draw_Customize(SKStyleCache StyleCache, SKCanvas Canvas, ILayoutAnchor Anchor)
         {
             if (SourceNodeWidget is ImageViewNodeWidget imageWidget) {
-                if (imageWidget.CurBitmap != null) {
-                    Canvas.DrawBitmap(imageWidget.CurBitmap, Conversion.ToSkia(ImageArea), BitmapPaint);
+                if (imageWidget.CurSKImage != null) {
+                    Canvas.DrawImage(imageWidget.CurSKImage, Conversion.ToSkia(ImageArea), BitmapPaint);
                 } else {
                     Canvas.DrawRect(Conversion.ToSkia(ImageArea), NoImagePaint);
                 }

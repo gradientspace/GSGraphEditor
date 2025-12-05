@@ -93,6 +93,8 @@ namespace GSNodeEditor
 				typeof(PythonFunctionCodeNode), new CodeFunctionNodeWidgetProvider());
             NodeWidgetCustomizationSystem.Instance.RegisterProvider(
                 typeof(ImageViewNode), new ImageViewNodeWidgetProvider());
+            NodeWidgetCustomizationSystem.Instance.RegisterProvider(
+                typeof(StringViewNode), new StringViewNodeWidgetProvider());
 
             //UsingDataFlowGraph = MakeInitialDataflowGraph();
             //UsingDataFlowGraphEvaluator = new DataFlowGraphEvaluator(UsingDataFlowGraph);
