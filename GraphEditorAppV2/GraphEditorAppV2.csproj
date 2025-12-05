@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\DerivativeEngine\GSNodeGraph\GSNodeGraph.csproj" />
     <ProjectReference Include="..\..\geometry3Sharp\geometry3Sharp.csproj" />
     <ProjectReference Include="..\GSNodeEditor\GSNodeEditor.csproj" />
+    <ProjectReference Include="..\NodeLibraries\GenAINodeLibrary\GenAINodeLibrary.csproj" />
     <ProjectReference Include="..\NodeLibraries\MeshmixerNodeLibrary\MeshmixerNodeLibrary.csproj" />
     <ProjectReference Include="..\NodeLibraries\MujocoNodeLibrary\MujocoNodeLibrary.csproj" />
   </ItemGroup>

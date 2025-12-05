@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Gradientspace.Nodes.GenAI</RootNamespace>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Anthropic" Version="11.0.0" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\DerivativeCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
+    <ProjectReference Include="..\..\..\DerivativeEngine\GSNodeGraph\GSNodeGraph.csproj" />
+    <ProjectReference Include="..\..\..\geometry3Sharp\geometry3Sharp.csproj" />
+  </ItemGroup>
+
+  <!-- publish build to AdditionalNodeLibraries -->
+  <Target Name="PublishDlls" AfterTargets="AfterBuild">
+    <!-- Copy command docs: https://learn.microsoft.com/en-us/visualstudio/msbuild/copy-task?view=vs-2022 -->
+	<ItemGroup>
+		<BuildOutputFiles Include="$(OutDir)\GenAINodeLibrary.*" />
+	</ItemGroup> 
+    <Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\DerivativeEditor\AdditionalNodeLibraries\GenAINodeLibrary" SkipUnchangedFiles="true" />
+  </Target>
+
+
+</Project>
