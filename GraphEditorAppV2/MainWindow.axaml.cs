@@ -354,6 +354,13 @@ public partial class MainWindow : Window
         SkiaView.Focus(NavigationMethod.Pointer);
     }
 
+    private async void NodeWizard_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var dialog = new NodeWizardDialog() { GraphViewport = SkiaView.ActiveViewport };
+        await dialog.ShowDialog(this);
+    }
+
+
     private void GenerateCode_OnClick(object? sender, RoutedEventArgs e)
     {
         ExecutionGraph? graph = SkiaView.ActiveViewport.CurrentGraphView.GetGraph() as ExecutionGraph;
@@ -439,6 +446,13 @@ public partial class MainWindow : Window
     {
         if (NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.NodeLibraryPaths) > 0) {
             SkiaView.ActiveViewport.RebuildGraphLibraryWithActiveGraph();
+        }
+    }
+
+    private void EditAPIKeys_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (File.Exists(NodeEditorSecrets.UserSecretsFilePath)) {
+            System.Diagnostics.Process.Start("explorer.exe", NodeEditorSecrets.UserSecretsFilePath);
         }
     }
 

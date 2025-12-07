@@ -6,9 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using static Gradientspace.NodeGraph.ExecutionGraphSerializer;
 
 namespace GSNodeEditor
 {
@@ -64,20 +61,28 @@ namespace GSNodeEditor
 		}
 
 
+        public static string UserEditorConfigFolder {
+            get {
+                // todo on windows could use Environment.SpecialFolder.ApplicationData for AppData/Roaming folder...
+
+                string HomeDirPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                string GradientspacePath = Path.Combine(HomeDirPath, ".gradientspace");
+                if (Directory.Exists(GradientspacePath) == false)
+                    Directory.CreateDirectory(GradientspacePath);
+
+                string NodeEditorPath = Path.Combine(GradientspacePath, "GSNodeEditor");
+                if (Directory.Exists(NodeEditorPath) == false)
+                    Directory.CreateDirectory(NodeEditorPath);
+
+                return NodeEditorPath;
+            }
+        }
+
+
 		public static string UserConfigFilePath {
 			get {
-				// todo on windows could use Environment.SpecialFolder.ApplicationData for AppData/Roaming folder...
-
-				string HomeDirPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-				string GradientspacePath = Path.Combine(HomeDirPath, ".gradientspace");
-				if (Directory.Exists(GradientspacePath) == false)
-					Directory.CreateDirectory(GradientspacePath);
-
-				string NodeEditorPath = Path.Combine(GradientspacePath, "GSNodeEditor");
-				if (Directory.Exists(NodeEditorPath) == false)
-					Directory.CreateDirectory(NodeEditorPath);
-
-				string ConfigFilePath = Path.Combine(NodeEditorPath, "editor_config.json");
+                string NodeEditorPath = UserEditorConfigFolder;
+                string ConfigFilePath = Path.Combine(NodeEditorPath, "editor_config.json");
 				return ConfigFilePath;
 			}
 		}

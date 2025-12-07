@@ -68,6 +68,8 @@ namespace GraphEditorAppV2
             DebugManager.GlobalEnableGraphDebugging = true;
             GlobalGraphOutput.SetCurrentOutput(new DefaultGraphOutputImpl());
 
+            Gradientspace.NodeGraph.SecretsSource.InitializeSecretsSource(new NodeEditorSecretsImpl());
+
             // load node libraries from settings file
             NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.NodeLibraryPaths);
 

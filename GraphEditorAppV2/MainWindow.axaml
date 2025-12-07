@@ -69,6 +69,8 @@
 						<MenuItem Header="Open Current Folder" Click="OpenCurrentFolder_OnClick"/>
 						<MenuItem Header="Open Current File" Click="OpenCurrentFile_OnClick"/>
 						<Separator/>
+						<MenuItem Header="Edit API Keys..." Click="EditAPIKeys_OnClick"/>
+						<Separator/>
 						<MenuItem Header="_Exit" Click="Exit_OnClick"/>
 					</MenuItem>
 					<MenuItem Header="_Edit" Classes="topMenu">
@@ -76,6 +78,7 @@
 						<MenuItem Header="_Paste" Click="Paste_OnClick" />
 						<Separator/>
 						<MenuItem Header="_New Function" Click="NewFunction_OnClick" />
+						<MenuItem Header="Node _Wizard" Click="NodeWizard_OnClick" />
 						<Separator/>
 						<MenuItem Header="_Generate Code" Click="GenerateCode_OnClick" />
 					</MenuItem>

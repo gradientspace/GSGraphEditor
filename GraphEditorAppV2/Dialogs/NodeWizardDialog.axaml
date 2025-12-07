@@ -1,0 +1,31 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:pages="using:GraphEditorAppV2"
+        x:Class="GraphEditorAppV2.NodeWizardDialog"
+		SizeToContent="WidthAndHeight"
+		WindowStartupLocation="CenterOwner"
+        Title="Node Wizard"
+		x:Name="NodeWizardWin">
+
+	<Border BorderThickness="10">
+			<StackPanel MinWidth="600" MaxWidth="600" >
+				<Label>Prompt:</Label>
+				<TextBox Name="PromptText" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120" MaxHeight ="200"/>
+				<TextBlock Name="GenerationFeedback" />
+				<TextBlock Name="GenerationErrors" />
+				<TextBox Name="ResultCode" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120" MaxHeight="120"/>
+				<Border BorderThickness="10">
+					<StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+						<Button Name="GenerateButton" Background="#50C878" Click="Generate_OnClick">Generate</Button>
+						<Button Name="EditButton" Background="#50C878" Click="Edit_OnClick">Edit</Button>
+						<TextBlock xml:space="preserve">   </TextBlock>
+						<Button Name="CreateButton" Background="#50C878" Click="Create_OnClick">Create Node</Button>
+						<Button Name="CancelButton" Background="red" Click="Cancel_OnClick">Cancel</Button>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+	</Border>
+
+</Window>
