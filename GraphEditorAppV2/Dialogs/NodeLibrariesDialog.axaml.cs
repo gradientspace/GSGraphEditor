@@ -1,4 +1,5 @@
-﻿using Avalonia.Controls;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml.MarkupExtensions;

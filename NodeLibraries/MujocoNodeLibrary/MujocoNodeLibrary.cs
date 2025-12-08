@@ -1,4 +1,5 @@
-﻿using Gradientspace.NodeGraph;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using Gradientspace.NodeGraph;
 using Mujoco;
 using System;
 using System.Diagnostics;

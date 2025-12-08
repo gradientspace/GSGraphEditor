@@ -1,4 +1,5 @@
-﻿using Anthropic;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using Anthropic;
 using Anthropic.Models.Messages;
 using Anthropic.Services;
 using Gradientspace.NodeGraph;

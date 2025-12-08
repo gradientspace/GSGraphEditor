@@ -1,4 +1,5 @@
-﻿using Gradientspace.NodeGraph;
+// Copyright Gradientspace Corp. All Rights Reserved.
+using Gradientspace.NodeGraph;
 using Gradientspace.NodeGraph.CodeNodes;
 using Gradientspace.NodeGraph.Nodes;
 using Gradientspace.Nodes.GenAI;
