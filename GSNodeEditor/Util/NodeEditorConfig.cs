@@ -1,4 +1,5 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
+using Gradientspace.NodeGraph.Util;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -82,7 +83,8 @@ namespace GSNodeEditor
 		public static string UserConfigFilePath {
 			get {
                 string NodeEditorPath = UserEditorConfigFolder;
-                string ConfigFilePath = Path.Combine(NodeEditorPath, "editor_config.json");
+                string ConfigFileName = (Debugger.IsAttached) ? "editor_config.dev.json" : "editor_config.json";
+                string ConfigFilePath = Path.Combine(NodeEditorPath, ConfigFileName);
 				return ConfigFilePath;
 			}
 		}
@@ -90,7 +92,9 @@ namespace GSNodeEditor
 
 
         [GSConfigValue]
-        public static List<string> NodeLibraryPaths = new List<string>();
+        public static List<string> NodeLibraryPaths = [
+            $"{NodeLibraryUtils.INSTALL_FOLDER}\\AdditionalNodeLibraries"
+        ];
 
 
 
@@ -205,8 +209,10 @@ namespace GSNodeEditor
 				}
 			}
 
-			if (File.Exists(UserConfigFilePath) == false)
-				return false;
+            // if config file does not exist, create it by saving defaults
+			if (File.Exists(UserConfigFilePath) == false) {
+                CreateDefaultConfigFile();
+            }
 
 			try {  
 				using (FileStream fileStream = File.OpenRead(UserConfigFilePath))
@@ -249,5 +255,10 @@ namespace GSNodeEditor
 		}
 
 
+
+        private static void CreateDefaultConfigFile()
+        {
+            SaveConfig();
+        }
 	}
 }
