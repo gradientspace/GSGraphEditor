@@ -24,7 +24,19 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<TargetPath>simulate.exe</TargetPath>
 		</Content>
-	</ItemGroup>	
-	
+	</ItemGroup>
+
+
+	<!-- Copy output .dll, .pdb, json files to a fixed directory (top-level \x64\(Debug|Release) here...maybe this could be configurable?) -->
+	<Target Name="PublishDlls" AfterTargets="AfterBuild">
+		<!-- Copy command docs: https://learn.microsoft.com/en-us/visualstudio/msbuild/copy-task?view=vs-2022 -->
+		<ItemGroup>
+			<BuildOutputFiles Include="$(OutDir)\MujocoNodeLibrary.*" />
+			<BuildOutputFiles Include="$(OutDir)\mujoco.dll" />
+			<BuildOutputFiles Include="$(OutDir)\simulate.exe" />
+		</ItemGroup>
+		<Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\DerivativeEditor\AdditionalNodeLibraries\MujocoNodeLibrary" SkipUnchangedFiles="true" />
+	</Target>
+
 
 </Project>
