@@ -6,6 +6,9 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationIcon>Assets\main_icon_v3.ico</ApplicationIcon>
+    <AssemblyName>GSGraphEditor</AssemblyName>
+    <RootNamespace>GSGraphEditor</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,15 +37,19 @@
 
 
   <ItemGroup>
+    <Content Include="Assets\favicon.ico" />
+    <Content Include="Assets\main_icon_v3.ico" />
+  </ItemGroup>
+
+
+  <ItemGroup>
     <Folder Include="Dialogs\" />
   </ItemGroup>
 
     <!-- Build node libraries without establishing direct link... -->
 	<!-- TODO: make a parent project that builds all of them... -->
     <Target Name="BuildMeshmixer" AfterTargets="Build">
-	    <MSBuild Projects="$(ProjectDir)..\NodeLibraries\MeshmixerNodeLibrary\MeshmixerNodeLibrary.csproj"
-				    Targets="Build"
-				    Properties="Configuration=$(Configuration);Platform=$(Platform)" />
+	    <MSBuild Projects="$(ProjectDir)..\NodeLibraries\MeshmixerNodeLibrary\MeshmixerNodeLibrary.csproj" Targets="Build" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
     </Target>	
 	
 </Project>
