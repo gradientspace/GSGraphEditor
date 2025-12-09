@@ -391,10 +391,9 @@ namespace GSNodeEditor
 		}
 
 
-        const string DefaultExtension = "json";
-        const string DefaultFileFilter = "Node Graphs (*.json)|*.json|All files (*.*)|*.*";
-        const string DefaultFileName = "nodegraph.json";
-        const string DefaultDirectory = "c:\\scratch\\graphs\\";
+        const string DefaultExtension = "gg";
+        const string DefaultFileFilter = "Node Graphs (*.gg)|*.gg|JSon Node Graphs (*.json)|*.json|All files (*.*)|*.*";
+        const string DefaultFileName = "nodegraph.gg";
 
         public string CurrentGraphFilePath { get; private set; } = "";
         public bool CurrentGraphIsSaved { get; private set; } = false;
@@ -488,8 +487,10 @@ namespace GSNodeEditor
 
 			string UseDirectory = NodeEditorConfig.GetActiveSaveLoadPath();
 			string UseFilename = (CurrentGraphFilePath.Length == 0) ? DefaultFileName : Path.GetFileName(CurrentGraphFilePath)!;
+            if ( UseFilename.EndsWith(".gg") == false )
+                UseFilename = System.IO.Path.ChangeExtension(UseFilename, "gg");
 
-			if (HostAPI != null && HostAPI.ShowBlockingSaveAsDialog(DefaultFileName, DefaultExtension, UseFilename, UseDirectory, out string SelectedFilename))
+			if (HostAPI != null && HostAPI.ShowBlockingSaveAsDialog(UseFilename, DefaultExtension, "", UseDirectory, out string SelectedFilename))
 			{
 				// should check if file exists and prompt to replace?
 				SaveGraphToFile(SelectedFilename, EnableAutoSaveBackups);

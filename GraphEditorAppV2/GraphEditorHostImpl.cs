@@ -49,7 +49,8 @@ namespace GraphEditorAppV2
 			TopLevel? topLevel = TopLevel.GetTopLevel(AppMainWindow) ?? throw new NullReferenceException();
 
 			List<FilePickerFileType> FileTypes = new List<FilePickerFileType>() {
-				new FilePickerFileType("Node Graphs") { Patterns = new[] { "*.json" } },
+                new FilePickerFileType("Node Graphs") { Patterns = new[] { "*.gg" } },
+                new FilePickerFileType("Node Graphs (old)") { Patterns = new[] { "*.json" } },
 				new FilePickerFileType("All Files") {Patterns = new [] { "*.*" } }
 			};
 
@@ -92,7 +93,8 @@ namespace GraphEditorAppV2
 			TopLevel? topLevel = TopLevel.GetTopLevel(AppMainWindow) ?? throw new NullReferenceException();
 
 			List<FilePickerFileType> FileTypes = new List<FilePickerFileType>() {
-				new FilePickerFileType("Node Graphs") { Patterns = new[] { "*.json" } },
+                new FilePickerFileType("Node Graphs") { Patterns = new[] { "*.gg" } },
+                new FilePickerFileType("Node Graphs (old)") { Patterns = new[] { "*.json" } },
 				new FilePickerFileType("All Files") {Patterns = new [] { "*.*" } }
 			};
 

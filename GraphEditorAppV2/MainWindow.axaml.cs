@@ -64,6 +64,8 @@ public class ActionCommand : ICommand
 
 public partial class MainWindow : Window
 {
+    public string[]? StartupArguments = null;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -100,34 +102,47 @@ public partial class MainWindow : Window
     }
 
     private void MainWindow_Loaded(object? sender, RoutedEventArgs e)
-	{
-		PythonSetup.InitializePython();
+    {
+        PythonSetup.InitializePython();
 
-		SkiaView.InitializeGraph();
-		SkiaView.ActiveViewport.SetActiveHostAPI(
-			new GraphEditorHostImpl(this));
-		GlobalGraphOutput.OnGraphOutputUpdated += GlobalGraphOutput_OnGraphOutputUpdated;
-		LogTextArea.Text += "\r\n"; // ugh
+        SkiaView.InitializeGraph();
+        SkiaView.ActiveViewport.SetActiveHostAPI(
+            new GraphEditorHostImpl(this));
+        GlobalGraphOutput.OnGraphOutputUpdated += GlobalGraphOutput_OnGraphOutputUpdated;
+        LogTextArea.Text += "\r\n"; // ugh
 
-		SkiaView.Focus(NavigationMethod.Pointer);
+        SkiaView.Focus(NavigationMethod.Pointer);
 
-		Option_LoadLastOnStartup.IsChecked = NodeEditorConfig.LoadLastGraphOnStartup;
-		Option_EnableGraphDebug.IsChecked = DebugManager.GlobalEnableGraphDebugging;
+        Option_LoadLastOnStartup.IsChecked = NodeEditorConfig.LoadLastGraphOnStartup;
+        Option_EnableGraphDebug.IsChecked = DebugManager.GlobalEnableGraphDebugging;
         Option_EnableDebugSingleStep.IsChecked = DebugManager.Instance.EnableStepByStep;
 
         UpdateRecentFilesMenu();
-		if (NodeEditorConfig.LoadLastGraphOnStartup)
-			TryLoadGraphFromPath( NodeEditorConfig.EnumerateRecentFiles().FirstOrDefault(), false );
+
+        bool bLoadedStartupGraph = false;
+        if (StartupArguments != null && StartupArguments.Length > 0) {
+            if (File.Exists(StartupArguments[0])) {
+                TryLoadGraphFromPath(StartupArguments[0], false);
+                bLoadedStartupGraph = true;     // TODO identify failure to load?? (but it's async...)
+            }
+        }
+        if (bLoadedStartupGraph == false && NodeEditorConfig.LoadLastGraphOnStartup) { 
+            TryLoadGraphFromPath(NodeEditorConfig.EnumerateRecentFiles().FirstOrDefault(), false);
+            bLoadedStartupGraph = true;
+        }
 
         SkiaView.ActiveViewport.OnGraphEvalStarted += ActiveViewport_OnGraphEvalStarted;
-        SkiaView.ActiveViewport.OnGraphEvalEnded += ActiveViewport_OnGraphEvalEnded; 
+        SkiaView.ActiveViewport.OnGraphEvalEnded += ActiveViewport_OnGraphEvalEnded;
+
+        // register as dragdrop handler
+        DragDrop.SetAllowDrop(this, true);
+        AddHandler(DragDrop.DropEvent, HandleMainWindowDropEvent);
     }
 
     protected override void OnGotFocus(GotFocusEventArgs e)
     {
         SkiaView.Focus(NavigationMethod.Pointer);
     }
-
 
 
 	private bool bActiveLogFilterOutput = true;
@@ -181,17 +196,40 @@ public partial class MainWindow : Window
 		UpdateLogWindow();
 	}
 
+
+    private string make_truncated_path(string Path, int maxLength)
+    {
+        if (Path.Length <= maxLength)
+            return Path;
+
+        string Filename = System.IO.Path.GetFileName(Path);
+        string Directory = System.IO.Path.GetDirectoryName(Path) ?? "";
+        int Remaining = maxLength - Filename.Length - 5; 
+        if (Remaining < 0)
+            return $"(...)\\{Filename}";
+
+        int idx = Directory.IndexOf('\\', Directory.Length - Remaining);
+        string ShowDir = (idx > 0) ? Directory.Substring(idx) : Directory.Substring(Directory.Length - Remaining);
+        return $"(...){ShowDir}\\{Filename}";
+    }
+
 	private void UpdateRecentFilesMenu()
 	{
 		var MakeItem = (string path) => {
-			Avalonia.Controls.MenuItem TmpItem = new() { Header = path };
+            string ShowPath = make_truncated_path(path, 50);
+            //string ShowPath = path;
+            Avalonia.Controls.MenuItem TmpItem = new() { Header = ShowPath };
 			TmpItem.Click += (object? sender, RoutedEventArgs e) => { TryLoadGraphFromPath(path, true); };
-			return TmpItem;
+            ToolTip.SetTip(TmpItem, path);
+            return TmpItem;
 		};
 		RecentFilesMenu.Items.Clear();
-		foreach (string path in NodeEditorConfig.EnumerateRecentFiles())
-			RecentFilesMenu.Items.Add(MakeItem(path));
-	}
+        foreach (string path in NodeEditorConfig.EnumerateRecentFiles()) {
+            Avalonia.Controls.MenuItem item = MakeItem(path);
+            RecentFilesMenu.Items.Add(item);
+            item.MaxWidth = 1000;
+        }
+    }
 
 
 	private void RegisterGlobalKeyBindings()
@@ -303,7 +341,25 @@ public partial class MainWindow : Window
 			UpdateRecentFilesMenu();
 		SkiaView.Focus(NavigationMethod.Pointer);
 	}
-	private async void TryLoadGraphFromPath(string? path, bool bIsInteractive)
+
+
+    private void HandleMainWindowDropEvent(object? sender, DragEventArgs e)
+    {
+        if (e.Data.GetFiles() is { } fileNames) {
+            Uri pathURI = fileNames.First().Path;
+            if (pathURI.IsFile) {
+                string FilePath = pathURI.LocalPath;
+                if (System.IO.Path.Exists(FilePath)) {
+                    TryLoadGraphFromPath(FilePath, true);
+                }
+            }
+            e.Handled = true;
+        }
+    }
+
+
+
+    private async void TryLoadGraphFromPath(string? path, bool bIsInteractive)
 	{
         bool bCanceled = false;
         if (bIsInteractive) {
