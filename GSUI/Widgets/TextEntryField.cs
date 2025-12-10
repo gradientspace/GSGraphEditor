@@ -1,6 +1,7 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
 using g3;
 using SkiaSharp;
+using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -41,6 +42,15 @@ namespace Gradientspace.UI
             VectorReal
         }
         public StringValidation ValidationType { get; set; } = StringValidation.None;
+
+
+        public enum ETextEntryFieldType
+        {
+            SingleLine,
+            MultiLine
+        }
+        public ETextEntryFieldType FieldType { get; set; } = ETextEntryFieldType.SingleLine;
+
 
         TextEntryFieldChange? activeChange = null;
 
@@ -95,14 +105,19 @@ namespace Gradientspace.UI
 
         public override IWidgetView CreateDefaultView()
         {
+            if ( FieldType == ETextEntryFieldType.MultiLine )
+                return new MultiLineTextEntryFieldView(this);
             return new TextEntryFieldView(this);
         }
 
 
 		public override bool GetTooltipStrings(out string? tooltip, out string[]? extendedTooltip)
 		{
-			tooltip = Text;
-			extendedTooltip = null;
+            if (FieldType == ETextEntryFieldType.MultiLine) {
+                tooltip = null; extendedTooltip = null; return false;
+            }
+            tooltip = Text;
+            extendedTooltip = null;
 			return true;
 		}
 
@@ -508,9 +523,6 @@ namespace Gradientspace.UI
 
         public override bool HitTest(Vector2f QueryPoint)
         {
-            //AxisAlignedBox2f WorldBounds =
-            //    AnchorLocation.GetAnchoredBounds(LocalBounds, DrawOrigin, GetWidget().AnchorPlacement);
-            //return WorldBounds.Contains(QueryPoint);
             return LastVisibleWorldBounds.Contains(QueryPoint);
         }
 
@@ -518,14 +530,14 @@ namespace Gradientspace.UI
         {
             Result = new WidgetHitResult();
             if (HitTest(QueryPoint)) {
-                Result = new WidgetHitResult(this, 25);
+                Result = new WidgetHitResult(this, 25);         // AAHHH what is this hardcoded constant...
                 return true; 
             }
             return false;
         }
 
 
-        public int GetCharacterIndexFromPosition(Vector2f QueryPoint)
+        public virtual int GetCharacterIndexFromPosition(Vector2f QueryPoint)
         {
             if (LastTextPaint == null)
                 return 0;
@@ -550,6 +562,225 @@ namespace Gradientspace.UI
             return ShowText.Length;
 		}
 
+
+    }
+
+
+    public class MultiLineTextEntryFieldView : TextEntryFieldView
+    {
+        List<string> CurLines = new();
+        Interval1i[] CharRanges = [];
+        int CurLineCursorIndex = 0;
+        Vector2i CursorRowCol = Vector2i.Zero;
+        Vector2i SelectionStartRowCol = new Vector2i(-1, -1);
+        Vector2i SelectionEndRowCol = new Vector2i(-1, -1);
+
+        SKFontMetrics CurTextMetrics;
+        TextHeightInfo CurTextHeightInfo;
+        int NumLines = 1;
+        float LineHeight = 1.0f;
+        float AllLinesHeight = 1.0f;
+
+        public MultiLineTextEntryFieldView(TextEntryField sourceTextEntryField) : base(sourceTextEntryField)
+        {
+        }
+
+        public override void UpdateLayout(SKStyleCache StyleCache)
+        {
+            // TODO: really should cache this layout as it will be quite expensive for long text...
+
+            LocalBounds = new AxisAlignedBox2f(Vector2f.Zero, SourceTextEntry.Dimensions);
+
+            string ShowText = SourceTextEntry.ActiveText;
+
+            WidgetStyle UseStyle = SourceTextEntry.Style.Select(SourceTextEntry.IsHovered, SourceTextEntry.IsFocused);
+            SKPaint TextPaint = StyleCache.GetCachedPaint(UseStyle, SKStyleCache.EPaintType.Text);
+            WidgetMargins Margins = SourceTextEntry.Style.BaseMargins;
+
+            float MaxTextWidth = LocalBounds.Width - SourceTextEntry.Style.BaseMargins.TotalWidth;
+            CurLines = TextLayoutUtils.BreakLines(ShowText, TextPaint, MaxTextWidth);
+            NumLines = Math.Max(CurLines.Count, 1);
+
+            CharRanges = new Interval1i[NumLines];
+            int Accum = 0;
+            for ( int i = 0; i < NumLines; ++i ) {
+                int LineLen = (i >= CurLines.Count) ? 0 : CurLines[i].Length;
+                CharRanges[i] = new(Accum, Accum + LineLen);
+                Accum += LineLen;
+            }
+
+            CurTextHeightInfo = StyleCache.GetCachedFontHeightInfo(UseStyle);
+            CurTextMetrics = TextPaint.FontMetrics;
+            float MetricsHeight = CurTextMetrics.Bottom - CurTextMetrics.Top;
+
+            // using MetricsHeight leaves too much space IMO, this is a nice balance...
+            LineHeight = CurTextHeightInfo.MaxTotalHeight + (MetricsHeight-CurTextHeightInfo.MaxTotalHeight)/2.0f;
+            AllLinesHeight = NumLines * LineHeight;
+
+            TextInfo.Bounds = LocalBounds;
+            TextInfo.TextOrigin = new Vector2f(
+                TextInfo.Bounds.Min.x + Margins.Left,
+                TextInfo.Bounds.Min.x + Margins.Top + CurTextHeightInfo.AboveBaseline);
+
+            FocusedTextInfo = TextInfo;
+            FocusedTextInfo.Bounds.Max.x = Math.Max(LocalBounds.Max.x, LocalBounds.Min.x + MaxTextWidth + Margins.TotalWidth);
+            FocusedTextInfo.Bounds.Max.y = Math.Max(LocalBounds.Max.y, LocalBounds.Min.y + AllLinesHeight + Margins.TotalWidth);
+
+            // expand...but doesn't expand parent node...
+            //LocalBounds = FocusedTextInfo.Bounds;
+
+            // figure out row/column in text lines for cursor
+            int CursorCharIndex = SourceTextEntry.GetActiveEditCursorLocation();
+            CursorRowCol = FindCharRowCol(CursorCharIndex);
+            CursorOffset = FindCharOffset(TextPaint, CursorRowCol);
+
+            SelectionStartRowCol = SelectionEndRowCol = new Vector2i(-1,-1);
+            SelectionStartOffset = SelectionEndOffset = -1;
+            if (SourceTextEntry.GetSelectionRange(out var StartIndex, out var EndIndex)) {
+                SelectionStartRowCol = FindCharRowCol(StartIndex);
+                SelectionEndRowCol = FindCharRowCol(EndIndex);
+                SelectionStartOffset = FindCharOffset(TextPaint, SelectionStartRowCol);
+                SelectionEndOffset = FindCharOffset(TextPaint, SelectionEndRowCol);
+            }
+        }
+
+        public override void Draw(SKStyleCache StyleCache, SKCanvas Canvas, ILayoutAnchor Anchor)
+        {
+            DrawOrigin = Anchor.GetOrigin();
+
+            AxisAlignedBox2f PlacedBounds = AnchorLocation.MakeRelativeToAnchor(LocalBounds, SourceTextEntry.AnchorPlacement, DrawOrigin);
+
+            if (SourceTextEntry.IsFocused) {
+                PlacedBounds.Max.x = PlacedBounds.Min.x + FocusedTextInfo.Bounds.Width;
+                PlacedBounds.Max.y = PlacedBounds.Min.y + FocusedTextInfo.Bounds.Height;
+            }
+
+            WidgetStyle UseStyle = SourceTextEntry.Style.Select(SourceTextEntry.IsHovered, SourceTextEntry.IsFocused, !SourceTextEntry.IsEditable);
+            SKStyleCache.CachedSKPaintSet StandardPaints = StyleCache.GetCachedPaintSet(UseStyle);
+            WidgetMargins Margins = SourceTextEntry.Style.BaseMargins;
+
+            SKPaint TextPaint = StyleCache.GetCachedPaint(UseStyle, SKStyleCache.EPaintType.Text);
+            LastTextPaint = TextPaint;
+
+            LastVisibleWorldBounds = PlacedBounds;
+            Canvas.DrawRect(Conversion.ToSkia(PlacedBounds), StandardPaints.BackgroundPaint);
+            Vector2f TextOrigin = PlacedBounds.Min + TextInfo.TextOrigin;
+
+
+            if (SourceTextEntry.IsFocused == false) {
+                Canvas.Save();
+                Canvas.ClipRect(Conversion.ToSkia(PlacedBounds));
+            }
+
+            int HardCapOnMaxLines = Math.Min(500, CurLines.Count);
+
+            float textX = TextOrigin.x, textY = TextOrigin.y;
+            for (int yi = 0; yi < HardCapOnMaxLines; yi++) {
+
+                if (SourceTextEntry.IsFocused && yi >= SelectionStartRowCol.y && yi <= SelectionEndRowCol.y ) {
+                    Vector2f SelectionMin = new Vector2f(textX, textY - CurTextHeightInfo.AboveBaseline - 1);
+                    float lineWidth = LastTextPaint.MeasureText(CurLines[yi]);
+                    Vector2f SelectionMax = new Vector2f(textX + lineWidth, textY + CurTextHeightInfo.BelowBaseline + 1);
+                    if (SelectionStartRowCol.y == yi)
+                        SelectionMin.x = textX + SelectionStartOffset;
+                    else if (SelectionEndRowCol.y == yi)
+                        SelectionMax.x = textX + SelectionEndOffset;
+                    AxisAlignedBox2f SelectionRect = new(SelectionMin, SelectionMax);
+                    Canvas.DrawRect(Conversion.ToSkia(SelectionRect), StandardPaints.ForegroundPaint);
+                }
+
+                Canvas.DrawText(CurLines[yi], textX, textY, TextPaint);
+
+                if ( SourceTextEntry.IsFocused && yi == CursorRowCol.y ) {
+
+                    Vector2f CursorTop = new Vector2f(textX + CursorOffset, textY - CurTextHeightInfo.AboveBaseline - 1 );
+                    Vector2f CursorBottom = new Vector2f(textX + CursorOffset, textY + CurTextHeightInfo.BelowBaseline + 1 );
+                    // blink the cursor using this kinda hacky method...
+                    // todo this should maybe be something based on an accumulation, so that we can
+                    // force cursor to visible state immediately after clicks/etc
+                    if ((DateTime.Now.Ticks / 5000000) % 2  == 0)
+                        Canvas.DrawLine(Conversion.ToSkia(CursorBottom), Conversion.ToSkia(CursorTop), StandardPaints.TextPaint);
+                }
+
+                textY += LineHeight;
+            }
+
+            if (SourceTextEntry.IsFocused == false) {
+                Canvas.Restore();
+            }
+        }
+
+
+
+        public override int GetCharacterIndexFromPosition(Vector2f QueryPoint)
+        {
+            if (LastTextPaint == null || CurLines.Count == 0)
+                return 0;
+
+            AxisAlignedBox2f WorldBounds =
+                AnchorLocation.GetAnchoredBounds(LocalBounds, DrawOrigin, GetWidget().AnchorPlacement);
+            Vector2f TextOrigin = WorldBounds.Min + TextInfo.TextOrigin;
+
+            float LocalClickX = QueryPoint.x - WorldBounds.Min.x;
+
+            // note: if text layout above changes, this will be wrong.
+            // possibly should save a bbox for each row, would simplify this a lot...
+            int yi = 0;
+            float prevY = WorldBounds.Min.y, curBaselineY = TextOrigin.y;
+            for (int i = 0; i < CurLines.Count; i++) {
+                float LineMaxY = curBaselineY + CurTextHeightInfo.BelowBaseline;
+                if (QueryPoint.y >= prevY && QueryPoint.y < LineMaxY) {
+                    yi = i;
+                    break;
+                }
+                prevY = LineMaxY;
+                curBaselineY += LineHeight;
+            }
+            yi = Math.Clamp(yi, 0, CurLines.Count-1);
+
+            // dumb linear search. Conceivably would be better to cache this if the widget is focused?
+            // or do a binary search at least? not performance-critical though...
+            float cur_offset = 0;
+            string LineText = CurLines[yi];
+            for (int k = 1; k < LineText.Length; ++k) {
+                string substring = LineText.Substring(0, k);
+                float next_offset = LastTextPaint.MeasureText(substring);
+                if (LocalClickX < (cur_offset + next_offset)*0.5)
+                    return CharRanges[yi].a + (k-1);
+                cur_offset = next_offset;
+            }
+            return CharRanges[yi].a + LineText.Length;
+        }
+
+
+
+        private float FindCharOffset(SKPaint TextPaint, Vector2i CharRowCol)
+        {
+            if (CharRowCol.x <= 0) {
+                return 0;
+            } else {
+                string substring = CurLines[CharRowCol.y].Substring(0, CharRowCol.x);
+                return TextPaint.MeasureText(substring);
+            }
+        }
+
+        private Vector2i FindCharRowCol(int CharIndex)
+        {
+            Vector2i RowCol = Vector2i.Zero;
+            int AccumCharCount = 0;
+            while (AccumCharCount < CharIndex)
+            {
+                int CurLineLen = CurLines[RowCol.y].Length;
+                if (AccumCharCount + CurLineLen >= CharIndex)
+                {
+                    RowCol.x = CharIndex - AccumCharCount;
+                    break;
+                }
+                AccumCharCount += CurLineLen;
+                RowCol.y++;
+            }
+            return RowCol;
+        }
 
     }
 

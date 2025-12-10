@@ -80,7 +80,7 @@ namespace GSNodeEditor.NodeGraphWidgets
             if (SourceNodeWidget is StringViewNodeWidget StringWidget)
                 text = StringWidget.CurString;
 
-            CurLines = BreakLines(text, TextPaint, MaxTextWidth);
+            CurLines = TextLayoutUtils.BreakLines(text, TextPaint, MaxTextWidth);
             int N = Math.Max(1, CurLines.Count);
 
             SKFontMetrics TextMetrics = TextPaint.FontMetrics;
@@ -112,64 +112,6 @@ namespace GSNodeEditor.NodeGraphWidgets
                 textY += LineHeight;
             }
         }
-
-
-        // found this code at https://github.com/mono/SkiaSharp/issues/692
-
-        static List<string> BreakLines(string text, SKPaint paint, float width)
-        {
-            List<string> lines = new List<string>();
-
-            string remainingText = text.Trim();
-
-            do {
-                int idx = LineBreak(remainingText, paint, width);
-                if (idx == 0) {
-                    break;
-                }
-                string lastLine = remainingText.Substring(0, idx).Trim();
-                lines.Add(lastLine);
-                remainingText = remainingText.Substring(idx).Trim();
-            } while (!string.IsNullOrEmpty(remainingText));
-            return lines;
-        }
-
-        static int LineBreak(string text, SKPaint paint, float width)
-        {
-            int idx = 0, last = 0;
-            int lengthBreak = (int)paint.BreakText(text, width);
-
-            while (idx < text.Length) {
-                int next = text.IndexOfAny(new char[] { ' ', '\n' }, idx);
-                if (next == -1) {
-                    if (idx == 0) {
-                        return lengthBreak; 
-                    } else {
-                        // Ellipsize if it's the last line
-                        if (lengthBreak == text.Length
-                        // || text.IndexOfAny (new char [] { ' ', '\n' }, lengthBreak + 1) == -1
-                        ) {
-                            return lengthBreak;
-                        }
-                        // Split at the last word;
-                        return last;
-                    }
-                }
-                if (text[idx] == '\n') {
-                    return idx;
-                }
-                if (next > lengthBreak) {
-                    return idx;
-                }
-                last = next;
-                idx = next + 1;
-            }
-            return last;
-        }
-
-
-
-
 
     }
 

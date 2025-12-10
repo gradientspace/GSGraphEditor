@@ -22,6 +22,7 @@ namespace GSNodeEditor
         Integer,
         Real,
         String,
+		TextBlock,
         Enum,
         EnumList,
         Type,
@@ -115,35 +116,29 @@ namespace GSNodeEditor
             IConnectionInfo Connection = Graph.FindConnectionTo(OwningNodeIdentifier, InputName);
             if (Connection.IsValid == false && bDefaultIsDefined && defaultValue != null)
             {
-                if (pinType == typeof(bool))
-                {
-                    InlineType = EInlineWidgetType.Boolean;
-                }
-                else if (pinType == typeof(float) || pinType == typeof(double))
-                {
-                    InlineType = EInlineWidgetType.Real;
-                }
-                else if (pinType == typeof(int) || pinType == typeof(short) || pinType == typeof(long))
-                {
-                    InlineType = EInlineWidgetType.Integer;
-                }
-                else if (pinType == typeof(g3.Vector3d) || pinType == typeof(g3.Vector3f)) 
-                {
-                    InlineType = EInlineWidgetType.Vector3Real;
-                }
-                else if (pinType == typeof(string)) {
-                    InlineType = EInlineWidgetType.String;
-                } else if (pinType.IsEnum) {
-                    InlineType = EInlineWidgetType.Enum;
-                } else if (pinType == typeof(EnumOptionItem) && NodeInputInfo.Input is IEnumOptionSetNodeInput) {
-                    InlineType = EInlineWidgetType.EnumList;
-                } else if (pinType == typeof(Type)) {
-                    InlineType = EInlineWidgetType.Type;
-                } else {
-                    UseWidgetProvider = InlinePinWidgetSystem.Instance.FindProvider(pinType);
-                    if (UseWidgetProvider != null)
-                        InlineType = EInlineWidgetType.FromProvider;
-                }
+				if (NodeInputInfo.Input is TextBlockNodeInput) {
+					InlineType = EInlineWidgetType.TextBlock;
+				} else if (pinType == typeof(bool)) {
+					InlineType = EInlineWidgetType.Boolean;
+				} else if (pinType == typeof(float) || pinType == typeof(double)) {
+					InlineType = EInlineWidgetType.Real;
+				} else if (pinType == typeof(int) || pinType == typeof(short) || pinType == typeof(long)) {
+					InlineType = EInlineWidgetType.Integer;
+				} else if (pinType == typeof(g3.Vector3d) || pinType == typeof(g3.Vector3f)) {
+					InlineType = EInlineWidgetType.Vector3Real;
+				} else if (pinType == typeof(string)) {
+					InlineType = EInlineWidgetType.String;
+				} else if (pinType.IsEnum) {
+					InlineType = EInlineWidgetType.Enum;
+				} else if (pinType == typeof(EnumOptionItem) && NodeInputInfo.Input is IEnumOptionSetNodeInput) {
+					InlineType = EInlineWidgetType.EnumList;
+				} else if (pinType == typeof(Type)) {
+					InlineType = EInlineWidgetType.Type;
+				} else {
+					UseWidgetProvider = InlinePinWidgetSystem.Instance.FindProvider(pinType);
+					if (UseWidgetProvider != null)
+						InlineType = EInlineWidgetType.FromProvider;
+				}
             }
             else if (Connection.IsValid == false && bDefaultIsDefined && defaultValue == null)
             {
@@ -226,88 +221,106 @@ namespace GSNodeEditor
                     };
                     InlineWidget = textEntry;
                     AddChildWidget(InlineWidget);
-                }
-                else if (InlineType == EInlineWidgetType.Enum)
-                {
-                    if ( TypeUtils.GetEnumInfo(pinType, out TypeUtils.EnumInfo enumInfo) == false )
-                        return;
+                } 
+				else if (InlineType == EInlineWidgetType.TextBlock) 
+				{
+					TextEntryField textEntry = new TextEntryField();
+					textEntry.Width = 120;
+					textEntry.Height = 40;
+					// these are some hacks for textblock input...
+					if ( NodeInputInfo.Input is TextBlockNodeInput textBlockInput ) {
+						if ( textBlockInput.UIWidthHint > 0 )
+							textEntry.Width = textBlockInput.UIWidthHint;
+					}
+					textEntry.FieldType = TextEntryField.ETextEntryFieldType.MultiLine;
 
-                    DropDownPicker dropdown = new DropDownPicker();
-                    for (int i = 0; i < enumInfo.NumEnumValues; ++i) 
-                        dropdown.AddItem(enumInfo.EnumStrings[i], enumInfo.EnumIDs[i], enumInfo.EnumValues[i]);
+					if (bDefaultIsDefined && defaultValue != null && defaultValue is string initialString) {
+						textEntry.Text = initialString;
+					}
 
-                    if (bDefaultIsDefined && defaultValue != null) {
-                        if (enumInfo.FindIndexForEnumValue(defaultValue, out int SelectIndex))
-                            dropdown.SetSelectedIndex(SelectIndex);
-                    }
+					InlineWidgetAnchor.BoxPoint = BoxPoints.CenterRight;
+					textEntry.AnchorTo(InlineWidgetAnchor);
+					textEntry.AnchorPlacement = new AnchorLocation(BoxPoints.CenterRight);
+					textEntry.OnTextModified += (TextEntryField sender, string oldText, string newText) => {
+						UpdateInputFromModifiedTextEntry(Graph, OwningNodeIdentifier, newText);
+					};
+					InlineWidget = textEntry;
+					AddChildWidget(InlineWidget);
+				} 
+				else if (InlineType == EInlineWidgetType.Enum) 
+				{
+					if (TypeUtils.GetEnumInfo(pinType, out TypeUtils.EnumInfo enumInfo) == false)
+						return;
 
-                    InlineWidgetAnchor.BoxPoint = BoxPoints.CenterRight;
-                    dropdown.AnchorTo(InlineWidgetAnchor);
-                    dropdown.AnchorPlacement = new AnchorLocation(BoxPoints.CenterRight);
-                    dropdown.OnSelectionModified += (DropDownPicker dropdown, int oldIndex, int newIndex) => {
-                        if (dropdown.GetItemAtIndex(newIndex, out string label, out int externalID, out object? externalObject)) {
-                            if (externalObject != null && externalObject.GetType() == pinType)
-                                UpdateInputFromModifiedEnum(Graph, OwningNodeIdentifier, externalObject);
-                        }
-                    };
-                    InlineWidget = dropdown;
-                    AddChildWidget(InlineWidget);
-                }
-                else if (InlineType == EInlineWidgetType.EnumList) 
-                {
-                    IEnumOptionSetNodeInput EnumInput = (IEnumOptionSetNodeInput)NodeInputInfo.Input;     // verified when selecting this type
-                    EnumOptionSet EnumList = EnumInput.GetOptionSet();
-                    DropDownPicker dropdown = new DropDownPicker();
-                    foreach (EnumOptionSet.OptionItem item in EnumList.Items)
-                        dropdown.AddItem(item.Label, 0, item.TransientData);
+					DropDownPicker dropdown = new DropDownPicker();
+					for (int i = 0; i < enumInfo.NumEnumValues; ++i)
+						dropdown.AddItem(enumInfo.EnumStrings[i], enumInfo.EnumIDs[i], enumInfo.EnumValues[i]);
 
-                    if (bDefaultIsDefined && defaultValue != null && defaultValue is EnumOptionItem) {
-                        if (EnumList.FindIndexFromLabel( ((EnumOptionItem)defaultValue).ItemString, out int SelectIndex))
-                            dropdown.SetSelectedIndex(SelectIndex);
-                    }
+					if (bDefaultIsDefined && defaultValue != null) {
+						if (enumInfo.FindIndexForEnumValue(defaultValue, out int SelectIndex))
+							dropdown.SetSelectedIndex(SelectIndex);
+					}
 
-                    InlineWidgetAnchor.BoxPoint = BoxPoints.CenterRight;
-                    dropdown.AnchorTo(InlineWidgetAnchor);
-                    dropdown.AnchorPlacement = new AnchorLocation(BoxPoints.CenterRight);
-                    dropdown.OnSelectionModified += (DropDownPicker dropdown, int oldIndex, int newIndex) => {
-                        if (dropdown.GetItemAtIndex(newIndex, out string label, out int externalID, out object? externalObject)) 
-                            UpdateInputFromModifiedEnumList(Graph, OwningNodeIdentifier, label);
-                    };
-                    InlineWidget = dropdown;
-                    AddChildWidget(InlineWidget);
-                }
-                else if (InlineType == EInlineWidgetType.Type)
-                {
-                    TypeComboBox typeEntry = new TypeComboBox();
-                    typeEntry.Width = 40;
+					InlineWidgetAnchor.BoxPoint = BoxPoints.CenterRight;
+					dropdown.AnchorTo(InlineWidgetAnchor);
+					dropdown.AnchorPlacement = new AnchorLocation(BoxPoints.CenterRight);
+					dropdown.OnSelectionModified += (DropDownPicker dropdown, int oldIndex, int newIndex) => {
+						if (dropdown.GetItemAtIndex(newIndex, out string label, out int externalID, out object? externalObject)) {
+							if (externalObject != null && externalObject.GetType() == pinType)
+								UpdateInputFromModifiedEnum(Graph, OwningNodeIdentifier, externalObject);
+						}
+					};
+					InlineWidget = dropdown;
+					AddChildWidget(InlineWidget);
+				} else if (InlineType == EInlineWidgetType.EnumList) {
+					IEnumOptionSetNodeInput EnumInput = (IEnumOptionSetNodeInput)NodeInputInfo.Input;     // verified when selecting this type
+					EnumOptionSet EnumList = EnumInput.GetOptionSet();
+					DropDownPicker dropdown = new DropDownPicker();
+					foreach (EnumOptionSet.OptionItem item in EnumList.Items)
+						dropdown.AddItem(item.Label, 0, item.TransientData);
 
-                    if (bDefaultIsDefined && defaultValue != null)
-                        typeEntry.SelectedType = (defaultValue as Type) ?? typeof(object);
+					if (bDefaultIsDefined && defaultValue != null && defaultValue is EnumOptionItem) {
+						if (EnumList.FindIndexFromLabel(((EnumOptionItem)defaultValue).ItemString, out int SelectIndex))
+							dropdown.SetSelectedIndex(SelectIndex);
+					}
 
-                    InlineWidgetAnchor.BoxPoint = BoxPoints.CenterRight;
-                    typeEntry.AnchorTo(InlineWidgetAnchor);
-                    typeEntry.AnchorPlacement = new AnchorLocation(BoxPoints.CenterRight);
-                    typeEntry.OnSelectedTypeChanged += (TypeComboBox sender, Type newType) => {
-                        UpdateInputFromModifiedTypeSelector(Graph, OwningNodeIdentifier, newType);
-                    };
-                    InlineWidget = typeEntry;
-                    AddChildWidget(InlineWidget);
-                }
-                else if (InlineType == EInlineWidgetType.FromProvider && UseWidgetProvider != null)
-                {
-                    Widget? inlineWidget = UseWidgetProvider.CreateNewWidget(Graph, OwningNodeIdentifier, this, defaultValue, bDefaultIsDefined);
-                    if (inlineWidget != null)
-                    {
-                        InlineWidget = inlineWidget;
+					InlineWidgetAnchor.BoxPoint = BoxPoints.CenterRight;
+					dropdown.AnchorTo(InlineWidgetAnchor);
+					dropdown.AnchorPlacement = new AnchorLocation(BoxPoints.CenterRight);
+					dropdown.OnSelectionModified += (DropDownPicker dropdown, int oldIndex, int newIndex) => {
+						if (dropdown.GetItemAtIndex(newIndex, out string label, out int externalID, out object? externalObject))
+							UpdateInputFromModifiedEnumList(Graph, OwningNodeIdentifier, label);
+					};
+					InlineWidget = dropdown;
+					AddChildWidget(InlineWidget);
+				} else if (InlineType == EInlineWidgetType.Type) {
+					TypeComboBox typeEntry = new TypeComboBox();
+					typeEntry.Width = 40;
 
-                        InlineWidgetAnchor.BoxPoint = BoxPoints.CenterRight;
-                        InlineWidget.AnchorTo(InlineWidgetAnchor);
-                        InlineWidget.AnchorPlacement = new AnchorLocation(BoxPoints.CenterRight);
+					if (bDefaultIsDefined && defaultValue != null)
+						typeEntry.SelectedType = (defaultValue as Type) ?? typeof(object);
 
-                        AddChildWidget(InlineWidget);
-                    }
+					InlineWidgetAnchor.BoxPoint = BoxPoints.CenterRight;
+					typeEntry.AnchorTo(InlineWidgetAnchor);
+					typeEntry.AnchorPlacement = new AnchorLocation(BoxPoints.CenterRight);
+					typeEntry.OnSelectedTypeChanged += (TypeComboBox sender, Type newType) => {
+						UpdateInputFromModifiedTypeSelector(Graph, OwningNodeIdentifier, newType);
+					};
+					InlineWidget = typeEntry;
+					AddChildWidget(InlineWidget);
+				} else if (InlineType == EInlineWidgetType.FromProvider && UseWidgetProvider != null) {
+					Widget? inlineWidget = UseWidgetProvider.CreateNewWidget(Graph, OwningNodeIdentifier, this, defaultValue, bDefaultIsDefined);
+					if (inlineWidget != null) {
+						InlineWidget = inlineWidget;
 
-                }
+						InlineWidgetAnchor.BoxPoint = BoxPoints.CenterRight;
+						InlineWidget.AnchorTo(InlineWidgetAnchor);
+						InlineWidget.AnchorPlacement = new AnchorLocation(BoxPoints.CenterRight);
+
+						AddChildWidget(InlineWidget);
+					}
+
+				}
             }
         }
 
@@ -353,6 +366,12 @@ namespace GSNodeEditor
                     });
                 }
             } 
+			else if (InlineType == EInlineWidgetType.TextBlock)
+            {
+				ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+					Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, newText);
+				});
+			}
         }
         private void UpdateInputFromModifiedBoolean(INodeGraph Graph, int OwningNodeIdentifier, bool bNewValue)
         {
@@ -472,6 +491,16 @@ namespace GSNodeEditor
 
             //float PinHeight = (SourcePinWidget.CompactMode) ? 5 : PinTextHeightInfo.MaxTotalHeight;
             float PinHeight = PinTextHeightInfo.MaxTotalHeight;
+
+			// If we have an inline widget, expand the PinHeight to contain it's height dimension.
+			// This affects layout so we only do it if the height change is significant, for now
+			// (need to revisit all this layout stuff as it's very hardcoded for constant-height pins...)
+			if (bHasInlineWidget) {
+				AxisAlignedBox2f inlineWidgetBounds = SourcePinWidget.InlineWidget?.GetActiveView()?.BoundsQuery() ?? AxisAlignedBox2f.Empty;
+				if (inlineWidgetBounds.Height > PinHeight*1.2)
+					PinHeight = inlineWidgetBounds.Height;
+			}
+
             LocalBounds = new AxisAlignedBox2f(0, 0, InputPinRight, PinHeight + PinMargins.TotalHeight);
 
             // update any child inline widget layout, if it exists

@@ -85,6 +85,9 @@ namespace GSNodeEditor
             const float PinNodeConstantEdgeOffset = 2;
             const float PinVerticalSpace = 5;
 
+            Span<AxisAlignedBox2f> InputPinBounds = stackalloc AxisAlignedBox2f[NumInputs];
+            //Span<AxisAlignedBox2f> InputPinBounds = new AxisAlignedBox2f[NumInputs];      // for debugging because stackalloc prevents hot-recompile...
+
             // compute max input and output pin text length
             InOutMatches.Clear();
             float MaxInputPinWidth = 0;
@@ -94,6 +97,7 @@ namespace GSNodeEditor
                 //MaxInputPinWidth = MathF.Max(MaxInputPinWidth, InputTextWidth);
                 SourceNodeWidget.InputWidgets[k].GetActiveView()?.UpdateLayout(StyleCache);
                 AxisAlignedBox2f childBounds = SourceNodeWidget.InputWidgets[k].GetActiveView()?.BoundsQuery(null) ?? AxisAlignedBox2f.Empty;
+                InputPinBounds[k] = childBounds;
                 float ChildWidth = childBounds.Width;
                 if (SourceNodeWidget.InputWidgets[k].NodeInputInfo.IsNodeConstant)
                     ChildWidth += (PinNodeEdgeOffset+PinNodeConstantEdgeOffset);      // otherwise constant val may overlap rhs
@@ -156,17 +160,24 @@ namespace GSNodeEditor
             float LabelY = LabelMargins.Top + LabelTextHeightInfo.AboveBaseline;
             LabelOrigin = new Vector2f(LabelX + SequencePinWidth, LabelY);
 
-            TextHeightInfo PinTextHeightInfo = StyleCache.GetCachedFontHeightInfo(PinWidgetStyles.DefaultInputStandardStyle);
             float PinStartOffsetY = InitialBox.Min.y + (LabelTextHeightInfo.MaxTotalHeight + LabelMargins.TotalHeight);
             float InputPinLeft = InitialBox.Min.x;
             float InputPinRight = InputPinLeft + (MaxInputPinWidth + PinMargins.TotalWidth);
+
+            TextHeightInfo PinTextHeightInfo = StyleCache.GetCachedFontHeightInfo(PinWidgetStyles.DefaultInputStandardStyle);
 
             // layout input pin boxes
             float CurPinY = PinStartOffsetY;
             float MaxY = CurPinY;
             for (int k = 0; k < NumInputs; ++k)
             {
-                float BottomY = CurPinY + (PinTextHeightInfo.MaxTotalHeight + PinMargins.TotalHeight);
+                // expand pin height for tall widgets. Conceivably we should always use the PinBounds,
+                // however this currently makes all pins look ugly, so hack it to only make tall pins look ugly...
+                float PinHeight = PinTextHeightInfo.MaxTotalHeight;
+                if (InputPinBounds[k].Height > PinHeight*1.5)
+                    PinHeight = InputPinBounds[k].Height;
+
+                float BottomY = CurPinY + (PinHeight + PinMargins.TotalHeight);
                 bool bIsConstant = SourceNodeWidget.InputWidgets[k].NodeInputInfo.IsNodeConstant;
                 float shiftX = (bIsConstant) ? PinNodeConstantEdgeOffset : -PinNodeEdgeOffset;
                 AxisAlignedBox2f localPinBox = new AxisAlignedBox2f(InputPinLeft+shiftX, CurPinY, InputPinRight+shiftX, BottomY);
