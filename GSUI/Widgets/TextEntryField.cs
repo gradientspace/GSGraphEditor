@@ -570,7 +570,6 @@ namespace Gradientspace.UI
     {
         List<string> CurLines = new();
         Interval1i[] CharRanges = [];
-        int CurLineCursorIndex = 0;
         Vector2i CursorRowCol = Vector2i.Zero;
         Vector2i SelectionStartRowCol = new Vector2i(-1, -1);
         Vector2i SelectionEndRowCol = new Vector2i(-1, -1);
@@ -636,7 +635,7 @@ namespace Gradientspace.UI
 
             SelectionStartRowCol = SelectionEndRowCol = new Vector2i(-1,-1);
             SelectionStartOffset = SelectionEndOffset = -1;
-            if (SourceTextEntry.GetSelectionRange(out var StartIndex, out var EndIndex)) {
+            if (SourceTextEntry.GetSelectionRange(out var StartIndex, out var EndIndex) && StartIndex != EndIndex) {
                 SelectionStartRowCol = FindCharRowCol(StartIndex);
                 SelectionEndRowCol = FindCharRowCol(EndIndex);
                 SelectionStartOffset = FindCharOffset(TextPaint, SelectionStartRowCol);
@@ -672,7 +671,7 @@ namespace Gradientspace.UI
                 Canvas.ClipRect(Conversion.ToSkia(PlacedBounds));
             }
 
-            int HardCapOnMaxLines = Math.Min(500, CurLines.Count);
+            int HardCapOnMaxLines = Math.Min(500, NumLines);
 
             float textX = TextOrigin.x, textY = TextOrigin.y;
             for (int yi = 0; yi < HardCapOnMaxLines; yi++) {
@@ -683,13 +682,14 @@ namespace Gradientspace.UI
                     Vector2f SelectionMax = new Vector2f(textX + lineWidth, textY + CurTextHeightInfo.BelowBaseline + 1);
                     if (SelectionStartRowCol.y == yi)
                         SelectionMin.x = textX + SelectionStartOffset;
-                    else if (SelectionEndRowCol.y == yi)
+                    if (SelectionEndRowCol.y == yi)
                         SelectionMax.x = textX + SelectionEndOffset;
                     AxisAlignedBox2f SelectionRect = new(SelectionMin, SelectionMax);
                     Canvas.DrawRect(Conversion.ToSkia(SelectionRect), StandardPaints.ForegroundPaint);
                 }
 
-                Canvas.DrawText(CurLines[yi], textX, textY, TextPaint);
+                if (yi < CurLines.Count)
+                    Canvas.DrawText(CurLines[yi], textX, textY, TextPaint);
 
                 if ( SourceTextEntry.IsFocused && yi == CursorRowCol.y ) {
 
