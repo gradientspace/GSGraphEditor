@@ -220,8 +220,9 @@ namespace Gradientspace.UI
             StartIndex = EndIndex = -1;
             if (ActiveStringEdit != null && ActiveStringEdit.HasSelection)
             {
-                StartIndex = ActiveStringEdit.SelectionStartLocation;
-                EndIndex = ActiveStringEdit.SelectionEndLocation;
+                int CurLen = ActiveStringEdit.CurrentString.Length;
+                StartIndex = Math.Clamp(ActiveStringEdit.SelectionStartLocation, 0, CurLen);
+                EndIndex = Math.Clamp(ActiveStringEdit.SelectionEndLocation, 0, CurLen);
                 return true;
             }
             return false;
