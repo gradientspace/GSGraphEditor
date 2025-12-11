@@ -5,11 +5,7 @@ using Gradientspace.NodeGraph.CodeNodes;
 using Gradientspace.UI;
 using SkiaSharp;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GSNodeEditor
 {
@@ -60,15 +56,22 @@ namespace GSNodeEditor
         internal TextEntryField SearchBox;
 
         internal WidgetRelativeBoxAnchor NodesMenuAnchor;
+        // these two should be an array/stack, like ActiveSubCategoryMenuStack
         internal WidgetRelativeBoxAnchor NodesCategoryMenuAnchor;
-        internal PopupMenu NodesMenu;
-        internal PopupMenu? ActiveSubCategoryMenu = null;
+        internal WidgetRelativeBoxAnchor NodesCategorySubMenuAnchor;
+
+        // list of all nodes, filtered by search box
+        internal PopupMenu LinearAllNodesMenu;
 
 
         internal class NodesCategory
         {
             public string Label;
             public PopupMenu CategoryMenu;
+
+            public NodesCategory? ParentCategory = null;
+            public List<NodesCategory>? ChildCategories = null;
+
             public NodesCategory(string label, WidgetStateStyle Style)
             {
                 Label = label;
@@ -78,12 +81,15 @@ namespace GSNodeEditor
             }
         }
 
-        internal PopupMenu NodesCategoryMenu;
+        internal PopupMenu TopLevelNodeSetsMenu;
+        bool bNodeSetsMenuActive = false;
+
         internal NodesCategory? VariablesCategory = null;
         internal NodesCategory? FunctionsCategory = null;
         internal List<NodesCategory> NodesCategories = new List<NodesCategory>();
-        bool bCategoryMenuActive = false;
 
+        // maybe better if this is NodesCategory[] ?
+        internal PopupMenu?[] ActiveSubCategoryMenuStack = [null, null];
 
         //public static WidgetStyle DefaultStyle = new WidgetStyle();
         //public static WidgetStyle DefaultHoverStyle = new WidgetStyle() { BackgroundColor = Colorf.Orange };
@@ -124,21 +130,24 @@ namespace GSNodeEditor
             NodesMenuAnchor = new WidgetRelativeBoxAnchor(this);
             NodesCategoryMenuAnchor = new WidgetRelativeBoxAnchor(this);
             NodesCategoryMenuAnchor.BoxPoint = BoxPoints.TopRight;
+            NodesCategorySubMenuAnchor = new WidgetRelativeBoxAnchor(this);
+            NodesCategorySubMenuAnchor.BoxPoint = BoxPoints.TopRight;
 
-            NodesMenu = new PopupMenu(Style);
-            NodesMenu.EnableClickToDismiss = false;
-            NodesMenu.AnchorPlacement = new AnchorLocation(BoxPoints.BottomLeft);
-            NodesMenu.AnchorTo(NodesMenuAnchor);
-            NodesMenu.AddItem(new MenuItem() { Text = "Item A" });
-            NodesMenu.AddItem(new MenuItem() { Text = "Item B" });
 
-            NodesMenu.OnMenuItemSelected += NodesMenu_OnMenuItemSelected;
+            LinearAllNodesMenu = new PopupMenu(Style);
+            LinearAllNodesMenu.EnableClickToDismiss = false;
+            LinearAllNodesMenu.AnchorPlacement = new AnchorLocation(BoxPoints.BottomLeft);
+            LinearAllNodesMenu.AnchorTo(NodesMenuAnchor);
+            LinearAllNodesMenu.AddItem(new MenuItem() { Text = "Item A" });
+            LinearAllNodesMenu.AddItem(new MenuItem() { Text = "Item B" });
 
-            NodesCategoryMenu = new PopupMenu(Style);
-            NodesCategoryMenu.EnableClickToDismiss = false;
-            NodesCategoryMenu.AnchorPlacement = new AnchorLocation(BoxPoints.BottomLeft);
-            NodesCategoryMenu.AnchorTo(NodesMenuAnchor);
-            NodesCategoryMenu.OnMenuItemHovered += NodesCategoryMenu_OnMenuItemHovered;
+            LinearAllNodesMenu.OnMenuItemSelected += NodesMenu_OnMenuItemSelected;
+
+            TopLevelNodeSetsMenu = new PopupMenu(Style);
+            TopLevelNodeSetsMenu.EnableClickToDismiss = false;
+            TopLevelNodeSetsMenu.AnchorPlacement = new AnchorLocation(BoxPoints.BottomLeft);
+            TopLevelNodeSetsMenu.AnchorTo(NodesMenuAnchor);
+            TopLevelNodeSetsMenu.OnMenuItemHovered += NodesCategoryMenu_OnMenuItemHovered;
 
             //AddChildWidget(NodesMenu);
             //AddChildWidget(NodesCategoryMenu);
@@ -160,46 +169,63 @@ namespace GSNodeEditor
 
         public PopupMenu ActiveMenu
         {
-            get { return (bCategoryMenuActive) ? NodesCategoryMenu : NodesMenu; }
+            get { return (bNodeSetsMenuActive) ? TopLevelNodeSetsMenu : LinearAllNodesMenu; }
         }
         void UpdateActiveMenu()
         {
             bool bShouldShowCategoryMenu = (FilterString == string.Empty);
-            if ( bShouldShowCategoryMenu != bCategoryMenuActive )
+            if ( bShouldShowCategoryMenu != bNodeSetsMenuActive )
             {
-                if (bCategoryMenuActive == false)
+                if (bNodeSetsMenuActive == false)
                 {
-                    RemoveChildWidget(NodesMenu);
-                    AddChildWidget(NodesCategoryMenu);
-                    bCategoryMenuActive = true;
+                    RemoveChildWidget(LinearAllNodesMenu);
+                    AddChildWidget(TopLevelNodeSetsMenu);
+                    bNodeSetsMenuActive = true;
                 }
                 else
                 {
-                    RemoveChildWidget(NodesCategoryMenu);
-                    AddChildWidget(NodesMenu);
-                    bCategoryMenuActive = false;
+                    RemoveChildWidget(TopLevelNodeSetsMenu);
+                    AddChildWidget(LinearAllNodesMenu);
+                    bNodeSetsMenuActive = false;
                 }
             }
             UpdateVisibleSubCategory(null);
         }
         void UpdateVisibleSubCategory(NodesCategory? category)
         {
-            if (category == null && ActiveSubCategoryMenu != null)
+            // if incoming category is null, hide any visible
+            if (category == null)
             {
-                RemoveChildWidget(ActiveSubCategoryMenu);
-                ActiveSubCategoryMenu = null;
+                //Debug.WriteLine("Incoming \"null\"");
+                for ( int i = ActiveSubCategoryMenuStack.Length-1; i >= 0; --i ) {
+                    if (ActiveSubCategoryMenuStack[i] != null)
+                        RemoveChildWidget(ActiveSubCategoryMenuStack[i]);
+                    ActiveSubCategoryMenuStack[i] = null;
+                }
                 return;
             }
 
-            if (category != null && category.CategoryMenu != ActiveSubCategoryMenu )
-            {
-                if (ActiveSubCategoryMenu != null)
-                {
-                    RemoveChildWidget(ActiveSubCategoryMenu);
+            NodesCategory? Level0Cat = (category.ParentCategory != null) ? category.ParentCategory : category;
+            PopupMenu? Level0Menu = Level0Cat.CategoryMenu;
+            NodesCategory? Level1Cat = (category.ParentCategory == null) ? null : category;
+            PopupMenu? Level1Menu = Level1Cat?.CategoryMenu ?? null;
+
+            //Debug.WriteLine($"Level0 {Level0Cat.Label}  Level1 {Level1Cat?.Label??"null"}  Incoming {category?.Label??"null"}");
+
+            for ( int i = 1; i >= 0; --i ) {
+                PopupMenu? LevelMenu = (i == 0) ? Level0Menu : Level1Menu;
+                if (ActiveSubCategoryMenuStack[i] != LevelMenu) {
+                    if (ActiveSubCategoryMenuStack[i] != null) {
+                        RemoveChildWidget(ActiveSubCategoryMenuStack[i]);
+                        ActiveSubCategoryMenuStack[i] = null;
+                    }
+                    if (LevelMenu  != null) {
+                        AddChildWidget(LevelMenu);
+                        ActiveSubCategoryMenuStack[i] = LevelMenu;
+                    }
                 }
-                ActiveSubCategoryMenu = category.CategoryMenu;
-                AddChildWidget(ActiveSubCategoryMenu);
             }
+
         }
 
 
@@ -219,11 +245,11 @@ namespace GSNodeEditor
             FilterString = newText;
             if (FilterString == string.Empty)
             {
-                NodesMenu.ResetFilteredItems();
+                LinearAllNodesMenu.ResetFilteredItems();
             }
             else
             {
-                NodesMenu.FilterItems(this.nodes_menu_filter);
+                LinearAllNodesMenu.FilterItems(this.nodes_menu_filter);
             }
             UpdateActiveMenu();
         }
@@ -234,7 +260,7 @@ namespace GSNodeEditor
 
         private void SearchBox_OnEnterKey()
         {
-            NodesMenu.SelectHighlightedItem();
+            LinearAllNodesMenu.SelectHighlightedItem();
         }
 
         private void NodesMenu_OnMenuItemSelected(PopupMenu popup, MenuItem selectedItem)
@@ -268,13 +294,9 @@ namespace GSNodeEditor
 
 		private void NodesCategoryMenu_OnMenuItemHovered(PopupMenu popup, MenuItem? hoveredItem, bool bEnded)
         {
-
             NodesCategory? category = hoveredItem?.CustomData as NodesCategory ?? null;
-            if (category != null && category.CategoryMenu != ActiveSubCategoryMenu)
-            {
-                UpdateVisibleSubCategory(null);
+            if (category != null)
                 UpdateVisibleSubCategory(category);
-            }
         }
 
 
@@ -329,17 +351,42 @@ namespace GSNodeEditor
                 }
             } else if (ActiveChord.IsSingleSpecialKey(KeyNames.Enter))
             {
-                if (NodesMenu.EnumerateItems().Count() == 1)
-                    NodesMenu.ExternalSelectItem(NodesMenu.EnumerateItems().First());
-                else if (NodesMenu.HighlightedItem != null)
-                    NodesMenu.ExternalSelectItem(NodesMenu.HighlightedItem);
+                if (LinearAllNodesMenu.EnumerateItems().Count() == 1)
+                    LinearAllNodesMenu.ExternalSelectItem(LinearAllNodesMenu.EnumerateItems().First());
+                else if (LinearAllNodesMenu.HighlightedItem != null)
+                    LinearAllNodesMenu.ExternalSelectItem(LinearAllNodesMenu.HighlightedItem);
             } else if (ActiveChord.IsSingleSpecialKey(KeyNames.DownArrow)) {
-                NodesMenu.HighlightNextItem(true);
+                LinearAllNodesMenu.HighlightNextItem(true);
             } else if (ActiveChord.IsSingleSpecialKey(KeyNames.UpArrow)) {
-                NodesMenu.HighlightPreviousItem(true);
+                LinearAllNodesMenu.HighlightPreviousItem(true);
             }
             return false;
         }
+
+
+        (string,string?) get_node_label(NodeType nodeType)
+        {
+            string nodeText = nodeType.GetNodeTypeUIName();
+
+            if (nodeType.ClassType.IsSubclassOf(typeof(ControlFlowNode)))
+                return (nodeText, null);
+            if (nodeType.ClassType.IsSubclassOf(typeof(PlaceholderNodeBase)))
+                return (nodeText, null);
+            if (nodeType.ClassType.IsAssignableTo(typeof(INodeWithInlineCode)))
+                return (nodeText, null);
+
+            ENodeInputFlags ignoreFlags = ENodeInputFlags.IsNodeConstant | ENodeInputFlags.Hidden;
+            foreach (INodeInputInfo inputInfo in nodeType.NodeArchetype!.EnumerateInputs()) {
+                if ((inputInfo.Input.GetInputFlags() & ignoreFlags) != 0)
+                    continue;
+                if (inputInfo.DataType.CSType == typeof(object))
+                    return (nodeText, null);
+                string typeStr = TypeUtils.TypeToString(inputInfo.DataType);
+                return (nodeText, $"({typeStr})");
+            }
+            return (nodeText, null);
+        }
+
 
         // this is called each time the popup is shown. It populates the NodesMenu with a list of
         // all nodes, the NodesCategoryMenu with a list of all categories, and each category with
@@ -371,53 +418,60 @@ namespace GSNodeEditor
 
 			Dictionary<string, NodesCategory> CategoryMap = new Dictionary<string, NodesCategory>();
 
-            var get_node_label = (NodeType nodeType) => {
-                string nodeText = nodeType.GetNodeTypeUIName();
+            var GetMainCategory = (string Label) => {
+                if (CategoryMap.TryGetValue(Label, out NodesCategory? found)) 
+                    return found;
+                
+                NodesCategory newCategory = new NodesCategory(Label, Style);
+                newCategory.CategoryMenu.AnchorTo(NodesCategoryMenuAnchor);
+                newCategory.CategoryMenu.OnMenuItemSelected += NodesMenu_OnMenuItemSelected;
+                CategoryMap.Add(newCategory.Label, newCategory);
+                NodesCategories.Add(newCategory);
+                TopLevelNodeSetsMenu.AddItem(new MenuItem() { Text = newCategory.Label, CustomData = newCategory });
+                newCategory.CategoryMenu.OnMenuItemHovered += NodesCategoryMenu_OnMenuItemHovered;
+                return newCategory;
+            };
+            var GetSubCategory = (string MainLabel, string SubLabel) => {
+                string CombinedLabel = $"{MainLabel}.{SubLabel}";
+                if (CategoryMap.TryGetValue(CombinedLabel, out NodesCategory? found))
+                    return found;
 
-                if (nodeType.ClassType.IsSubclassOf(typeof(ControlFlowNode)))
-                    return (nodeText, null);
-                if (nodeType.ClassType.IsSubclassOf(typeof(PlaceholderNodeBase)))
-                    return (nodeText, null);
-                if (nodeType.ClassType.IsAssignableTo(typeof(INodeWithInlineCode)))
-                    return (nodeText, null);
+                NodesCategory MainCat = GetMainCategory(MainLabel);
+                if (MainCat.ChildCategories == null) 
+                    MainCat.ChildCategories = new List<NodesCategory>();
 
-                ENodeInputFlags ignoreFlags = ENodeInputFlags.IsNodeConstant | ENodeInputFlags.Hidden;
-                foreach (INodeInputInfo inputInfo in nodeType.NodeArchetype!.EnumerateInputs()) {
-                    if ((inputInfo.Input.GetInputFlags() & ignoreFlags) != 0)
-                        continue;
-                    if (inputInfo.DataType.CSType == typeof(object))
-                        return (nodeText, null);
-                    string typeStr = TypeUtils.TypeToString(inputInfo.DataType);
-                    return (nodeText, $"({typeStr})");
-                }
-                return (nodeText,null);
+                NodesCategory newSubCategory = new NodesCategory(SubLabel, Style);
+                newSubCategory.CategoryMenu.AnchorTo(NodesCategorySubMenuAnchor);
+                newSubCategory.CategoryMenu.OnMenuItemSelected += NodesMenu_OnMenuItemSelected;
+                CategoryMap.Add(CombinedLabel, newSubCategory);
+                MainCat.ChildCategories.Add(newSubCategory);
+                newSubCategory.ParentCategory = MainCat;
+                MainCat.CategoryMenu.AddItem(new MenuItem() { Text = SubLabel, CustomData = newSubCategory });
+                return newSubCategory;
             };
 
-            // add a node to the menu set. this will dynamically create it's category if it doesn't exist yet.
+            // add a node to the menu set. this will dynamically create it's category(s) if it doesn't exist yet.
             var TryAddToCategory = (NodeType nodeType) =>
             {
                 (string nodeLabel, string? nodeHint) = get_node_label(nodeType);
 
-                if ( CategoryMap.TryGetValue(nodeType.UICategory, out NodesCategory? found) )
-                {
-                    found.CategoryMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
+                string? catLabel = apply_category_label_hacks(nodeType.UICategory);
+                if (catLabel == null)
+                    return;     // ignore this node...
+                string? subLabel = null;
+                if ( catLabel.Contains('.')) {
+                    int idx = catLabel.IndexOf('.');
+                    subLabel = catLabel.Substring(idx + 1);
+                    catLabel = catLabel.Substring(0, idx);
                 }
-                else
-                {
-                    NodesCategory newCategory = new NodesCategory(nodeType.UICategory, Style);
-                    newCategory.CategoryMenu.AnchorTo(NodesCategoryMenuAnchor);
-                    newCategory.CategoryMenu.OnMenuItemSelected += NodesMenu_OnMenuItemSelected;
 
-                    newCategory.CategoryMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
-                    CategoryMap.Add(newCategory.Label, newCategory);
+                NodesCategory foundCategory = (subLabel == null) ? GetMainCategory(catLabel) : GetSubCategory(catLabel, subLabel);
+                foundCategory.CategoryMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
 
-                    NodesCategories.Add(newCategory);
-                    NodesCategoryMenu.AddItem(new MenuItem() { Text = newCategory.Label, CustomData = newCategory });
-                }
             };
 
             // currently this function is never called more than once on an instance so this is unneccesary...
-			NodesMenu.ClearItems();
+			LinearAllNodesMenu.ClearItems();
 
             // build out the menus for all nodes with a given input type, or just all nodes
             IEnumerable<NodeType> filteredNodes = (bHaveValidFromPin) ?
@@ -429,19 +483,27 @@ namespace GSNodeEditor
                     continue;
 
                 (string nodeLabel, string? nodeHint) = get_node_label(nodeType);
-                NodesMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
+                LinearAllNodesMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
                 TryAddToCategory(nodeType);
             }
 
             // sort everthing
-			NodesMenu.SortItems();
-            NodesCategoryMenu.SortItems();
-            foreach (var Category in NodesCategories)
+			LinearAllNodesMenu.SortItems();
+            TopLevelNodeSetsMenu.SortItems();
+            foreach (var Category in NodesCategories) {
                 Category.CategoryMenu.SortItems();
+                if (Category.ChildCategories != null) {
+                    foreach (var ChildCategory in Category.ChildCategories)
+                        ChildCategory.CategoryMenu.SortItems();
+                }
+            }
         }
-
-
-
+        protected static string? apply_category_label_hacks(string CategoryLabel)
+        {
+            if (CategoryLabel.StartsWith("Core.Constants"))
+                return CategoryLabel.Replace("Core.Constants", "Constants");
+            return CategoryLabel;
+        }
 
         public void PopulateVariables(GraphStaticAnalyzer GraphAnalysis, NodeAndPin? FromNodeAndPin = null)
         {
@@ -483,8 +545,8 @@ namespace GSNodeEditor
             }
 
 
-            NodesCategoryMenu.AddItem(new MenuItem() { Text = VariablesCategory.Label, CustomData = VariablesCategory }, -1);
-            NodesCategoryMenu.SortItems();
+            TopLevelNodeSetsMenu.AddItem(new MenuItem() { Text = VariablesCategory.Label, CustomData = VariablesCategory }, -1);
+            TopLevelNodeSetsMenu.SortItems();
         }
 
 
@@ -514,8 +576,8 @@ namespace GSNodeEditor
             }
 
             if (FunctionsCategory.CategoryMenu.NumItems > 0) {
-                NodesCategoryMenu.AddItem(new MenuItem() { Text = FunctionsCategory.Label, CustomData = FunctionsCategory }, -2);
-                NodesCategoryMenu.SortItems();
+                TopLevelNodeSetsMenu.AddItem(new MenuItem() { Text = FunctionsCategory.Label, CustomData = FunctionsCategory }, -2);
+                TopLevelNodeSetsMenu.SortItems();
             }
         }
 
@@ -553,19 +615,32 @@ namespace GSNodeEditor
         {
             SourceDialog.SearchBox.GetActiveView()?.UpdateLayout(StyleCache);
             SourceDialog.ActiveMenu.GetActiveView()?.UpdateLayout(StyleCache);
-            SourceDialog.ActiveSubCategoryMenu?.GetActiveView()?.UpdateLayout(StyleCache);
-
             AxisAlignedBox2f SearchBounds = SourceDialog.SearchBox.GetActiveView()?.BoundsQuery(null) ?? AxisAlignedBox2f.Empty;
-            AxisAlignedBox2f ListBounds = SourceDialog.ActiveMenu.GetActiveView()?.BoundsQuery(null) ?? AxisAlignedBox2f.Empty;
+            AxisAlignedBox2f MainListBounds = SourceDialog.ActiveMenu.GetActiveView()?.BoundsQuery(null) ?? AxisAlignedBox2f.Empty;
+
+            //foreach (PopupMenu? popupMenu in SourceDialog.ActiveSubCategoryMenuStack)
+            //    popupMenu?.GetActiveView()?.UpdateLayout(StyleCache);
+            PopupMenu? popupMenu0 = SourceDialog.ActiveSubCategoryMenuStack[0];
+            PopupMenu? popupMenu1 = SourceDialog.ActiveSubCategoryMenuStack[1];
+            popupMenu0?.GetActiveView()?.UpdateLayout(StyleCache);
+            popupMenu1?.GetActiveView()?.UpdateLayout(StyleCache);
+
+            AxisAlignedBox2f ListBoundsL0 = popupMenu0?.GetActiveView()?.BoundsQuery(null) ?? AxisAlignedBox2f.Empty;
+            //AxisAlignedBox2f ListBoundsL1 = popupMenu1?.GetActiveView()?.BoundsQuery(null) ?? AxisAlignedBox2f.Empty;
 
             SourceDialog.SearchBoxAnchor.Box = new AxisAlignedBox2f(SearchBounds);
             SourceDialog.NodesMenuAnchor.Box = SourceDialog.SearchBoxAnchor.Box;
             SourceDialog.NodesMenuAnchor.BoxPoint = BoxPoints.BottomLeft;
             SourceDialog.NodesMenuAnchor.Offset = new Vector2f(0, 5);
 
-            SourceDialog.NodesCategoryMenuAnchor.Box = ListBounds;
+            SourceDialog.NodesCategoryMenuAnchor.Box = MainListBounds;
             // todo this is a hack - should be basing off the laid-out bounds like below...
             SourceDialog.NodesCategoryMenuAnchor.Offset = new Vector2f(5, SearchBounds.Height+5);
+
+            // yikes
+            SourceDialog.NodesCategorySubMenuAnchor.Box = MainListBounds;
+            SourceDialog.NodesCategorySubMenuAnchor.Offset = new Vector2f(ListBoundsL0.Width+10, SearchBounds.Height+5);
+
 
             AxisAlignedBox2f ChildBounds = SourceDialog.SearchBox.GetActiveView()?.BoundsQuery(SourceDialog.SearchBox.GetAnchor()) ?? AxisAlignedBox2f.Empty;
             AxisAlignedBox2f WorldListBounds = SourceDialog.ActiveMenu.GetActiveView()?.BoundsQuery(SourceDialog.ActiveMenu.GetAnchor()) ?? AxisAlignedBox2f.Empty;

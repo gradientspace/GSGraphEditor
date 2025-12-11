@@ -614,7 +614,9 @@ namespace GSNodeEditor
 
         protected void OnNewNodePopupItemSelected(NodeType nodeType, Vector2f Location, NodeAndPin? FromNode)
         {
-            PendingNextFrameAction = () => { AppendNewNodeAtLocation(nodeType, Location, FromNode); };
+            if (nodeType != null) {
+                PendingNextFrameAction = () => { AppendNewNodeAtLocation(nodeType, Location, FromNode); };
+            }
             DismissActivePopupDialogs();
         }
 
