@@ -15,8 +15,6 @@ Versioning
 Renaming
 ==================
 
-- rename Gradientspace. libraries to Core.
-- remove concept of a Sink node? This could be handled with a NodeFlag...
 
 
 ===================

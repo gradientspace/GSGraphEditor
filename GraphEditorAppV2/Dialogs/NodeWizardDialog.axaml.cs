@@ -28,6 +28,7 @@ namespace GraphEditorAppV2
 
 
         static string LastPrompt = "compute the first N elements of the fibonacci sequence";
+        static string LastCode = "";
 
         public NodeWizardDialog()
         {
@@ -55,7 +56,7 @@ namespace GraphEditorAppV2
 
             this.Loaded += NodeWizardDialog_Loaded;
 
-            ResultCode.IsVisible = false;
+            ResultCode.IsVisible = true;
             CreateButton.IsEnabled = false;
             EditButton.IsEnabled = false;
 
@@ -78,6 +79,7 @@ namespace GraphEditorAppV2
         private void NodeWizardDialog_Loaded(object? sender, RoutedEventArgs e)
         {
             PromptText.Text = NodeWizardDialog.LastPrompt;
+            ResultCode.Text = NodeWizardDialog.LastCode;
         }
 
         protected override void OnClosing(WindowClosingEventArgs e)
@@ -98,6 +100,7 @@ namespace GraphEditorAppV2
         }
         private void Edit_OnClick(object? sender, RoutedEventArgs e)
         {
+            RunEdit();
         }
         private void Create_OnClick(object? sender, RoutedEventArgs e)
         {
@@ -129,13 +132,39 @@ namespace GraphEditorAppV2
             AnimatedBulletCount = 0;
             TickTimer.Start();
 
-            ResultCode.Text = "";
             CreateButton.IsEnabled = false;
 
             NodeWizard Wiz = new NodeWizard();
-            Wiz.NodeFunctionPrompt = this.PromptText.Text;
+            Wiz.NodeFunctionPrompt = this.PromptText.Text ?? "";
 
             await Wiz.RunCodeGeneration();
+
+            ResultCode.IsVisible = true;
+            ResultCode.Text = Wiz.GeneratedCode;
+            CreateButton.IsEnabled = true;
+            EditButton.IsEnabled = true;
+            CurWizard = Wiz;
+
+            GenerationFeedback.Text = "Done!";
+            GenerationFeedback.IsVisible = false;
+            TickTimer.Stop();
+        }
+
+
+        private async void RunEdit()
+        {
+            GenerationFeedback.IsVisible = true;
+            GenerationFeedback.Text = "Working...";
+            AnimatedBulletCount = 0;
+            TickTimer.Start();
+
+            CreateButton.IsEnabled = false;
+
+            NodeWizard Wiz = new NodeWizard();
+            Wiz.NodeFunctionPrompt = this.PromptText.Text ?? "";
+            Wiz.GeneratedCode = this.ResultCode.Text ?? "";
+
+            await Wiz.RunCodeEdit();
 
             ResultCode.IsVisible = true;
             ResultCode.Text = Wiz.GeneratedCode;
@@ -150,7 +179,8 @@ namespace GraphEditorAppV2
 
         private void CloseDialog()
         {
-            NodeWizardDialog.LastPrompt = this.PromptText.Text;
+            NodeWizardDialog.LastPrompt = this.PromptText.Text ?? "";
+            NodeWizardDialog.LastCode = this.ResultCode.Text ?? "";
             this.Close();
         }
     }

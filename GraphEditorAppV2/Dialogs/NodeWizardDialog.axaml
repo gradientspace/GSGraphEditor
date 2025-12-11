@@ -4,28 +4,33 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:pages="using:GraphEditorAppV2"
         x:Class="GraphEditorAppV2.NodeWizardDialog"
-		SizeToContent="WidthAndHeight"
+		SizeToContent="Width"
+		Height="400"
 		WindowStartupLocation="CenterOwner"
         Title="Node Wizard"
 		x:Name="NodeWizardWin">
 
-	<Border BorderThickness="10">
-			<StackPanel MinWidth="600" MaxWidth="600" >
-				<Label>Prompt:</Label>
-				<TextBox Name="PromptText" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120" MaxHeight ="200"/>
-				<TextBlock Name="GenerationFeedback" />
-				<TextBlock Name="GenerationErrors" />
-				<TextBox Name="ResultCode" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120" MaxHeight="120"/>
-				<Border BorderThickness="10">
-					<StackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
+	<Border BorderThickness="10" MinWidth="600" MaxWidth="900">
+		<Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" ColumnDefinitions="*">
+			<Label Grid.Row="0" Grid.Column="0">Prompt:</Label>
+			<TextBox Grid.Row="1" Grid.Column="0" Name="PromptText" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" MaxHeight="120"/>
+			<TextBlock Grid.Row="2" Grid.Column="0" Name="GenerationErrors" />
+			<Label Grid.Row="3" Grid.Column="0">Code:</Label>
+			<TextBox Grid.Row="4" Grid.Column="0" Name="ResultCode" AcceptsReturn="True" TextWrapping="NoWrap" MinHeight="60" FontFamily="Consolas, Monaco, Liberation Mono, Monospace"/>
+			<Border Grid.Row="5" Grid.Column="0" BorderThickness="10">
+				<Grid RowDefinitions="Auto" ColumnDefinitions="75,*,75">
+					<Label Grid.Row="0" Grid.Column="0"></Label>
+					<StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center">
 						<Button Name="GenerateButton" Background="#50C878" Click="Generate_OnClick">Generate</Button>
 						<Button Name="EditButton" Background="#50C878" Click="Edit_OnClick">Edit</Button>
 						<TextBlock xml:space="preserve">   </TextBlock>
 						<Button Name="CreateButton" Background="#50C878" Click="Create_OnClick">Create Node</Button>
 						<Button Name="CancelButton" Background="red" Click="Cancel_OnClick">Cancel</Button>
 					</StackPanel>
-				</Border>
-			</StackPanel>
+					<TextBlock Name="GenerationFeedback" Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Bottom"></TextBlock>
+				</Grid>
+			</Border>
+		</Grid>
 	</Border>
 
 </Window>

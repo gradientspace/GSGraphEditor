@@ -67,8 +67,56 @@ namespace GraphEditorAppV2
                 GeneratedCode = result_code;
             });
 
-            // claude returns block enclosed in ```csharp / ```
         }
+
+
+
+        public async Task RunCodeEdit()
+        {
+            string system_prompt = @"
+                You are a helpful assistant that makes changes to a C# code function that was generated for a node-based graph editor.
+                Given the user prompt and C# function below, make the requested changes to the C# code based on the user prompt.
+                The updated code should be concise and focused on the requested functionality.
+                Return only the code snippet without any additional explanations or commentary.
+
+                Make the minimal possible set of changes to the existing C# code to satisfy the user prompt.
+                Do not change any argument types or names unless the user explicitly requests it.
+
+                The generated Function should be wrapped in a public static Function with an appropriate (but terse) name,
+                contained inside a public class named NodeClass.
+
+                The generated static Function should not use the async keyword. The Function must be synchronous,
+                it should wait for any async calls to complete internally.
+
+                The Function should only use C# libraries that are included in the standard dotnet SDK (version 8 or above).
+                In addition, the geometry3Sharp library in the g3 namespace should be used for any 2D/3D geometry, vector math, mesh processing, and related tasks.
+
+                The Function should return void. Any returned values should be returned via 'out' parameters with appropriate names.
+
+                Parameter and Function names should be in Upper Camel-case (also known as Pascal case), unless otherwise specified by the user.
+
+                If necessary, additional local private static functions can be added to the NodeClass and called by 
+                the primary static function. 
+            ";
+
+            string user_prompt = NodeFunctionPrompt;
+            string code_prompt = GeneratedCode;
+            string full_prompt = system_prompt + "\n\nUser Prompt: " + user_prompt + "\n\nCurrent C# Code: " + code_prompt;
+
+            await Task.Run(() => {
+                if (NodeEditorSecrets.FindSecret(ISecretsSource.ANTHROPIC_API_KEY, out string APIKey) == false) {
+                    GeneratedCode = "// ERROR: No Anthropic API key found";
+                    return;
+                }
+
+                string result_code = AnthropicUtil.SimpleClaudeTextQuery_Blocking(
+                    full_prompt, APIKey, AnthropicUtil.EClaudeModel.Opus, 8192);
+                result_code = strip_csharp_identification(result_code);
+                GeneratedCode = result_code;
+            });
+
+        }
+
 
 
 
@@ -95,7 +143,7 @@ namespace GraphEditorAppV2
             if ( idx >= 0 ) {
                 int eol = codeblock.IndexOf('\n');
                 if ( eol >= 0 )
-                    codeblock = codeblock.Substring(eol);
+                    codeblock = codeblock.Substring(eol+1);
             }
             idx = codeblock.LastIndexOf("```");
             if (idx >= 0) {
