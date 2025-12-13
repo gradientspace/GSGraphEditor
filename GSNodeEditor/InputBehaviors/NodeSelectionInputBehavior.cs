@@ -162,11 +162,7 @@ namespace GSNodeEditor
                 for ( int i = 0; i < N; ++i )
                 {
                     Vector2f NewPosition = InitialNodePositions[i] + Delta;
-                    if (Settings.EnableGridSnapping.Value == true) {
-                        float SnapStep = Settings.GridSnappingSize.Value;
-                        NewPosition.x = (float)Snapping.SnapToIncrement(NewPosition.x, SnapStep);
-                        NewPosition.y = (float)Snapping.SnapToIncrement(NewPosition.y, SnapStep);
-                    }
+                    NewPosition = PlacementUtils.ApplyNodePositionConstraints(NewPosition);
                     ActiveNodes[i].Position = NewPosition;
                 }
             }

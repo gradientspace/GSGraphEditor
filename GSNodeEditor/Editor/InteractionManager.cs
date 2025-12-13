@@ -571,6 +571,7 @@ namespace GSNodeEditor
 
             Vector2f UIPopupLocation = GetDeviceStateInSpace(EInteractionSpace.UILayer).CurrentPosition;
             Vector2f ViewportPopupLocation = GetDeviceStateInSpace(EInteractionSpace.GraphViewport).CurrentPosition;
+            ViewportPopupLocation = PlacementUtils.ApplyNodePositionConstraints(ViewportPopupLocation);
 
             ActiveNewNodePopupDialog = new NewNodePopupDialog();
             ActivePopupDialog = ActiveNewNodePopupDialog;

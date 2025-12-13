@@ -11,9 +11,12 @@ Versioning
 - implement for node types
 
 
-==================
-Renaming
-==================
+=============
+Python
+=============
+
+- function argument default values
+- 
 
 
 
@@ -36,6 +39,7 @@ Bugs
 ===================
 Graph Features
 ===================
+- would be nice if DataConversionLibrary could support enumerating through 'to' options for a 'from'...then browser could show explicit conversion options. Would simplify some messy stuff.
 - add some heuristics for handling name changes in inputs and outputs, when missing on load
 - add pin-name-redirector attributes
 - docking branch node  (to simplify common bool/branch pattern)
