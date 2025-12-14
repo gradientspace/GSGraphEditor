@@ -10,85 +10,10 @@ using System.Threading.Tasks;
 namespace Gradientspace.NodeGraph.Nodes
 {
 
-    public class TestGraphData
-    {
-        public float FloatVal = 0.5f;
-        public bool BoolVal = false;
-
-        float _floatprop = 1.0f;
-        public float FloatProp
-        {
-            get { return _floatprop; }
-            set { _floatprop = value; }
-        }
-
-        public float FloatValWrap
-        {
-            get { return _floatprop; }
-        }
-
-        public readonly int ReadOnlyInt = 7;
-
-        public float InitFloat { get; init; } = 13;
-        public float PrivateFloat { get; private set; } = 14;
-    }
-
-
-    [NodeFunctionLibrary("AAAATest")]
-    public static class TestNodeFunctionLibrary
-    {
-        [NodeFunction(Version="1.1")]
-        public static double MyVersionedFunc(double a)
-        {
-            return a + a;
-        }
-
-        [NodeFunction(Version="1.0", VersionOf= "AAAATest.MyVersionedFunc", Hidden=true)]
-        public static double MyVersionedFunc_v1p0(double a, int b)
-        {
-            return a + b;
-        }
-
-
-        [NodeFunction]
-        public static TestGraphData MakeTestData()
-        {
-            return new TestGraphData();
-        }
-
-        [NodeFunction]
-        public static void PrintTestData(TestGraphData Object)
-        { 
-            Debug.WriteLine("PrintTestData: FloatVal {0}  BoolVal {1}  FloatProp {2}", Object.FloatVal, Object.BoolVal, Object.FloatProp);
-        }
-
-        [NodeFunction]
-        public static float[] ArrayTest()
-        {
-            return new float[7] { 1, 2, 3, 4, 5, 6, 7 };
-        }
-
-        [NodeFunction]
-        public static List<float> ListTest()
-        {
-            return new List<float> { 1, 2, 3 };
-        }
-
-        [NodeFunction]
-        public static IEnumerable<float> EnumerableTest()
-        {
-            for (int k = 0; k < 12; ++k)
-                yield return k;
-        }
-    }
-
-
-
-
     [NodeFunctionLibrary("Geometry3.Test")]
     public static class G3TestFunctions
     {
-        [NodeFunction]
+        [NodeFunction(Hidden=true)]
         [NodeParameter("vecParam", DisplayName = "vec3vec", DefaultRealVec = [2.0,3.0,4.2])]
         public static Vector3d TestVec3Default(Vector3d vecParam)
         {
@@ -96,7 +21,7 @@ namespace Gradientspace.NodeGraph.Nodes
         }
 
 
-        [NodeFunction(ReturnName ="monkey")]
+        [NodeFunction(ReturnName ="monkey", Hidden=true)]
         [NodeReturnValue(DisplayName = "Mesh")]
         public static DMesh3? TestDMesh3Attribs()
         {
@@ -174,7 +99,7 @@ namespace Gradientspace.NodeGraph.Nodes
         }
 
 
-        [NodeFunction]
+        [NodeFunction(Hidden = true)]
         [NodeReturnValue(DisplayName = "Mesh")]
         public static DMesh3? TestDMesh3TriUVs()
         {
@@ -228,7 +153,7 @@ namespace Gradientspace.NodeGraph.Nodes
 
 
 
-        [NodeFunction]
+        [NodeFunction(Hidden = true)]
         [NodeReturnValue(DisplayName = "Mesh")]
         public static DMesh3? TestDMesh3PerVertAttribs()
         {

@@ -17,7 +17,7 @@ namespace GSNodeEditor
         }
 
 
-        [NodeFunction]
+        [NodeFunction(Hidden = true)]
         //[NodeParameter("Path", DisplayName = "OutputPath", DefaultValue = "c:\\scratch\\AA_FROM_GRAPH.obj")]
         public static void DisplayMesh(DMesh3 Mesh, string Name = "mesh1", bool FitToView = false )
         {
