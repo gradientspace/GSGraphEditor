@@ -52,8 +52,15 @@ namespace GSNodeEditor
                 SKPaint TextPaint = StyleCache.GetCachedPaint(NodeErrorWidget.TextStyle, SKStyleCache.EPaintType.Text);
                 TextHeightInfo heightInfo = StyleCache.GetCachedFontHeightInfo(NodeErrorWidget.TextStyle);
 
+                float MaxWidth = 0;
+                for ( int i = 0; i < CurrentErrors.Length; ++i ) {
+                    float Width = TextPaint.MeasureText(CurrentErrors[i]);
+                    MaxWidth = Math.Max(MaxWidth, Width);
+                }
+
                 Vector2f CurPos = Bounds.BottomRight;
-                CurPos += new Vector2f(2, -2);
+                CurPos.x -= MaxWidth*0.5f;
+                CurPos += new Vector2f(2, -10);
                 for (int i = CurrentErrors.Length-1; i >= 0; --i) {
                     string Message = CurrentErrors[i];
                     Canvas.DrawText(Message, Conversion.ToSkia(CurPos), TextPaint);
