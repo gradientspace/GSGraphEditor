@@ -1,8 +1,10 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
+using g3;
 using Gradientspace.NodeGraph;
 using Gradientspace.NodeGraph.CodeNodes;
 using Gradientspace.NodeGraph.Nodes;
 using Gradientspace.Nodes.GenAI;
+using Gradientspace.UI;
 using GSNodeEditor;
 using System;
 using System.Collections.Generic;
@@ -124,8 +126,32 @@ namespace GraphEditorAppV2
         {
             graphViewport.ExecuteGraphEdit((NodeGraphEditor editor) => {
                 NodeType codeNodetype = new NodeType(typeof(CodeFunctionNode));
-                g3.Vector2f Position = new g3.Vector2f(500, 0);
-                NodeWidget newWidget = editor.AddNodeOfType(codeNodetype, Position,
+
+                // try to pick a sane position for new node
+                // this could work better if it picked a specific node to position relative to...
+                // could also try to pick 'empty' space (ie not colliding w/ any existing nodes)
+                AxisAlignedBox2f CurGraphBounds = graphViewport.WidgetScene.BoundsQuery((Widget w) => { return w is NodeWidget; });
+                AxisAlignedBox2f ViewportBounds = graphViewport.ViewportBounds;
+                // default to viewport center
+                Vector2f NodePosition = ViewportBounds.Center; 
+                // if graph is on-screen...
+                if ( CurGraphBounds.Intersects(ViewportBounds) ) {
+                    AxisAlignedBox2f isect = CurGraphBounds.Intersect(ViewportBounds);
+                    // intersect graph bounds w/ screen bounds and pick the right-top/middle/bottom pt that is closest to center of window
+                    Vector2f RightPos = isect.CenterRight;
+                    if ( ViewportBounds.Center.DistanceSquared(RightPos) > ViewportBounds.Center.DistanceSquared(isect.TopRight) )
+                        RightPos = isect.TopRight;
+                    if ( ViewportBounds.Center.DistanceSquared(RightPos) > ViewportBounds.Center.DistanceSquared(isect.BottomRight) )
+                        RightPos = isect.BottomRight;
+                    // shift to the right some, to make some space
+                    RightPos.x += 50;
+                    // make sure we don't go too far right...  (should actually be based on right-edge of node...)
+                    float InsetDist = ViewportBounds.Max.x - 250;
+                    RightPos.x = Math.Min(RightPos.x, InsetDist);
+                    NodePosition = RightPos;
+                }
+
+                NodeWidget newWidget = editor.AddNodeOfType(codeNodetype, NodePosition,
                     (INodeInfo info) => {
                         if (info.Node is CodeFunctionNode codeNode) {
                             codeNode.UpdateSourceCode(new SourceCodeDataType(GeneratedCode, SourceCodeDataType.Language.CSharp));

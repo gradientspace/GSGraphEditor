@@ -377,6 +377,38 @@ namespace Gradientspace.UI
         }
 
 
+        public AxisAlignedBox2f BoundsQuery(Predicate<Widget>? WidgetPredicateFunc = null)
+        {
+            lock (SceneLockable) {
+                return BoundsQueryImpl(WidgetPredicateFunc);
+            }
+        }
+        protected AxisAlignedBox2f BoundsQueryImpl(Predicate<Widget>? WidgetPredicateFunc = null)
+        {
+            AxisAlignedBox2f result = AxisAlignedBox2f.Empty;
+
+            var query_widget = (Widget widget) => {
+                AxisAlignedBox2f widgetBounds = widget.GetActiveView()?.BoundsQuery(widget.GetAnchor()) ?? AxisAlignedBox2f.Empty;
+                result.Contain(widgetBounds);
+            };
+
+            foreach (WidgetSourceSet set in AllWidgetInfos) {
+                foreach (Widget rootWidget in set.RootWidgets) {
+                    foreach (Widget childWidget in rootWidget.EnumerateChildWidgets(true)) {
+                        if (WidgetPredicateFunc == null || WidgetPredicateFunc(childWidget) == true) {
+                            query_widget(childWidget);
+                        }
+                    }
+
+                    if (WidgetPredicateFunc == null || WidgetPredicateFunc(rootWidget) == true) {
+                        query_widget(rootWidget);
+                    }
+                }
+            }
+
+            return result;
+        }
+
 
         public bool ContainsWidget(Widget widget)
         {

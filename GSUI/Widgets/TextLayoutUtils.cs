@@ -44,7 +44,7 @@ namespace Gradientspace.UI
 
                 // it's possible we broke right at the end of the line (due to width) without
                 // including the trailing newline characters. In that case, they can be dropped.
-                while (remainingText[idx] == '\r' || remainingText[idx] == '\n')
+                while (idx < remainingText.Length && (remainingText[idx] == '\r' || remainingText[idx] == '\n') )
                     idx++;
 
                 remainingText = remainingText.Substring(idx);
@@ -61,7 +61,7 @@ namespace Gradientspace.UI
             int max_chars_in_width = (int)paint.BreakText(text, width);     // todo does BreakText include newline boxes??
 
             // if we have a newline before max chars, we break at the newline
-            if (next_newline_idx < max_chars_in_width)
+            if (next_newline_idx > 0 && next_newline_idx < max_chars_in_width)
                 return (next_newline_idx+1);
             
             // if all chars fit, we do not have to break

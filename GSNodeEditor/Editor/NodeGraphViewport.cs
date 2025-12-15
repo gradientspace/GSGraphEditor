@@ -225,9 +225,7 @@ namespace GSNodeEditor
             PrintWithFormatNode Print = executionGraph.CreateNewNode<PrintWithFormatNode>()!;
             executionGraph.AddConnection(Sum2, DoubleConstantNode.ValueOutputName, Print, Print.MakeObjectInputName(0));
 
-            executionGraph.AddSequenceConnection(Sum, "", Sum2, "");
-            executionGraph.AddSequenceConnection(Sum2, "", Print, "");
-            executionGraph.AddSequenceConnection(executionGraph.StartNodeHandle, "", Sum.Handle, "");
+            executionGraph.AddSequenceConnection(executionGraph.StartNodeHandle, "", Print.Handle, "");
 
             executionGraph.SetNodeConstantValue(Constant1, DoubleConstantNode.ValueInputName, 2);
             executionGraph.SetNodeConstantValue(Constant2, DoubleConstantNode.ValueInputName, 3);
@@ -239,6 +237,8 @@ namespace GSNodeEditor
 
         public Vector2f ViewportTranslation { get; set; }
         public float ViewportScale { get; set; }
+        public AxisAlignedBox2f ViewportBounds { get; protected set; }
+        public AxisAlignedBox2f WindowBounds { get; protected set; }
         public WidgetScene WidgetScene { get { return widgetScene; } }
 
         public float UIScale { get; set; }
@@ -402,7 +402,7 @@ namespace GSNodeEditor
         {
             bool bIsSave = ActiveChord.IsChord2(KeyNames.Ctrl, 'S');
 
-            if (ActiveChord.IsSingleSpecialKey(KeyNames.Delete))
+            if (ActiveChord.IsSingleSpecialKey(KeyNames.Delete) || ActiveChord.IsSingleSpecialKey(KeyNames.Backspace))
             {
                 if ( SelectionManager.HasSelection ) {
                     List<NodeWidget> widgets = SelectionManager.FindSelectedNodeWidgets();
@@ -748,6 +748,11 @@ namespace GSNodeEditor
         {
             //ViewportCanvas.Clear(new SKColor(0xFFA0A0A0));
             ViewportCanvas.Clear(new SKColor(0xFF444444));
+
+            WindowBounds = Conversion.FromSkia(ViewportCanvas.LocalClipBounds);
+            ViewportBounds = new AxisAlignedBox2f(
+                TransformWindowToViewport(WindowBounds.Min),
+                TransformWindowToViewport(WindowBounds.Max));
 
             SKMatrix InitialMatrix = ViewportCanvas.TotalMatrix;
             SKMatrix ViewportTranslationMatrix = SKMatrix.CreateTranslation(this.ViewportTranslation.x, this.ViewportTranslation.y);
