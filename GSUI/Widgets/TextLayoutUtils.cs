@@ -28,13 +28,24 @@ namespace Gradientspace.UI
             string remainingText = (bTrimStrings) ? text.Trim() : text;
 
             do {
+                // figure out break point in the string. 
+                // this will break at a newline if it comes before width.
+                // otherwise it will prefer to break at a space, unless it's
+                // not possible, then it will break mid-word (currently no dashes are shown)
                 int idx = LineBreak(remainingText, paint, width);
                 if (idx == 0) {
                     break;
                 }
 
+                // extract the line. remove any trailing newline characters. optionally trim spaces.
                 string lastLine = remainingText.Substring(0, idx);
+                lastLine = lastLine.ReplaceLineEndings(string.Empty);
                 lines.Add( (bTrimStrings) ? lastLine.Trim() : lastLine);
+
+                // it's possible we broke right at the end of the line (due to width) without
+                // including the trailing newline characters. In that case, they can be dropped.
+                while (remainingText[idx] == '\r' || remainingText[idx] == '\n')
+                    idx++;
 
                 remainingText = remainingText.Substring(idx);
 
@@ -44,22 +55,31 @@ namespace Gradientspace.UI
 
         public static int LineBreak(string text, SKPaint paint, float width)
         {
-            int idx = 0, last = 0;
-            int MaxCharsInWidth = (int)paint.BreakText(text, width);
-            if (MaxCharsInWidth == text.Length)
-                return MaxCharsInWidth;     // if all chars fit we do not have to break anything (except what about '\n' ?)
+            int next_newline_idx = text.IndexOf('\n');
 
+            int idx = 0, last = 0;
+            int max_chars_in_width = (int)paint.BreakText(text, width);     // todo does BreakText include newline boxes??
+
+            // if we have a newline before max chars, we break at the newline
+            if (next_newline_idx < max_chars_in_width)
+                return (next_newline_idx+1);
+            
+            // if all chars fit, we do not have to break
+            if (max_chars_in_width == text.Length)
+                return max_chars_in_width;
+
+            // don't quite understand this loop yet...
             while (idx < text.Length) {
                 int next = text.IndexOfAny(new char[] { ' ', '\n' }, idx);
                 if (next == -1) {
                     if (idx == 0) {
-                        return MaxCharsInWidth;
+                        return max_chars_in_width;
                     } else {
                         // Ellipsize if it's the last line
-                        if (MaxCharsInWidth == text.Length
+                        if (max_chars_in_width == text.Length
                         // || text.IndexOfAny (new char [] { ' ', '\n' }, lengthBreak + 1) == -1
                         ) {
-                            return MaxCharsInWidth;
+                            return max_chars_in_width;
                         }
                         // Split at the last word;
                         return last;
@@ -68,8 +88,8 @@ namespace Gradientspace.UI
                 if (text[idx] == '\n') {
                     return idx;
                 }
-                if (next > MaxCharsInWidth) {
-                    return idx;
+                if (next > max_chars_in_width) {
+                    return max_chars_in_width;
                 }
                 last = next;
                 idx = next + 1;
