@@ -32,6 +32,7 @@ namespace Gradientspace.Nodes.GenAI
 
 
             Anthropic.Models.Messages.Model InternalUseModel = Model.ClaudeHaiku4_5;
+            //Anthropic.Models.Messages.Model InternalUseModel = Model.ClaudeSonnet4_5;
             switch (UseModel) {
                 case EClaudeModel.Haiku:
                     InternalUseModel = Model.ClaudeHaiku4_5; break;
@@ -47,10 +48,17 @@ namespace Gradientspace.Nodes.GenAI
                 Messages = [textPromptMessage]
             };
 
-            Message message = await client.Messages.Create(messageParams);
+            Message? message = null;
+            try {
+                message = await client.Messages.Create(messageParams);
+                if (message == null)
+                    throw new Exception("Anthropic API returned null message...");
+            } catch (Exception ex) {
+                return $"Anthropic API threw exception: {ex.Message}";
+            }
 
             string resultText = "";
-            foreach (ContentBlock contentBlock in message.Content) {
+            foreach (ContentBlock contentBlock in message!.Content) {
                 if (contentBlock.Value is TextBlock textBlock) {
                     resultText = textBlock.Text;
                 }

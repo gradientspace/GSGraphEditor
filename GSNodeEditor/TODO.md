@@ -24,6 +24,8 @@ Python
 Bugs
 ===================
 
+- possibly need to refresh code nodes after load, if they had an error, because required assemblies might not have been loaded
+    - (there is some messy business here...)
 - SelectionManager active selection is not updated when deleting selected node, leaving an invalid selection
 - Type input on static function node does not result in a type picker
 - why isn't int -> Vector3d a type-conversion warning?

@@ -77,7 +77,7 @@ namespace PopupWindow
             SafeHWND WindowHandle = CreateWindowEx(
                 0,                              // Optional window styles.
                 WindowClassName,                     // Window class
-                "Derivative Graph Editor",     // Window text
+                "Gradientspace Graph Editor",     // Window text
                 WindowStyles.WS_OVERLAPPEDWINDOW,// Window style
 
                 // Size and position
