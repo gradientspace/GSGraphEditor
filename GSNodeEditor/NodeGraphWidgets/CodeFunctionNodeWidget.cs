@@ -5,6 +5,7 @@ using Gradientspace.NodeGraph.CodeNodes;
 using Gradientspace.UI;
 using SkiaSharp;
 using System.Diagnostics;
+using static GSNodeEditor.InteractionManager;
 
 namespace GSNodeEditor
 {
@@ -44,6 +45,8 @@ namespace GSNodeEditor
         public CodeFunctionNodeButton CodeButton;
         public RelativeBoxAnchor CodeButtonAnchor;
 
+        SimplePopupMenuDialog? ActivePopupMenuDialog = null;
+
         public CodeFunctionNodeWidget(NodeGraphView graphView, INodeInfo node) : base(graphView, node)
         {
             Debug.Assert(node.Node is INodeWithInlineCode);
@@ -61,19 +64,23 @@ namespace GSNodeEditor
             CodeButton.ContentExtension = this;
             CodeButton.OnClicked += CodeButton_OnClicked;
             AddChildWidget(CodeButton);
+
+            // explicitly do a status update in case the node already has it's code compiled
+            CodeNode_OnCompileStatusUpdate(CodeNodeAPI);
         }
 
-        private void CodeNode_OnCompileStatusUpdate(bool bCompileOK, List<string>? Errors)
+        private void CodeNode_OnCompileStatusUpdate(INodeWithInlineCode codeNode)
         {
-            if (bCompileOK)
+            if (codeNode.LastCompileOK)
                 ClearNodeErrorState();
             else
-                SetNodeErrorState(Errors);
+                SetNodeErrorState(codeNode.LastCompileMessages);
         }
 
         private void CodeButton_OnClicked(Button button)
         {
-            SourceCodeEditingSystem.Instance.BeginCodeEdit(this);
+            if ( initCodeEditContextMenu() == false )
+                SourceCodeEditingSystem.Instance.BeginCodeEdit(this);
         }
 
         public override void Dispose()
@@ -96,7 +103,61 @@ namespace GSNodeEditor
             return CodeNodeAPI.GetCodeNameHint();
         }
 
-		public override IWidgetView CreateDefaultView()
+
+        private bool initCodeEditContextMenu()
+        {
+            if (ActivePopupMenuDialog != null)
+                return false;
+            SimpleWidgetSource? source = ParentGraphWidget.WidgetSource as SimpleWidgetSource;
+            if (source == null) 
+                return false;
+
+            SimplePopupMenuDialog newDialog = new SimplePopupMenuDialog();
+
+            newDialog.AddItem(new MenuItem() {
+                Text = "Edit in VSCode",
+                OnClicked = () => {
+                    SourceCodeEditingSystem.Instance.BeginCodeEdit(this);
+                }
+            });
+            newDialog.AddItem(new MenuItem() {
+                Text = "Edit in Node Wizard",
+                OnClicked = () => {
+                    SourceCodeEditingSystem.LaunchExternalCodeEditSession(this);
+                }
+            });
+
+            AxisAlignedBox2f buttonBox = CodeButton.GetActiveView()?.BoundsQuery(this.CodeButtonAnchor) ?? AxisAlignedBox2f.Empty;
+            newDialog.Position = buttonBox.CenterRight + new Vector2f(5,-5);
+            newDialog.OnDismissDialogClick = () => { dismissCodeEditContextMenu(); };
+            newDialog.OnItemSelected += (SimplePopupMenuDialog dialog, MenuItem item) => {
+                dismissCodeEditContextMenu();
+            };
+
+            source.AddRootWidget(newDialog);
+            SystemKeyboardRouter.Instance.PushHotkeyTarget(newDialog);
+
+            ActivePopupMenuDialog = newDialog;
+            return true;
+        }
+
+        protected void dismissCodeEditContextMenu()
+        {
+            if (ActivePopupMenuDialog == null)
+                return;
+
+            if (ParentGraphWidget.WidgetSource is SimpleWidgetSource source)
+                source.RemoveRootWidget(ActivePopupMenuDialog);
+
+            if (ActivePopupMenuDialog is IHotkeyTarget target)
+                SystemKeyboardRouter.Instance.PopHotkeyTarget(target);
+
+            ActivePopupMenuDialog = null;
+        }
+
+
+
+        public override IWidgetView CreateDefaultView()
         {
             return new CodeFunctionNodeWidgetView(this);
         }

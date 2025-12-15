@@ -454,7 +454,7 @@ namespace GSNodeEditor
 
         // not sure this should be something that the node itself tracks...maybe
         // should be done at the graphview level
-        public void SetNodeErrorState(List<string>? ErrorMessages)
+        public void SetNodeErrorState(IEnumerable<string>? ErrorMessages)
         {
             if (NodeState == NodeStates.Normal)
                 AddChildWidget(ErrorWidget);

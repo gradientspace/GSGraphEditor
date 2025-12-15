@@ -78,7 +78,7 @@
 						<MenuItem Header="_Paste" Click="Paste_OnClick" />
 						<Separator/>
 						<MenuItem Header="_New Function" Click="NewFunction_OnClick" />
-						<MenuItem Header="Node _Wizard" Click="NodeWizard_OnClick" />
+						<MenuItem Header="AI Node _Wizard" Click="NodeWizard_OnClick" />
 						<Separator/>
 						<MenuItem Header="_Generate Code" Click="GenerateCode_OnClick" />
 					</MenuItem>
@@ -129,7 +129,7 @@
 						<Border Background="#888888">
 							<ScrollViewer Name="LogTextAreaScrollView">
 								<SelectableTextBlock Name="LogTextArea" Margin="3">
-									Welcome to Derivative Graph Editor!
+									Welcome to the Gradientspace GSGraph Editor!
 								</SelectableTextBlock>
 							</ScrollViewer>
 						</Border>

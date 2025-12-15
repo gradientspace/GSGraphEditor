@@ -152,11 +152,14 @@ namespace GSNodeEditor
 		public static bool LoadLastGraphOnStartup = false;
 
 
+        [GSConfigValue]
+        public static string CodeTextEditorPath = "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe";
 
-		// below actually implements very general automatic field/property serialization and
-		// probably should be generalized outside this class...
 
-		public static bool SaveConfig() 
+        // below actually implements very general automatic field/property serialization and
+        // probably should be generalized outside this class...
+
+        public static bool SaveConfig() 
 		{
 			Dictionary<string, object> ConfigValues = new Dictionary<string, object>();
 			foreach (var Member in typeof(NodeEditorConfig).GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static) ) {

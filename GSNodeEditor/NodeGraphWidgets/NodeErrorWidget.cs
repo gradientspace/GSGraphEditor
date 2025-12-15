@@ -24,11 +24,11 @@ namespace GSNodeEditor
             OnHoverUpdate += NodeErrorWidget_OnHoverUpdate;
         }
 
-        string[] CurrentErrors = new string[0];
+        string[] CurrentErrors = [];
 
-        public void SetErrorStrings(List<string>? Errors)
+        public void SetErrorStrings(IEnumerable<string>? Errors)
         {
-            CurrentErrors = Errors?.ToArray() ?? new string[0];
+            CurrentErrors = Errors?.ToArray() ?? [];
         }
 
         bool bHovering = false;

@@ -62,7 +62,7 @@ public class ActionCommand : ICommand
 
 
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeEditingHandler
 {
     public string[]? StartupArguments = null;
 
@@ -137,6 +137,9 @@ public partial class MainWindow : Window
         // register as dragdrop handler
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DropEvent, HandleMainWindowDropEvent);
+
+        // register as external code editor
+        SourceCodeEditingSystem.SetExternalCodeEditingHandler(this);
     }
 
     protected override void OnGotFocus(GotFocusEventArgs e)
@@ -540,11 +543,23 @@ public partial class MainWindow : Window
 		base.OnTextInput(e);
 	}
 
-	//protected override void OnKeyUp(KeyEventArgs e)
-	//{
-	//	if (e.Key == Key.Space) {
-	//		RunGraphEvaluationCommand();
-	//	}
-	//}
-	
+    //protected override void OnKeyUp(KeyEventArgs e)
+    //{
+    //	if (e.Key == Key.Space) {
+    //		RunGraphEvaluationCommand();
+    //	}
+    //}
+
+
+
+
+    // SourceCodeEditingSystem.IExternalCodeEditingHandler implementation
+    public async void BeginCodeEditingSession(ISourceCodeProvider provider)
+    {
+        var dialog = new NodeWizardDialog() { GraphViewport = SkiaView.ActiveViewport };
+        dialog.InitializeFromCodeProvider(provider);
+        await dialog.ShowDialog(this);
+    }
+
+
 }

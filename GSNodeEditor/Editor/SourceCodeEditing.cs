@@ -133,10 +133,15 @@ namespace GSNodeEditor
             }
 
             ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.FileName = SourceCodeEditingSystem.EditorPath;
+            startInfo.FileName = SourceCodeEditingSystem.GetCodeEditorPath();
             startInfo.Arguments = useTempFileName;
             //startInfo.UseShellExecute = false;
-			ActiveEditorProcess = Process.Start(startInfo);
+            try {
+                ActiveEditorProcess = Process.Start(startInfo);
+            } catch (Exception ex) {
+                GlobalGraphOutput.AppendError($"Failed to start Code Editor {startInfo.FileName} : {ex.Message}");
+            }
+            
         }
 
 
@@ -231,8 +236,24 @@ namespace GSNodeEditor
 
     public sealed class SourceCodeEditingSystem
     {
-        //public static string EditorPath = "c:\\windows\\notepad.exe";
-        public static string EditorPath = "C:\\Users\\rms\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe";
+        // these are windows-specific...need OS branching here...
+        public static string VSCodeUserPath = "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe";
+        public static string VSCodeSystemPath64 = "C:\\Program Files\\Microsoft VS Code\\Code.exe";
+        public static string VSCodeSystemPath32 = "C:\\Program Files\\Microsoft VS Code\\Code.exe";
+        public static string NotepadPath = "C:\\Windows\\System32\\notepad.exe";
+
+        public static string GetCodeEditorPath()
+        {
+            string SettingsPath = NodeEditorConfig.CodeTextEditorPath;
+
+            string[] TryPaths = [SettingsPath, VSCodeUserPath, VSCodeSystemPath64, VSCodeSystemPath32, NotepadPath];
+            foreach (string path in TryPaths) {
+                string EXEPath = Environment.ExpandEnvironmentVariables(path);
+                if (File.Exists(EXEPath))
+                    return EXEPath;
+            }
+            return "";
+        }
 
 
         // singleton pattern
@@ -297,6 +318,28 @@ namespace GSNodeEditor
             foreach (SourceCodeEditSession session in ActiveSessions)
                 session.Shutdown();
             ActiveSessions.Clear();
+        }
+
+
+
+
+
+
+
+
+        // this is a gross hack to allow the CodeNode widgets to launch an
+        // in-app code editing wizard
+
+        public interface IExternalCodeEditingHandler
+        {
+            void BeginCodeEditingSession(ISourceCodeProvider provider);
+        }
+        private static IExternalCodeEditingHandler? CurrentExternalHandler = null;
+        public static void SetExternalCodeEditingHandler(IExternalCodeEditingHandler? handler) {
+            CurrentExternalHandler = handler;
+        }
+        public static void LaunchExternalCodeEditSession(ISourceCodeProvider provider) {
+            CurrentExternalHandler?.BeginCodeEditingSession(provider);
         }
 
 

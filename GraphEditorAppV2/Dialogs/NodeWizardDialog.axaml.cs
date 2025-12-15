@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Threading;
+using Gradientspace.NodeGraph;
 using GSNodeEditor;
 using SkiaSharp;
 using System;
@@ -26,9 +27,10 @@ namespace GraphEditorAppV2
         DispatcherTimer TickTimer = null;
         int AnimatedBulletCount = 0;
 
-
         static string LastPrompt = "compute the first N elements of the fibonacci sequence";
         static string LastCode = "";
+
+        ISourceCodeProvider? CodeTarget = null;
 
         public NodeWizardDialog()
         {
@@ -104,7 +106,10 @@ namespace GraphEditorAppV2
         }
         private void Create_OnClick(object? sender, RoutedEventArgs e)
         {
-            if (CurWizard != null) {
+            if (CodeTarget != null) {
+                UpdateCodeTarget();
+                CloseDialog();
+            }else if (CurWizard != null) {
                 CurWizard.EmitNewCodeNode(GraphViewport);
                 CloseDialog();
             }
@@ -146,7 +151,7 @@ namespace GraphEditorAppV2
             CurWizard = Wiz;
 
             GenerationFeedback.Text = "Done!";
-            GenerationFeedback.IsVisible = false;
+            //GenerationFeedback.IsVisible = false;
             TickTimer.Stop();
         }
 
@@ -172,7 +177,7 @@ namespace GraphEditorAppV2
             CurWizard = Wiz;
 
             GenerationFeedback.Text = "Done!";
-            GenerationFeedback.IsVisible = false;
+            //GenerationFeedback.IsVisible = false;
             TickTimer.Stop();
         }
 
@@ -183,6 +188,30 @@ namespace GraphEditorAppV2
             NodeWizardDialog.LastCode = this.ResultCode.Text ?? "";
             this.Close();
         }
+
+        public void InitializeFromCodeProvider(ISourceCodeProvider provider)
+        {
+            SourceCodeDataType codeData = provider.GetCurrentSourceCode();
+            ResultCode.Text = codeData.CodeText;
+            NodeWizardDialog.LastCode = ResultCode.Text;
+
+            CodeTarget = provider;
+
+            CreateButton.Content = "Apply Changes";
+            CreateButton.IsEnabled = true;
+            EditButton.Content = "Request Edit";
+            EditButton.IsEnabled = true;
+            GenerateButton.IsVisible = false;
+        }
+        public void UpdateCodeTarget()
+        {
+            if (CodeTarget == null) return;
+            SourceCodeDataType codeData = CodeTarget.GetCurrentSourceCode().MakeDuplicate();
+            codeData.CodeText = ResultCode.Text ?? "";
+            CodeTarget.UpdateSourceCode(codeData);
+        }
+
+
     }
 
 }
