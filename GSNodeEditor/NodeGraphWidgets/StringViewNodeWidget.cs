@@ -26,6 +26,8 @@ namespace GSNodeEditor.NodeGraphWidgets
         {
             if (ParentNode is StringViewNode StringNode) {
                 StringNode.OnStringUpdate += StringNode_OnStringUpdate;
+            } else if (ParentNode is ObjectViewNode ObjectNode) {
+                ObjectNode.OnStringUpdate += StringNode_OnStringUpdate;
             }
         }
 

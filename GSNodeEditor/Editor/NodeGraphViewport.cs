@@ -95,6 +95,8 @@ namespace GSNodeEditor
                 typeof(ImageViewNode), new ImageViewNodeWidgetProvider());
             NodeWidgetCustomizationSystem.Instance.RegisterProvider(
                 typeof(StringViewNode), new StringViewNodeWidgetProvider());
+            NodeWidgetCustomizationSystem.Instance.RegisterProvider(
+                typeof(ObjectViewNode), new StringViewNodeWidgetProvider());
 
             //UsingDataFlowGraph = MakeInitialDataflowGraph();
             //UsingDataFlowGraphEvaluator = new DataFlowGraphEvaluator(UsingDataFlowGraph);
