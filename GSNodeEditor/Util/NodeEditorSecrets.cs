@@ -24,11 +24,16 @@ namespace GSNodeEditor
         {
             string ConfigFolderPath = NodeEditorConfig.UserEditorConfigFolder;
             string SecretsFile = Path.Combine(ConfigFolderPath, UserSecretsFileName);
-            if (File.Exists(SecretsFile) == false) {
-                List<string> lines = new List<string>();
+            List<string> lines = File.Exists(SecretsFile) ? File.ReadAllLines(SecretsFile).ToList() : new();
+            int initial = lines.Count;
+
+            if ( lines.Find( (string line) => { return line.Contains(ISecretsSource.ANTHROPIC_API_KEY); }) == null )
                 lines.Add($"{ISecretsSource.ANTHROPIC_API_KEY}=");
+            if (lines.Find((string line) => { return line.Contains(ISecretsSource.GEMINI_API_KEY); }) == null)
+                lines.Add($"{ISecretsSource.GEMINI_API_KEY}=");
+
+            if (lines.Count != initial)
                 File.WriteAllLines(SecretsFile, lines);
-            }
             return SecretsFile;
         }
 
