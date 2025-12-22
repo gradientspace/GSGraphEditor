@@ -1,11 +1,11 @@
 // Copyright Gradientspace Corp. All Rights Reserved.
+using g3;
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using g3;
-using SkiaSharp;
 
 namespace Gradientspace.UI
 {
@@ -105,6 +105,14 @@ namespace Gradientspace.UI
         {
             return new DropDownPickerView(this);
         }
+
+        public override bool GetTooltipStrings(out string? tooltip, out string[]? extendedTooltip)
+        {
+            tooltip = CurrentText;
+            extendedTooltip = null;
+            return true;
+        }
+
 
         public virtual bool IsFocused { get; set; } = false;
         public virtual bool IsHovered { get; set; }
