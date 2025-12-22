@@ -2,6 +2,7 @@
 using Anthropic;
 using Anthropic.Models.Messages;
 using Anthropic.Services;
+using Gradientspace.GenAI;
 using Gradientspace.NodeGraph;
 using Microsoft.Extensions.AI;
 
@@ -23,6 +24,17 @@ namespace Gradientspace.Nodes.GenAI
 
             return AnthropicUtil.SimpleClaudeTextQuery_Blocking(prompt, APIKey);
         }
-        
+
+
+
+        [NodeFunction]
+        public static string TextQuery(
+            ModelID Model,
+            string prompt = "What is the tallest building in Canada?")
+        {
+            return ModelUtil.RunTextQuery_Blocking(Model, prompt, ModelQueryParams.Default);
+        }
+
+
     }
 }

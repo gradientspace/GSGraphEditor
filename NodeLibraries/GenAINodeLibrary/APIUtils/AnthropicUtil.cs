@@ -12,6 +12,8 @@ namespace Gradientspace.Nodes.GenAI
 {
     public static class AnthropicUtil
     {
+        public static string ProviderID = "anthropic";
+
         public enum EClaudeModel
         {
             Haiku,
