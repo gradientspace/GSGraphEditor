@@ -13,7 +13,8 @@ namespace Gradientspace.GenAI
 
         static abstract ModelAuthInfo GetModelAuthInfo(ModelID modelID);
 
-        static abstract Func<string, Task<string>> GetSimpleTextQueryFunction(ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams);
+        static abstract Func<string, Task<string>>? GetSimpleTextQueryFunction(ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams);
+        static abstract Func<VisionPrompt, Task<string>>? GetVisionQueryFunction(ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams);
     }
 
 

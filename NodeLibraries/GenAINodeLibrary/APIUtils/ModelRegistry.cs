@@ -16,8 +16,6 @@ namespace Gradientspace.GenAI
     /// </summary>
     public static class ModelRegistry
     {
-
-
         public static EnumOptionSet GetAllModels()
         {
             ModelRegistry.Initialize();

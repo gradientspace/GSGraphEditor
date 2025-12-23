@@ -34,15 +34,14 @@ namespace Gradientspace.GenAI
 
             ModelAuthInfo authInfo = ModelUtil.FindDefaultAuthInfo(modelID);
 
-            var getSimpleTextQueryMethod = modelID.ModelAPIType.GetMethod("GetSimpleTextQueryFunction", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
-            if (getSimpleTextQueryMethod == null)
+            var textQueryFunc = modelID.ModelAPIType.GetMethod("GetSimpleTextQueryFunction", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+            if (textQueryFunc == null)
                 throw new Exception($"ModelUtil.RunTextQuery: GetSimpleTextQueryFunction method not found for ModelAPIType '{modelID.ModelAPIType.Name}'");
             
-            var queryFunction = (Func<string, Task<string>>)getSimpleTextQueryMethod.Invoke(null, [modelID, authInfo, queryParams])!;
+            var queryFunction = (Func<string, Task<string>>)textQueryFunc.Invoke(null, [modelID, authInfo, queryParams])!;
             string result = await queryFunction(prompt);          
             return result;
         }
-
         public static string RunTextQuery_Blocking(ModelID modelID, string prompt, ModelQueryParams queryParams)
         {
             try {
@@ -53,6 +52,34 @@ namespace Gradientspace.GenAI
             }
         }
 
+
+
+        public static async Task<string> RunVisionQuery(ModelID modelID, VisionPrompt prompt, ModelQueryParams queryParams)
+        {
+            if (modelID.IsValid == false)
+                throw new Exception("ModelUtil.RunVisionQuery: Invalid ModelID");
+            if (modelID.ModelAPIType == null)
+                throw new Exception($"ModelUtil.RunVisionQuery: ModelAPIType is null for ModelID '{modelID.ProviderID}:{modelID.ModelName}'");
+
+            ModelAuthInfo authInfo = ModelUtil.FindDefaultAuthInfo(modelID);
+
+            var visionQueryFunc = modelID.ModelAPIType.GetMethod("GetVisionQueryFunction", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+            if (visionQueryFunc == null)
+                throw new Exception($"ModelUtil.RunVisionQuery: GetVisionQueryFunction method not found for ModelAPIType '{modelID.ModelAPIType.Name}'");
+
+            var queryFunction = (Func<VisionPrompt, Task<string>>)visionQueryFunc.Invoke(null, [modelID, authInfo, queryParams])!;
+            string result = await queryFunction(prompt);
+            return result;
+        }
+        public static string RunVisionQuery_Blocking(ModelID modelID, VisionPrompt prompt, ModelQueryParams queryParams)
+        {
+            try {
+                Task<string> result = Task.Run(async () => await RunVisionQuery(modelID, prompt, queryParams));
+                return result.Result;
+            } catch (Exception ex) {
+                return $"[ModelUtil.RunVisionQuery_Blocking] Exception: {ex.Message}";
+            }
+        }
 
 
         public static bool ValidateQueryInfo(

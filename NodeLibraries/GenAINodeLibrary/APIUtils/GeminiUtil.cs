@@ -1,7 +1,9 @@
 ﻿// Copyright Gradientspace Corp. All Rights Reserved.
+using g3;
 using Google.GenAI;
 using Google.GenAI.Types;
 using Gradientspace.NodeGraph;
+using Gradientspace.NodeGraph.Image;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,13 +83,55 @@ namespace Gradientspace.GenAI
             string resultText = response.Candidates?[0].Content?.Parts?[0].Text ?? "(empty response)";
             return resultText;
         }
-        public static string SimpleTextQuery_Blocking(string prompt, 
+
+
+        public static async Task<string> VisionQuery(VisionPrompt prompt, 
             ModelID useModel, ModelAuthInfo authInfo, ModelQueryParams queryParams)
         {
-            Task<string> result = Task.Run(async () => await SimpleTextQuery(prompt, useModel, authInfo, queryParams));
-            return result.Result;
+            try {
+                ModelUtil.ValidateQueryInfo(useModel, ProviderID, ModelNames, authInfo, EModelAuthType.APIKey, true);
+            } catch (Exception ex) {
+                return $"[GeminiUtil.VisionQuery] invalid query - {ex.Message}";
+            }
+
+            var client = new Client(apiKey: authInfo.AuthToken);
+            string modelString = useModel.ModelName;
+
+
+
+            GenerateContentResponse? response = null;
+            try {
+                List<Content> contentsList = new();
+
+                var textPart = new Part { Text = prompt.TextPrompt };
+                contentsList.Add(new Content() { Role = "user", Parts = [ textPart ] } );
+
+                foreach (PixelImage img in prompt.Images ?? []) {
+					byte[] imageBytes = ImageUtil.PixelImageToMimeData(img, out string mimeType);
+                    var imagePart = new Part {
+                        InlineData = new Blob {
+                            MimeType = mimeType,
+                            Data = imageBytes
+                        }
+                    };
+                    contentsList.Add(new Content() { Role = "user", Parts = [imagePart] });
+                }
+
+                response = await client.Models.GenerateContentAsync(
+                    model: modelString,
+                    contents: contentsList);
+                if (response == null)
+                    throw new Exception("Gemini API returned null message...");
+            } catch (Exception ex) {
+                return $"Gemini API threw exception: {ex.Message}";
+            }
+
+            string resultText = response.Candidates?[0].Content?.Parts?[0].Text ?? "(empty response)";
+            return resultText;
         }
+
     }
+
 
 
     public class GeminiAPIHelper : IModelAPI
@@ -114,10 +158,16 @@ namespace Gradientspace.GenAI
             return new ModelAuthInfo() { AuthType = EModelAuthType.APIKey, AuthToken = APIKey };
         }
 
-        public static Func<string, Task<string>> GetSimpleTextQueryFunction(
+        public static Func<string, Task<string>>? GetSimpleTextQueryFunction(
             ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams)
         {
             return (string prompt) => GeminiUtil.SimpleTextQuery(prompt, modelID, authInfo, queryParams);
+        }
+
+        public static Func<VisionPrompt, Task<string>>? GetVisionQueryFunction(
+            ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams)
+        {
+            return (VisionPrompt prompt) => GeminiUtil.VisionQuery(prompt, modelID, authInfo, queryParams);
         }
     }
 }

@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\DerivativeCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
+    <ProjectReference Include="..\..\..\DerivativeEngine\GSNodeGraphImageLibrary\GSNodeGraphImageLibrary.csproj" />
     <ProjectReference Include="..\..\..\DerivativeEngine\GSNodeGraph\GSNodeGraph.csproj" />
     <ProjectReference Include="..\..\..\geometry3Sharp\geometry3Sharp.csproj" />
   </ItemGroup>

@@ -2,6 +2,7 @@
 using Anthropic;
 using Anthropic.Models.Messages;
 using Anthropic.Services;
+using g3;
 using Gradientspace.GenAI;
 using Gradientspace.NodeGraph;
 using Microsoft.Extensions.AI;
@@ -26,6 +27,25 @@ namespace Gradientspace.Nodes.GenAI
             return ModelUtil.RunTextQuery_Blocking(Model, prompt, ModelQueryParams.Default);
         }
 
+
+        [NodeFunction]
+        public static string VisionQuery(
+            ModelID Model,
+            PixelImage Image,
+            string TextPrompt = "Describe this image",
+            IEnumerable<PixelImage>? Images = null)
+        {
+            VisionPrompt prompt = new VisionPrompt() {
+                TextPrompt = TextPrompt
+            };
+            if (Images == null)
+                prompt.Images = [Image];
+            else if (Image == null && Images != null)
+                prompt.Images = Images.ToArray();
+            else if (Image != null && Images != null)
+                prompt.Images = [Image, .. Images];
+            return ModelUtil.RunVisionQuery_Blocking(Model, prompt, ModelQueryParams.Default);
+        }
 
     }
 }

@@ -126,10 +126,16 @@ namespace Gradientspace.GenAI
             return new ModelAuthInfo() { AuthType = EModelAuthType.APIKey, AuthToken = APIKey };
         }
 
-        public static Func<string, Task<string>> GetSimpleTextQueryFunction(
+        public static Func<string, Task<string>>? GetSimpleTextQueryFunction(
             ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams)
         {
             return (string prompt) => AnthropicUtil.SimpleTextQuery(prompt, modelID, authInfo, queryParams);
+        }
+
+        public static Func<VisionPrompt, Task<string>>? GetVisionQueryFunction(
+            ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams)
+        {
+            return null;
         }
     }
 
