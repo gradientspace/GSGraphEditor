@@ -41,6 +41,7 @@ Bugs
 ===================
 Graph Features
 ===================
+- make it possible to wire single element into an IEnumerable
 - would be nice if DataConversionLibrary could support enumerating through 'to' options for a 'from'...then browser could show explicit conversion options. Would simplify some messy stuff.
 - add some heuristics for handling name changes in inputs and outputs, when missing on load
 - add pin-name-redirector attributes

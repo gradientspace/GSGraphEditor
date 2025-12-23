@@ -28,24 +28,36 @@ namespace Gradientspace.UI
             string remainingText = (bTrimStrings) ? text.Trim() : text;
 
             do {
+                // if first char is a newline, we insert an empty line
+                // handle this as special case because LineBreak will return 0...
+                if ( remainingText.Length > 0 && remainingText[0] == '\n' ) {
+                    lines.Add("");
+                    remainingText = remainingText.Substring(1);
+                    continue;
+                }
+
                 // figure out break point in the string. 
                 // this will break at a newline if it comes before width.
                 // otherwise it will prefer to break at a space, unless it's
                 // not possible, then it will break mid-word (currently no dashes are shown)
                 int idx = LineBreak(remainingText, paint, width);
-                if (idx == 0) {
+                if (idx == 0) 
                     break;
-                }
 
                 // extract the line. remove any trailing newline characters. optionally trim spaces.
                 string lastLine = remainingText.Substring(0, idx);
+                bool bIsNewlineTermined = (lastLine[lastLine.Length-1] == '\n');
                 lastLine = lastLine.ReplaceLineEndings(string.Empty);
                 lines.Add( (bTrimStrings) ? lastLine.Trim() : lastLine);
 
                 // it's possible we broke right at the end of the line (due to width) without
-                // including the trailing newline characters. In that case, they can be dropped.
-                while (idx < remainingText.Length && (remainingText[idx] == '\r' || remainingText[idx] == '\n') )
-                    idx++;
+                // including the trailing newline characters. In that case, we skip ahead
+                if (!bIsNewlineTermined) {
+                    if (idx < remainingText.Length && remainingText[idx] == '\r')
+                        idx++;
+                    if (idx < remainingText.Length && remainingText[idx] == '\n')
+                        idx++;
+                }
 
                 remainingText = remainingText.Substring(idx);
 
@@ -69,6 +81,8 @@ namespace Gradientspace.UI
                 return max_chars_in_width;
 
             // don't quite understand this loop yet...
+            // possibly should just rewrite it as the original code seems to
+            // not handle a lot of possible cases (maybe was intended for use in some other context)
             while (idx < text.Length) {
                 int next = text.IndexOfAny(new char[] { ' ', '\n' }, idx);
                 if (next == -1) {
@@ -86,15 +100,18 @@ namespace Gradientspace.UI
                     }
                 }
                 if (text[idx] == '\n') {
-                    return idx;
+                    return idx;     // don't think this ever happens now?
                 }
                 if (next > max_chars_in_width) {
-                    return max_chars_in_width;
+                    // if next space or newline is too far, we want to
+                    // break at the previous newline/space. If there wasn't
+                    // a previous one, break the very long word at the maxchars
+                    return (last > 0) ? last : max_chars_in_width;
                 }
                 last = next;
                 idx = next + 1;
             }
-            return last;
+            return last;    // not sure we get here anymore...
         }
 
 
