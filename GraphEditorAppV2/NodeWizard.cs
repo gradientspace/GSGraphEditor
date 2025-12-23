@@ -3,7 +3,7 @@ using g3;
 using Gradientspace.NodeGraph;
 using Gradientspace.NodeGraph.CodeNodes;
 using Gradientspace.NodeGraph.Nodes;
-using Gradientspace.Nodes.GenAI;
+using Gradientspace.GenAI;
 using Gradientspace.UI;
 using GSNodeEditor;
 using System;
@@ -58,13 +58,10 @@ namespace GraphEditorAppV2
             string full_prompt = system_prompt + "\n\nUser Prompt: " + user_prompt;
 
             await Task.Run(() => {
-                if ( NodeEditorSecrets.FindSecret(ISecretsSource.ANTHROPIC_API_KEY, out string APIKey) == false ) {
-                    GeneratedCode = "// ERROR: No Anthropic API key found";
-                    return;
-                }
-
-                string result_code = AnthropicUtil.SimpleClaudeTextQuery_Blocking(
-                    full_prompt, APIKey, AnthropicUtil.EClaudeModel.Opus, 8192);
+                ModelID useModel = ModelRegistry.FindModel("haiku");
+                ModelQueryParams queryParams = new();
+                string result_code = ModelUtil.RunTextQuery_Blocking(
+                    useModel, full_prompt, queryParams);
                 result_code = strip_csharp_identification(result_code);
                 GeneratedCode = result_code;
             });
@@ -106,13 +103,10 @@ namespace GraphEditorAppV2
             string full_prompt = system_prompt + "\n\nUser Prompt: " + user_prompt + "\n\nCurrent C# Code: " + code_prompt;
 
             await Task.Run(() => {
-                if (NodeEditorSecrets.FindSecret(ISecretsSource.ANTHROPIC_API_KEY, out string APIKey) == false) {
-                    GeneratedCode = "// ERROR: No Anthropic API key found";
-                    return;
-                }
-
-                string result_code = AnthropicUtil.SimpleClaudeTextQuery_Blocking(
-                    full_prompt, APIKey, AnthropicUtil.EClaudeModel.Opus, 8192);
+                ModelID useModel = ModelRegistry.FindModel("haiku");
+                ModelQueryParams queryParams = new();
+                string result_code = ModelUtil.RunTextQuery_Blocking(
+                    useModel, full_prompt, queryParams);
                 result_code = strip_csharp_identification(result_code);
                 GeneratedCode = result_code;
             });

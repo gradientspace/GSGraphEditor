@@ -9,6 +9,11 @@ using System.Threading.Tasks;
 
 namespace Gradientspace.GenAI
 {
+    /// <summary>
+    /// ModelRegistry stores the set of 'known' models. These are 
+    /// found by searching for classes that implement IModelAPI, and
+    /// enumerating their models
+    /// </summary>
     public static class ModelRegistry
     {
 
@@ -29,8 +34,25 @@ namespace Gradientspace.GenAI
         }
 
 
+        /// <summary>
+        /// Search for a Model with name that contains modelSearchString (prefers exact match or starts-with)
+        /// </summary>
+        public static ModelID FindModel(string modelSearchString)
+        {
+            ModelRegistry.Initialize();
 
-
+            int foundIndex = AllModels?.FindIndex(
+                m => string.Equals(m.modelID.ModelName, modelSearchString, StringComparison.OrdinalIgnoreCase)) ?? -1;
+            if (foundIndex < 0) {
+                foundIndex = AllModels?.FindIndex(
+                    m => m.modelID.ModelName.StartsWith(modelSearchString, StringComparison.OrdinalIgnoreCase)) ?? -1;
+            }
+            if (foundIndex < 0) {
+                foundIndex = AllModels?.FindIndex(
+                    m => m.modelID.ModelName.Contains(modelSearchString, StringComparison.OrdinalIgnoreCase)) ?? -1;
+            }
+            return (foundIndex >= 0) ? AllModels![foundIndex].modelID : ModelID.Invalid;
+        }
 
 
 

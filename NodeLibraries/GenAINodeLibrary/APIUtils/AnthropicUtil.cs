@@ -2,13 +2,9 @@
 using Anthropic;
 using Anthropic.Models.Messages;
 using Anthropic.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Gradientspace.NodeGraph;
 
-namespace Gradientspace.Nodes.GenAI
+namespace Gradientspace.GenAI
 {
     public static class AnthropicUtil
     {
@@ -16,15 +12,51 @@ namespace Gradientspace.Nodes.GenAI
 
         public enum EClaudeModel
         {
-            Haiku,
-            Sonnet,
-            Opus
+            Haiku_4p5 = 0,
+            Sonnet_4p5 = 1,
+            Opus_4p5 = 2
         }
 
-        public static async Task<string> SimpleClaudeTextQuery(string prompt, string apiKey, EClaudeModel UseModel = EClaudeModel.Opus, int MaxTokens = 4096)
+        public static readonly string[] ModelNames = [
+            "claude-haiku-4-5",
+            "claude-sonnet-4-5",
+            "claude-opus-4-5"
+        ];
+
+        public static string ModelToString(EClaudeModel model)
         {
+            return ModelNames[(int)model];
+        }
+
+        public static ModelID FindModelID(string modelString)
+        {
+            modelString = modelString.ToLower().Trim();
+            int idx = Array.IndexOf(ModelNames, modelString);
+            if (idx == -1)
+                return ModelID.Invalid;
+
+            return new ModelID() {
+                ProviderID = ProviderID,
+                ModelName = modelString,
+                Type = ModelType.TextModel,
+                InternalModelID = idx,
+                ModelAPIType = typeof(AnthropicAPIHelper)
+            };
+        }
+
+
+
+        public static async Task<string> SimpleTextQuery(string prompt,
+            ModelID useModel, ModelAuthInfo authInfo, ModelQueryParams queryParams)
+        {
+            try {
+                ModelUtil.ValidateQueryInfo(useModel, ProviderID, ModelNames, authInfo, EModelAuthType.APIKey, true);
+            } catch (Exception ex) {
+                return $"[AnthropicUtil.SimpleTextQuery] invalid query - {ex.Message}";
+            }
+
             AnthropicClient client = new() {
-                APIKey = apiKey
+                APIKey = authInfo.AuthToken
             };
 
             MessageParam textPromptMessage = new() {
@@ -32,20 +64,17 @@ namespace Gradientspace.Nodes.GenAI
                 Content = prompt
             };
 
-
             Anthropic.Models.Messages.Model InternalUseModel = Model.ClaudeHaiku4_5;
-            //Anthropic.Models.Messages.Model InternalUseModel = Model.ClaudeSonnet4_5;
-            switch (UseModel) {
-                case EClaudeModel.Haiku:
-                    InternalUseModel = Model.ClaudeHaiku4_5; break;
-                case EClaudeModel.Sonnet:
-                    InternalUseModel = Model.ClaudeSonnet4_5; break;
-                case EClaudeModel.Opus:
-                    InternalUseModel = Model.ClaudeOpus4_5; break;
-            };
+            if (useModel.ModelName.StartsWith("claude-haiku-4-5",StringComparison.OrdinalIgnoreCase))
+                InternalUseModel = Model.ClaudeHaiku4_5;
+            else if (useModel.ModelName.StartsWith("claude-sonnet-4-5", StringComparison.OrdinalIgnoreCase))
+                InternalUseModel = Model.ClaudeSonnet4_5;
+            else if (useModel.ModelName.StartsWith("claude-opus-4-5", StringComparison.OrdinalIgnoreCase))
+                InternalUseModel = Model.ClaudeOpus4_5;
+
 
             MessageCreateParams messageParams = new() {
-                MaxTokens = MaxTokens,
+                MaxTokens = queryParams.MaxTokens,
                 Model = InternalUseModel,
                 Messages = [textPromptMessage]
             };
@@ -68,11 +97,40 @@ namespace Gradientspace.Nodes.GenAI
 
             return resultText;
         }
-        public static string SimpleClaudeTextQuery_Blocking(string prompt, string apiKey, EClaudeModel UseModel = EClaudeModel.Opus, int MaxTokens = 4096)
-        {
-            Task<string> result = Task.Run(async () => await SimpleClaudeTextQuery(prompt, apiKey, UseModel, MaxTokens));
-            return result.Result;
-        }
 
     }
+
+
+
+    public class AnthropicAPIHelper : IModelAPI
+    {
+        private AnthropicAPIHelper() { }
+
+        public static IEnumerable<ModelID> EnumerateModels()
+        {
+            for (int i = 0; i < AnthropicUtil.ModelNames.Length; ++i) {
+                yield return new ModelID() {
+                    ProviderID = AnthropicUtil.ProviderID,
+                    ModelName = AnthropicUtil.ModelNames[i],
+                    Type = ModelType.TextModel,
+                    InternalModelID = i,
+                    ModelAPIType = typeof(AnthropicAPIHelper)
+                };
+            }
+        }
+
+        public static ModelAuthInfo GetModelAuthInfo(ModelID modelID)
+        {
+            if (SecretsSource.FindSecret(ISecretsSource.ANTHROPIC_API_KEY, out string APIKey) == false)
+                return ModelAuthInfo.Invalid;
+            return new ModelAuthInfo() { AuthType = EModelAuthType.APIKey, AuthToken = APIKey };
+        }
+
+        public static Func<string, Task<string>> GetSimpleTextQueryFunction(
+            ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams)
+        {
+            return (string prompt) => AnthropicUtil.SimpleTextQuery(prompt, modelID, authInfo, queryParams);
+        }
+    }
+
 }

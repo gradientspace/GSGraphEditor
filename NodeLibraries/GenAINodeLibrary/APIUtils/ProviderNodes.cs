@@ -12,11 +12,6 @@ namespace Gradientspace.Nodes.GenAI
     public static class GenAIProviderNodes
     {
 
-        [NodeFunction]
-        public static void FindGeminiTextModel(out ModelID Model, GeminiUtil.EGeminiTextModel ID = GeminiUtil.EGeminiTextModel.Gemini_2p5_Flash)
-        {
-            Model = GeminiUtil.FindModelID(GeminiUtil.ModelToString(ID));
-        }
 
     }
 

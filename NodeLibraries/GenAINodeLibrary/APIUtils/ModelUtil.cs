@@ -27,6 +27,8 @@ namespace Gradientspace.GenAI
 
         public static async Task<string> RunTextQuery(ModelID modelID, string prompt, ModelQueryParams queryParams)
         {
+            if (modelID.IsValid == false)
+                throw new Exception("ModelUtil.RunTextQuery: Invalid ModelID");
             if (modelID.ModelAPIType == null)
                 throw new Exception($"ModelUtil.RunTextQuery: ModelAPIType is null for ModelID '{modelID.ProviderID}:{modelID.ModelName}'");
 
@@ -43,8 +45,12 @@ namespace Gradientspace.GenAI
 
         public static string RunTextQuery_Blocking(ModelID modelID, string prompt, ModelQueryParams queryParams)
         {
-            Task<string> result = Task.Run(async () => await RunTextQuery(modelID, prompt, queryParams));
-            return result.Result;
+            try {
+                Task<string> result = Task.Run(async () => await RunTextQuery(modelID, prompt, queryParams));
+                return result.Result;
+            } catch (Exception ex) {
+                return $"[ModelUtil.RunTextQuery_Blocking] Exception: {ex.Message}";
+            }
         }
 
 
