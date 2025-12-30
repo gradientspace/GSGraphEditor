@@ -97,7 +97,8 @@ namespace GSNodeEditor
                 Type[] allTypes = assembly.GetTypes();
                 foreach (Type type in allTypes) 
                 {
-                    if (type.IsPublic == false || type.IsAbstract) continue;
+                    //if (type.IsPublic == false || type.IsAbstract) continue;
+                    if (type.IsPublic == false ) continue;      // allow abstract types
                     if (HandledTypes.Contains(type)) continue;
 
                     // todo special handling for templates?
