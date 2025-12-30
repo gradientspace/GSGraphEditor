@@ -27,6 +27,7 @@ namespace GSNodeEditor
         EnumList,
         Type,
 
+        Vector2Real,
         Vector3Real,
 
         FromProvider
@@ -124,7 +125,9 @@ namespace GSNodeEditor
 					InlineType = EInlineWidgetType.Real;
 				} else if (pinType == typeof(int) || pinType == typeof(short) || pinType == typeof(long)) {
 					InlineType = EInlineWidgetType.Integer;
-				} else if (pinType == typeof(g3.Vector3d) || pinType == typeof(g3.Vector3f)) {
+                } else if (pinType == typeof(g3.Vector2d) || pinType == typeof(g3.Vector2f)) {
+                    InlineType = EInlineWidgetType.Vector2Real;
+                } else if (pinType == typeof(g3.Vector3d) || pinType == typeof(g3.Vector3f)) {
 					InlineType = EInlineWidgetType.Vector3Real;
 				} else if (pinType == typeof(string)) {
 					InlineType = EInlineWidgetType.String;
@@ -181,7 +184,7 @@ namespace GSNodeEditor
                     AddChildWidget(InlineWidget);
                 }
                 else if (InlineType == EInlineWidgetType.Real || InlineType == EInlineWidgetType.Integer || InlineType == EInlineWidgetType.String
-                    || InlineType == EInlineWidgetType.Vector3Real )
+                    || InlineType == EInlineWidgetType.Vector2Real || InlineType == EInlineWidgetType.Vector3Real )
                 {
                     TextEntryField textEntry = new TextEntryField();
                     textEntry.Width = 40;
@@ -189,8 +192,11 @@ namespace GSNodeEditor
                         textEntry.ValidationType = TextEntryField.StringValidation.Real;
                     } else if (InlineType == EInlineWidgetType.Integer) {
                         textEntry.ValidationType = TextEntryField.StringValidation.Integer;
+                    } else if (InlineType == EInlineWidgetType.Vector2Real) {
+                        textEntry.ValidationType = TextEntryField.StringValidation.VectorReal2;
+                        textEntry.Width = 55;
                     } else if (InlineType == EInlineWidgetType.Vector3Real) {
-                        textEntry.ValidationType = TextEntryField.StringValidation.VectorReal;
+                        textEntry.ValidationType = TextEntryField.StringValidation.VectorReal3;
                         textEntry.Width = 55;
                     } else if (InlineType == EInlineWidgetType.String) {
                         textEntry.Width = 65;
@@ -209,6 +215,8 @@ namespace GSNodeEditor
                             textEntry.Text = ((long)defaultValue).ToString();
                         else if (defaultValue is string)
                             textEntry.Text = (string)defaultValue;
+                        else if (defaultValue is g3.Vector2d)
+                            textEntry.Text = ((g3.Vector2d)defaultValue).ToString("0.0#######");
                         else if (defaultValue is g3.Vector3d)
                             textEntry.Text = ((g3.Vector3d)defaultValue).ToString("0.0#######");
                     }
@@ -352,7 +360,15 @@ namespace GSNodeEditor
                         Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, value);
                     });
                 }
-            } 
+            }
+            else if (InlineType == EInlineWidgetType.Vector2Real) 
+            {
+                if ( g3.Vector2d.TryParse(newText, out Vector2d value)) {
+                    ParentView.ExecuteGraphEdit((NodeGraphEditor Editor) => {
+                        Editor.SetNodeConstantValue(OwningNodeIdentifier, InputName, value);
+                    });
+                }
+            }             
             else if (InlineType == EInlineWidgetType.String ) 
             {
                 // kind of gross that we have to do this at such a low level...if we are updating

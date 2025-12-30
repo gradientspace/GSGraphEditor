@@ -39,7 +39,8 @@ namespace Gradientspace.UI
             None,
             Integer,
             Real,
-            VectorReal
+            VectorReal2,
+            VectorReal3
         }
         public StringValidation ValidationType { get; set; } = StringValidation.None;
 
@@ -144,7 +145,7 @@ namespace Gradientspace.UI
                 ActiveStringEdit.ConfigureForInteger();
             else if (ValidationType == StringValidation.Real)
                 ActiveStringEdit.ConfigureForReal();
-            else if (ValidationType == StringValidation.VectorReal)
+            else if (ValidationType == StringValidation.VectorReal2 || ValidationType == StringValidation.VectorReal3)
                 ActiveStringEdit.ConfigureForVectorReal();
 
             IsFocused = true;
@@ -348,7 +349,15 @@ namespace Gradientspace.UI
                     return true;
                 }
             } 
-            else if (ValidationType == StringValidation.VectorReal) {
+            else if (ValidationType == StringValidation.VectorReal2) {
+                if (Vector2d.TryParse(NewString, out Vector2d value)) {
+                    NewString = string.Format("{0},{1}", 
+                        value.x.ToString("0.########"), 
+                        value.y.ToString("0.########"));
+                    return true;
+                }
+            }
+            else if (ValidationType == StringValidation.VectorReal3) {
                 if (Vector3d.TryParse(NewString, out Vector3d value)) {
                     NewString = string.Format("{0},{1},{2}", 
                         value.x.ToString("0.########"), 
