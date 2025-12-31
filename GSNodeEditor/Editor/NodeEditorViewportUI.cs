@@ -75,7 +75,7 @@ namespace GSNodeEditor
 
 
         private void DebugButton_OnClicked(Button button) {
-            Settings.EnableDebugging.Value = !Settings.EnableDebugging.Value;
+            NodeEditorRuntimeSettings.EnableDebugging.Value = !NodeEditorRuntimeSettings.EnableDebugging.Value;
         }
 
         private void NewButton_OnClicked(Button button) {
