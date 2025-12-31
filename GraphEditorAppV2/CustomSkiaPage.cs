@@ -63,7 +63,7 @@ namespace GraphEditorAppV2
 		public void InitializeGraph()
 		{
             // initialize here so that setup code can log things
-            DebugManager.GlobalEnableGraphDebugging = true;
+            //DebugManager.GlobalEnableGraphDebugging = true;
             GlobalGraphOutput.SetCurrentOutput(new DefaultGraphOutputImpl());
 
             Gradientspace.NodeGraph.SecretsSource.InitializeSecretsSource(new NodeEditorSecretsImpl());

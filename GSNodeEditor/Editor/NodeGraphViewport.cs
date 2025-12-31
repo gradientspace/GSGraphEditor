@@ -882,7 +882,7 @@ namespace GSNodeEditor
                 }
                 else if (UsingExecutionGraphEvaluator != null)
                 {
-                    UsingExecutionGraphEvaluator.EnableDebugging = Settings.EnableDebugging.Value;
+                    UsingExecutionGraphEvaluator.EnableDebugging = NodeEditorRuntimeSettings.EnableDebugging.Value;
                     UsingExecutionGraphEvaluator.OnEvaluationErrorEvent += errorEvent;
                     UsingExecutionGraphEvaluator.EvaluateGraph();
                     UsingExecutionGraphEvaluator.OnEvaluationErrorEvent -= errorEvent;

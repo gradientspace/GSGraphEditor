@@ -431,9 +431,11 @@ public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeE
 
     private void GraphDebugging_OnToggle(object? sender, RoutedEventArgs e)
 	{
-		DebugManager.GlobalEnableGraphDebugging = !DebugManager.GlobalEnableGraphDebugging;
+        NodeEditorRuntimeSettings.EnableDebugging.Value = !NodeEditorRuntimeSettings.EnableDebugging.Value;
+		//DebugManager.GlobalEnableGraphDebugging = !DebugManager.GlobalEnableGraphDebugging;
 		Option_EnableGraphDebug.IsChecked = DebugManager.GlobalEnableGraphDebugging;
-	}
+        NodeEditorConfig.SaveConfig();
+    }
     private void GraphDebugSingleStep_OnToggle(object? sender, RoutedEventArgs e)
     {
         DebugManager.Instance.EnableStepByStep = !DebugManager.Instance.EnableStepByStep;

@@ -50,14 +50,23 @@ namespace GSNodeEditor
         }
     }
 
-
-    public static class Settings
+    // annoying this can't be connected to NodeEditorConfig more easily...
+    public static class NodeEditorRuntimeSettings
     {
         public static WatchableWrappedSetting<bool> EnableDebugging = new WatchableWrappedSetting<bool>(
             () => { return DebugManager.GlobalEnableGraphDebugging; },
-            (bool bEnable) => { DebugManager.GlobalEnableGraphDebugging = bEnable; });
+            (bool bEnable) => { 
+                DebugManager.GlobalEnableGraphDebugging = bEnable; 
+                NodeEditorConfig.EnableGraphDebugging = DebugManager.GlobalEnableGraphDebugging;
+            });
 
         public static WatchableSetting<bool> EnableGridSnapping = new WatchableSetting<bool>(true);
         public static WatchableSetting<int> GridSnappingSize = new WatchableSetting<int>(10);
+
+
+        public static void UpdateFromNodeEditorConfig()
+        {
+            DebugManager.GlobalEnableGraphDebugging = NodeEditorConfig.EnableGraphDebugging;
+        }
     }
 }

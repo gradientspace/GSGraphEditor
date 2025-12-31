@@ -12,9 +12,9 @@ namespace GSNodeEditor
         public static Vector2f ApplyNodePositionConstraints(Vector2f InputPosition)
         {
             Vector2f FinalPos = InputPosition;
-            if (Settings.EnableGridSnapping.Value == true) 
+            if (NodeEditorRuntimeSettings.EnableGridSnapping.Value == true) 
             {
-                float SnapStep = Settings.GridSnappingSize.Value;
+                float SnapStep = NodeEditorRuntimeSettings.GridSnappingSize.Value;
                 FinalPos.x = (float)Snapping.SnapToIncrement(InputPosition.x, SnapStep);
                 FinalPos.y = (float)Snapping.SnapToIncrement(InputPosition.y, SnapStep);
             }

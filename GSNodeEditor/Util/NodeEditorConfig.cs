@@ -151,6 +151,9 @@ namespace GSNodeEditor
 		[GSConfigValue]
 		public static bool LoadLastGraphOnStartup = false;
 
+        [GSConfigValue]
+        public static bool EnableGraphDebugging = true;
+
 
         [GSConfigValue]
         public static string CodeTextEditorPath = "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe";
@@ -248,7 +251,10 @@ namespace GSNodeEditor
 						}
 					}
 
-					return true;
+                    // propagate loaded config options to runtime settings
+                    NodeEditorRuntimeSettings.UpdateFromNodeEditorConfig();
+
+                    return true;
 				}
 			} 
 			catch (Exception)
