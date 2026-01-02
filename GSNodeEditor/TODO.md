@@ -3,8 +3,6 @@ WIP
 ==================
 - refreshing node library marks it dirty...
 
-- restore last view position on load
-
 - dynamic switch and static switch  (is static necessary?)
 - select node
 - some way to have multiple wires into a splitter-like thing where only the one on the active scope is used (related to switch/select)
@@ -39,8 +37,6 @@ Bugs
 ===================
 
 - exception on delete connection
-
-- *** Can make multiple output exec connections from foreach Done pin
 
 - possibly need to refresh code nodes after load, if they had an error, because required assemblies might not have been loaded
     - (there is some messy business here...)

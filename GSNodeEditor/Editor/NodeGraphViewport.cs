@@ -236,8 +236,9 @@ namespace GSNodeEditor
             return executionGraph;
         }
 
-
+        /// ViewportTranslation is in Window coordinates/space (Scaled Viewport space) - view transform is Viewport*Scale + Translation
         public Vector2f ViewportTranslation { get; set; }
+        /// ViewportScale is scale factor from Viewport to Window coordinates/space - view transform is Viewport*Scale + Translation
         public float ViewportScale { get; set; }
         public AxisAlignedBox2f ViewportBounds { get; protected set; }
         public AxisAlignedBox2f WindowBounds { get; protected set; }
@@ -257,13 +258,13 @@ namespace GSNodeEditor
             LastDeviceState = newState;
         }
 
-        public Vector2f TransformViewportToWindow(Vector2f DevicePoint)
+        public Vector2f TransformViewportToWindow(Vector2f ViewportPoint)
         {
-            return DevicePoint * ViewportScale + ViewportTranslation;
+            return ViewportPoint * ViewportScale + ViewportTranslation;
         }
-        public Vector2f TransformWindowToViewport(Vector2f ViewportPoint)
+        public Vector2f TransformWindowToViewport(Vector2f WindowPoint)
         {
-            return (ViewportPoint - ViewportTranslation) / ViewportScale;
+            return (WindowPoint - ViewportTranslation) / ViewportScale;
         }
 
         public Vector2f TransformUIToWindow(Vector2f DevicePoint)
@@ -283,6 +284,15 @@ namespace GSNodeEditor
         public Vector2f TransformUIToViewport(Vector2f UIPoint)
         {
             return TransformWindowToViewport(TransformUIToWindow(UIPoint));
+        }
+
+
+        public void CenterAtViewportPosition(Vector2f ViewportPoint)
+        {
+            Vector2f CurWindowPos = TransformViewportToWindow(ViewportPoint);
+            Vector2f TargetWindowPos = WindowBounds.Center;
+            Vector2f Delta = (TargetWindowPos - CurWindowPos);
+            ViewportTranslation += Delta;
         }
 
         public void UpdateCursor(InputDeviceState newState)
@@ -596,6 +606,9 @@ namespace GSNodeEditor
                 {
                     ExecutionGraphSerializer.SaveGraphOptions options = new ExecutionGraphSerializer.SaveGraphOptions();
                     options.LayoutProvider = CurrentGraphView;
+                    options.AdditionalTags = new() {
+                        { "ViewCenter",  ViewportBounds.Center.ToString() }
+                    };
                     ExecutionGraphSerializer.Save(UsingExecutionGraph!, memoryStream, options);
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     File.Delete(Filename);
@@ -613,10 +626,11 @@ namespace GSNodeEditor
         }
 
 
-        protected bool RestoreActiveGraphFromStream(Stream stream)
+        protected bool RestoreActiveGraphFromStream(Stream stream, bool bIsHotReload = false)
         {
             NodeLayoutCache layoutCache = new NodeLayoutCache();
             ExecutionGraphSerializer.RestoreGraphOptions options = new ExecutionGraphSerializer.RestoreGraphOptions() { LayoutProvider = layoutCache };
+            options.AllRestoredTags = new();
 
             ExecutionGraph readGraph = new ExecutionGraph();
             bool bRestoreOK = ExecutionGraphSerializer.Restore(stream, readGraph, options);
@@ -628,6 +642,13 @@ namespace GSNodeEditor
 
             RebuildGraphView();
             layoutCache.ApplyToGraphView(CurrentGraphView);
+
+            if (!bIsHotReload) {
+                if ( options.AllRestoredTags?.TryGetValue("ViewCenter", out string? ViewCenterString) ?? false ) {
+                    if (Vector2d.TryParse(ViewCenterString, out Vector2d ViewCenterPos)) 
+                        CenterAtViewportPosition((Vector2f)ViewCenterPos);
+                }
+            }
 
             return bRestoreOK;
         }
@@ -947,7 +968,7 @@ namespace GSNodeEditor
                 // rebuild library
                 DefaultNodeLibrary.ForceFullRebuild();
 
-                RestoreActiveGraphFromStream(savedStream);
+                RestoreActiveGraphFromStream(savedStream, true);
             } catch (Exception e) {
                 GlobalGraphOutput.AppendError($"ERROR REBUILDING GRAPH LIBRARY : {e.Message}");
             }
