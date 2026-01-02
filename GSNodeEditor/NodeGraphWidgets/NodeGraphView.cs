@@ -478,7 +478,20 @@ namespace GSNodeEditor
 		}
 
 
-
+        public AxisAlignedBox2f GetGraphBounds()
+        {
+            AxisAlignedBox2f allBounds = AxisAlignedBox2f.Empty;
+            foreach (NodeWidget widget in NodeWidgets) {
+                if (widget.GetActiveView() != null) {
+                    AxisAlignedBox2f widgetBounds = widget.GetActiveView()?.BoundsQuery(widget.GetAnchor()) ?? AxisAlignedBox2f.Empty;
+                    allBounds.Contain(widgetBounds);
+                } else {
+                    allBounds.Contain(widget.Position);
+                    allBounds.Contain(widget.Position + new Vector2f(100, 100));    // hack
+                }
+            }
+            return allBounds;
+        }
 
 
 		public IEnumerable<NodeWidget> EnumerateNodes(Predicate<NodeWidget>? Filter = null)

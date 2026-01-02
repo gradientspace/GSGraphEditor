@@ -632,8 +632,11 @@ namespace GSNodeEditor
             ExecutionGraphSerializer.RestoreGraphOptions options = new ExecutionGraphSerializer.RestoreGraphOptions() { LayoutProvider = layoutCache };
             options.AllRestoredTags = new();
 
+            bool bRestoreOK = false;
             ExecutionGraph readGraph = new ExecutionGraph();
-            bool bRestoreOK = ExecutionGraphSerializer.Restore(stream, readGraph, options);
+            try {
+                bRestoreOK = ExecutionGraphSerializer.Restore(stream, readGraph, options);
+            } catch (Exception) { throw; }
 
             UsingExecutionGraph = readGraph;
             UsingExecutionGraphEvaluator = new ExecutionGraphEvaluator(UsingExecutionGraph);
@@ -643,11 +646,13 @@ namespace GSNodeEditor
             RebuildGraphView();
             layoutCache.ApplyToGraphView(CurrentGraphView);
 
+            // probably should defer this until next frame because the widgets do not actually have Views yet, so the bounds are just a guess...
             if (!bIsHotReload) {
+                Vector2d FocusPosition = CurrentGraphView.GetGraphBounds().Center;
                 if ( options.AllRestoredTags?.TryGetValue("ViewCenter", out string? ViewCenterString) ?? false ) {
-                    if (Vector2d.TryParse(ViewCenterString, out Vector2d ViewCenterPos)) 
-                        CenterAtViewportPosition((Vector2f)ViewCenterPos);
+                    Vector2d.TryParse(ViewCenterString, out FocusPosition); 
                 }
+                CenterAtViewportPosition((Vector2f)FocusPosition);
             }
 
             return bRestoreOK;

@@ -1,6 +1,9 @@
 ==================
 WIP
 ==================
+
+- add simple error/warning dialog. Use to show file-load errors.
+
 - refreshing node library marks it dirty...
 
 - dynamic switch and static switch  (is static necessary?)
@@ -15,6 +18,8 @@ WIP
    - visual toggle on nodes w/ this capability
 
 - make struct
+
+- add special type of node for constant + alias, call it 'GraphParameter' - then can expose in custom UI panel...  (categories would be nice)
 
 ==================
 Versioning
@@ -91,6 +96,8 @@ Graph Features
 - show by-ref vs by-value in pin tooltip
 - pin contextmenu option to replace all output wires w/ an Alias...
  
+ - a way to 'save' state/checkpoints in graph so user can do partial evaluation (eg similar to python notebook)
+
 ====================
 Library Handling
 ====================
@@ -120,7 +127,6 @@ Core Editor
     - code nodes text
 - Mac support (seems to be working...)
 - Linux support
-- open graph on drag/drop
 
 ====================
 Node Management
@@ -155,30 +161,11 @@ Code Node Improvements
 - in-graph Code Node "objects" that can be referenced by graph nodes (eg to re-use)  ((maybe base on Asset objects?))
 - Typescript support
 
-======================
-Error Handling Improvements
-======================
-
-**Missing Pins**
-
-Ability to add pins to any node for 'missing' input/outputs, eg if 
-a graph is loaded that refers to pins that no longer exist, if a function
-changes, etc. Missing Pins are created on Node instances, and then connection
-can be made in graph but not executed. Can be discovered in validation pass, never 
-need to be explicitly stored (on nodes).
-
-**Missing Nodes**
-
-Extension of Missing Pins, if a graph is loaded that refers to nodes that do not exist,
-special MissingNode is created. MissingPins functionality can be used to create connection pins?
-
-
 
 =======================
 Debugging Improvements
 =======================
 
-- graph single-stepping evaluation
 - inspecting values on pins during single-step
 - Breakpoints that pause graph execution
 - Watches on graph wires or input/output pins. Watches would be shown in RHS panel in editor view
