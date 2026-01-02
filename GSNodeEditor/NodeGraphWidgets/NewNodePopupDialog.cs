@@ -236,6 +236,12 @@ namespace GSNodeEditor
             //return item.Text.StartsWith(FilterString, StringComparison.InvariantCultureIgnoreCase);
             return item.Text.Contains(FilterString, StringComparison.InvariantCultureIgnoreCase);
         }
+        private int nodes_menu_filter_similarity(MenuItem item)
+        {
+            if (item.Text.StartsWith(FilterString, StringComparison.InvariantCultureIgnoreCase))
+                return 10;
+            return 0;
+        }
 
         private void SearchBox_OnTextEditingUpdate(TextEntryField sender, string newText)
         {
@@ -249,7 +255,7 @@ namespace GSNodeEditor
             }
             else
             {
-                LinearAllNodesMenu.FilterItems(this.nodes_menu_filter);
+                LinearAllNodesMenu.FilterItems(this.nodes_menu_filter, this.nodes_menu_filter_similarity);
             }
             UpdateActiveMenu();
         }
@@ -451,7 +457,7 @@ namespace GSNodeEditor
             };
 
             // add a node to the menu set. this will dynamically create it's category(s) if it doesn't exist yet.
-            var TryAddToCategory = (NodeType nodeType) =>
+            var TryAddToCategory = (NodeType nodeType, int sortIndex) =>
             {
                 (string nodeLabel, string? nodeHint) = get_node_label(nodeType);
 
@@ -466,7 +472,7 @@ namespace GSNodeEditor
                 }
 
                 NodesCategory foundCategory = (subLabel == null) ? GetMainCategory(catLabel) : GetSubCategory(catLabel, subLabel);
-                foundCategory.CategoryMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
+                foundCategory.CategoryMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType }, sortIndex);
 
             };
 
@@ -474,17 +480,36 @@ namespace GSNodeEditor
 			LinearAllNodesMenu.ClearItems();
 
             // build out the menus for all nodes with a given input type, or just all nodes
-            IEnumerable<NodeType> filteredNodes = (bHaveValidFromPin) ?
-                Library.EnumerateAllNodesWithFirstAssignablePinType(FromPinGraphDataType) : Library.EnumerateAllNodes();
+            if ( bHaveValidFromPin ) {
+                IEnumerable<(NodeType,TypeUtils.TypeMatchInfo)> filteredNodes = Library.EnumerateAllNodesWithFirstAssignablePinType(FromPinGraphDataType);
+                foreach ((NodeType nodeType, TypeUtils.TypeMatchInfo matchInfo) in filteredNodes) {
+                    if (nodeType.Flags.HasFlag(ENodeFlags.Hidden))
+                        continue;
+                    (string nodeLabel, string? nodeHint) = get_node_label(nodeType);
+                    int sortIndex = 0;
+                    switch (matchInfo.TypeMatch) {
+                        case TypeUtils.ETypeMatch.Exact: sortIndex = 0; break;
+                        case TypeUtils.ETypeMatch.Subclass: sortIndex = 1; break;
+                        case TypeUtils.ETypeMatch.Assignable: sortIndex = 1; break;
+                        case TypeUtils.ETypeMatch.NumericCast_Safe: sortIndex = 5; break;
+                        case TypeUtils.ETypeMatch.NumericCast_Narrowing: sortIndex = 6; break;
+                        case TypeUtils.ETypeMatch.RegisteredConversion: sortIndex = 8; break;
+                        case TypeUtils.ETypeMatch.DynamicMatch: sortIndex = 10; break;
+                        case TypeUtils.ETypeMatch.ToGeneric: sortIndex = 20; break;
+                    }
 
-            foreach (NodeType nodeType in filteredNodes) 
-            {
-                if (nodeType.Flags.HasFlag(ENodeFlags.Hidden))
-                    continue;
+                    LinearAllNodesMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType }, sortIndex);
+                    TryAddToCategory(nodeType, sortIndex);
+                }
 
-                (string nodeLabel, string? nodeHint) = get_node_label(nodeType);
-                LinearAllNodesMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
-                TryAddToCategory(nodeType);
+            } else {
+                foreach (NodeType nodeType in Library.EnumerateAllNodes()) {
+                    if (nodeType.Flags.HasFlag(ENodeFlags.Hidden))
+                        continue;
+                    (string nodeLabel, string? nodeHint) = get_node_label(nodeType);
+                    LinearAllNodesMenu.AddItem(new MenuItem() { Text = nodeLabel, HintText = nodeHint, CustomData = nodeType });
+                    TryAddToCategory(nodeType, 0);
+                }
             }
 
             // sort everthing

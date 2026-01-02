@@ -3,6 +3,20 @@ WIP
 ==================
 - refreshing node library marks it dirty...
 
+- restore last view position on load
+
+- dynamic switch and static switch  (is static necessary?)
+- select node
+- some way to have multiple wires into a splitter-like thing where only the one on the active scope is used (related to switch/select)
+
+- comment node (should be easy now that we have multiline entry)
+
+- passthrough toggle on nodes w/ a ref parameter
+   - NodeFunction option or a new attribute enables it
+   - LibraryFunctionNode provides support
+   - visual toggle on nodes w/ this capability
+
+- make struct
 
 ==================
 Versioning
@@ -24,6 +38,10 @@ Python
 Bugs
 ===================
 
+- exception on delete connection
+
+- *** Can make multiple output exec connections from foreach Done pin
+
 - possibly need to refresh code nodes after load, if they had an error, because required assemblies might not have been loaded
     - (there is some messy business here...)
 - SelectionManager active selection is not updated when deleting selected node, leaving an invalid selection
@@ -41,6 +59,10 @@ Bugs
 ===================
 Graph Features
 ===================
+
+- generic Make Array node that determines type from first pin connection
+- be able to drag off an enumerable and make array or list of that type
+
 - make it possible to wire single element into an IEnumerable
 - would be nice if DataConversionLibrary could support enumerating through 'to' options for a 'from'...then browser could show explicit conversion options. Would simplify some messy stuff.
 - add some heuristics for handling name changes in inputs and outputs, when missing on load

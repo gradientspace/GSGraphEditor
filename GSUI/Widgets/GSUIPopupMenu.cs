@@ -126,12 +126,22 @@ namespace Gradientspace.UI
         /// <summary>
         /// Apply a filter to the menu items
         /// </summary>
-        public void FilterItems(Predicate<MenuItem> filter) {
+        public void FilterItems(Predicate<MenuItem> filter, Func<MenuItem,int>? matchMetric = null) {
             lock (items_lock) {
                 FilteredItems.Clear();
-                foreach (MenuListItem item in Items)
+                foreach (MenuListItem item in Items) {
                     if (item.ItemType != EMenuItemType.Separator && item.Item != null && filter(item.Item) == true)
                         FilteredItems.Add(item);
+                }
+
+                if (matchMetric != null) {
+                    FilteredItems.Sort((x, y) => {
+                        int xMetric = (x.Item == null) ? 0 : matchMetric(x.Item);
+                        int yMetric = (y.Item == null) ? 0 : matchMetric(y.Item);
+                        return yMetric.CompareTo(xMetric);  // higher == better
+                    });
+                }
+
                 HasFilterApplied = true;
                 ClearHighlightedItemIndex();
             }
