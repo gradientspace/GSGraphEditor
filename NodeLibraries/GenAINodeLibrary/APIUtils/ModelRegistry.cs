@@ -32,6 +32,20 @@ namespace Gradientspace.GenAI
         }
 
 
+        public static List<ModelID> GetAvailableModels(Predicate<ModelID>? FilterFunc = null)
+        {
+            ModelRegistry.Initialize();
+
+            List<ModelID> models = new();
+            foreach ( ModelInfo modelInfo in AllModels! ) {
+                if ( FilterFunc == null || FilterFunc(modelInfo.modelID) == true )
+                    models.Add(modelInfo.modelID);
+            }
+            return models;
+        }
+
+
+
         /// <summary>
         /// Search for a Model with name that contains modelSearchString (prefers exact match or starts-with)
         /// </summary>

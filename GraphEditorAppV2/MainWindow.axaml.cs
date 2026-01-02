@@ -88,6 +88,8 @@ public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeE
         e.Cancel = true;
         this.Closing -= MainWindow_OnClosing;
 
+        NodeEditorConfig.SaveConfig();
+
         bool bCancel = await TrySaveUnsavedGraph();
         if (bCancel == true) {
             this.Closing += MainWindow_OnClosing;

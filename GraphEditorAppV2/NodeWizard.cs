@@ -19,6 +19,8 @@ namespace GraphEditorAppV2
         public string NodeFunctionPrompt = "compute the first N elements of the fibonacci sequence";
         public string GeneratedCode = SourceCodeDataType.MakeDefaultCSharp().CodeText;
 
+        public string UseModelName = "claude-haiku-4-5";
+
         public NodeWizard()
         {
         }
@@ -58,7 +60,7 @@ namespace GraphEditorAppV2
             string full_prompt = system_prompt + "\n\nUser Prompt: " + user_prompt;
 
             await Task.Run(() => {
-                ModelID useModel = ModelRegistry.FindModel("haiku");
+                ModelID useModel = ModelRegistry.FindModel(UseModelName);
                 ModelQueryParams queryParams = new();
                 string result_code = ModelUtil.RunTextQuery_Blocking(
                     useModel, full_prompt, queryParams);
@@ -103,7 +105,7 @@ namespace GraphEditorAppV2
             string full_prompt = system_prompt + "\n\nUser Prompt: " + user_prompt + "\n\nCurrent C# Code: " + code_prompt;
 
             await Task.Run(() => {
-                ModelID useModel = ModelRegistry.FindModel("haiku");
+                ModelID useModel = ModelRegistry.FindModel(UseModelName);
                 ModelQueryParams queryParams = new();
                 string result_code = ModelUtil.RunTextQuery_Blocking(
                     useModel, full_prompt, queryParams);

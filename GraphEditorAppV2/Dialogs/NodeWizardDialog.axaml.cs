@@ -4,11 +4,13 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Threading;
+using Gradientspace.GenAI;
 using Gradientspace.NodeGraph;
 using GSNodeEditor;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,6 +31,16 @@ namespace GraphEditorAppV2
 
         static string LastPrompt = "compute the first N elements of the fibonacci sequence";
         static string LastCode = "";
+
+
+        List<ModelID> AvailableModels;
+        ModelID ActiveModel = ModelID.Invalid;
+        internal struct ModelOption
+        {
+            public ModelID modelID;
+            public override string ToString() { return modelID.ModelName; }
+        }
+
 
         ISourceCodeProvider? CodeTarget = null;
 
@@ -57,6 +69,7 @@ namespace GraphEditorAppV2
             //KeyBindings.Add(rightKey);
 
             this.Loaded += NodeWizardDialog_Loaded;
+            this.Closing += NodeWizardDialog_Closing;
 
             ResultCode.IsVisible = true;
             CreateButton.IsEnabled = false;
@@ -68,6 +81,31 @@ namespace GraphEditorAppV2
             TickTimer = new DispatcherTimer();
             TickTimer.Interval = TimeSpan.FromSeconds(0.5f);
             TickTimer.Tick += Timer_Tick;
+
+            // set up model-picker dropdown
+            AvailableModels = ModelRegistry.GetAvailableModels( (ModelID m) => { return m.Type.Text == true; } );
+            int select_index = (AvailableModels.Count > 0) ? 0 : -1;
+            string LastActiveModel = NodeEditorConfig.LastNodeWizardModel;
+            foreach ( ModelID model in AvailableModels ) {
+                ModelOption option = new ModelOption() { modelID = model };
+                ModelSelector.Items.Add(option);
+                if (model.IDString == LastActiveModel)
+                    select_index = ModelSelector.Items.Count-1;
+            }
+            if ( select_index >= 0 ) {
+                ActiveModel = AvailableModels[select_index];
+                ModelSelector.SelectedIndex = select_index;
+            }
+            ModelSelector.SelectionChanged += ModelSelector_SelectionChanged;
+        }
+
+
+        private void ModelSelector_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count == 0) return;
+            if (e.AddedItems[0] is ModelOption newOption) {
+                ActiveModel = newOption.modelID;
+            }
         }
 
         private void Timer_Tick(object? sender, EventArgs e)
@@ -140,6 +178,7 @@ namespace GraphEditorAppV2
             CreateButton.IsEnabled = false;
 
             NodeWizard Wiz = new NodeWizard();
+            Wiz.UseModelName = ActiveModel.ModelName;
             Wiz.NodeFunctionPrompt = this.PromptText.Text ?? "";
 
             await Wiz.RunCodeGeneration();
@@ -166,6 +205,7 @@ namespace GraphEditorAppV2
             CreateButton.IsEnabled = false;
 
             NodeWizard Wiz = new NodeWizard();
+            Wiz.UseModelName = ActiveModel.ModelName;
             Wiz.NodeFunctionPrompt = this.PromptText.Text ?? "";
             Wiz.GeneratedCode = this.ResultCode.Text ?? "";
 
@@ -184,9 +224,14 @@ namespace GraphEditorAppV2
 
         private void CloseDialog()
         {
+            this.Close();
+        }
+        private void NodeWizardDialog_Closing(object? sender, WindowClosingEventArgs e)
+        {
             NodeWizardDialog.LastPrompt = this.PromptText.Text ?? "";
             NodeWizardDialog.LastCode = this.ResultCode.Text ?? "";
-            this.Close();
+
+            NodeEditorConfig.LastNodeWizardModel = this.ActiveModel.IDString;
         }
 
         public void InitializeFromCodeProvider(ISourceCodeProvider provider)

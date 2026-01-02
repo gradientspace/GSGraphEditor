@@ -42,13 +42,14 @@ namespace Gradientspace.GenAI
 
         public ModelID() { }
 
-        public bool IsValid { get { return ProviderID.Length > 0 && ModelName.Length > 0; } }
+        public readonly bool IsValid { get { return ProviderID.Length > 0 && ModelName.Length > 0; } }
+        public readonly string IDString { get { return $"{ProviderID}::{ModelName}"; } }
 
         public static readonly ModelID Invalid = new ModelID();
 
         public override string ToString()
         {
-            return $"{ProviderID}::{ModelName}";
+            return IDString;
         }
     }
 

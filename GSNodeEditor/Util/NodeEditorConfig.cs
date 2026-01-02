@@ -156,6 +156,10 @@ namespace GSNodeEditor
 
 
         [GSConfigValue]
+        public static string LastNodeWizardModel = "::";
+
+
+        [GSConfigValue]
         public static string CodeTextEditorPath = "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe";
 
 
