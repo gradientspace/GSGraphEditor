@@ -233,11 +233,12 @@ namespace GSNodeEditor
                 if (NewConnectionInfo.ConnectionType == EConnectionType.Sequence)
                 {
                     Graph.FindConnectionsFrom(NewConnectionInfo.FromNodeIdentifier, NewConnectionInfo.FromNodeOutputName, ref ExistingConnections, EConnectionType.Sequence);
-                    if ( ExistingConnections.Count == 1 && FromNode.OutputSequenceWidget != null)
-                    {
-                        bFailedToRemoveExisting = (RemoveAllConnectionsFromSequencePin(FromNode.OutputSequenceWidget!) == false);
+                    foreach ( IConnectionInfo connectionInfo in ExistingConnections) {
+                        if ( RemoveConnection(connectionInfo) == false )
+                            bFailedToRemoveExisting |= true;
                     }
-                } else if (NewConnectionInfo.ConnectionType == EConnectionType.Data)
+                } 
+                else if (NewConnectionInfo.ConnectionType == EConnectionType.Data)
                 {
                     IConnectionInfo ExistingConnection = Graph.FindConnectionTo(NewConnectionInfo.ToNodeIdentifier, NewConnectionInfo.ToNodeInputName, EConnectionType.Data);
                     if (ExistingConnection.IsValid)
