@@ -21,6 +21,10 @@ WIP
 
 - add special type of node for constant + alias, call it 'GraphParameter' - then can expose in custom UI panel...  (categories would be nice)
 
+- support propagating parameters to new version of node, eg if code node changes or function node is modified
+- default files (bunny.obj, gradient.png) don't work in built version...try copying them one level up in build? CWD seems to be in top-level GSGraph
+- unload old version of dll on refresh-libraries
+
 ==================
 Versioning
 ==================
@@ -40,6 +44,8 @@ Python
 ===================
 Bugs
 ===================
+
+
 
 - exception on delete connection
 

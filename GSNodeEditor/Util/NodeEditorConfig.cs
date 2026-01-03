@@ -97,7 +97,10 @@ namespace GSNodeEditor
         ];
 
 
+        /// node library paths set by commandline args, etc - not saved in settings
+        public static List<string> TempNodeLibraryPaths = [];
 
+        public static IEnumerable<string> AllNodeLibraryPaths => [.. TempNodeLibraryPaths, .. NodeLibraryPaths];
 
 
         [GSConfigValue]

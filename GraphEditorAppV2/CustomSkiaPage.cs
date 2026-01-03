@@ -62,14 +62,10 @@ namespace GraphEditorAppV2
 
 		public void InitializeGraph()
 		{
-            // initialize here so that setup code can log things
-            //DebugManager.GlobalEnableGraphDebugging = true;
-            GlobalGraphOutput.SetCurrentOutput(new DefaultGraphOutputImpl());
-
             Gradientspace.NodeGraph.SecretsSource.InitializeSecretsSource(new NodeEditorSecretsImpl());
 
             // load node libraries from settings file
-            NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.NodeLibraryPaths);
+            NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.AllNodeLibraryPaths);
 
 
             GraphView = new NodeGraphViewport();

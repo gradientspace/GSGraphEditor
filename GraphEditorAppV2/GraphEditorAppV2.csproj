@@ -9,6 +9,11 @@
     <ApplicationIcon>Assets\main_icon_v3.ico</ApplicationIcon>
     <AssemblyName>GSGraphEditor</AssemblyName>
     <RootNamespace>GSGraphEditor</RootNamespace>
+    <Title>Gradientspace Graph Editor</Title>
+    <Company>GradientSpace Corp.</Company>
+    <Authors>rms80</Authors>
+    <Copyright>Copyright Gradientspace Corp. All Rights Reserved.</Copyright>
+    <PackageProjectUrl>https://www.gradientspace.com/gsgraphdemo</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>

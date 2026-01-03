@@ -105,6 +105,22 @@ public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeE
 
     private void MainWindow_Loaded(object? sender, RoutedEventArgs e)
     {
+        // initialize graph debug output as soon as possible
+        //DebugManager.GlobalEnableGraphDebugging = true;
+        GlobalGraphOutput.SetCurrentOutput(new DefaultGraphOutputImpl());
+
+        // find any node library paths provided on the command-line, so they can be initialized below
+        if (StartupArguments != null) {
+            foreach (string path in NodeGraphCommandLineArgs.EnumerateNodeLibraryPathArgs(StartupArguments)) {
+                if (Directory.Exists(path)) {
+                    GlobalGraphOutput.AppendLog($"Adding Command-Line Node Library Path {path}");
+                    NodeEditorConfig.TempNodeLibraryPaths.Add(path);
+                } else
+                    GlobalGraphOutput.AppendError($"Command-Line Node Library Path {path} does not exist!");
+            }
+        }
+
+        // initialize python
         PythonSetup.InitializePython();
 
         SkiaView.InitializeGraph();
@@ -122,11 +138,13 @@ public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeE
         UpdateRecentFilesMenu();
 
         bool bLoadedStartupGraph = false;
-        if (StartupArguments != null && StartupArguments.Length > 0) {
-            if (File.Exists(StartupArguments[0])) {
-                TryLoadGraphFromPath(StartupArguments[0], false);
+        string? startupGraphFile = (StartupArguments != null) ? NodeGraphCommandLineArgs.FindStartupGraphFileArg(StartupArguments) : null;
+        if (startupGraphFile != null) {
+            if (File.Exists(startupGraphFile)) {
+                TryLoadGraphFromPath(startupGraphFile, false);
                 bLoadedStartupGraph = true;     // TODO identify failure to load?? (but it's async...)
-            }
+            } else
+                GlobalGraphOutput.AppendError($"Startup graph file {startupGraphFile} specified on command-line does not exist!");
         }
         if (bLoadedStartupGraph == false && NodeEditorConfig.LoadLastGraphOnStartup) { 
             TryLoadGraphFromPath(NodeEditorConfig.EnumerateRecentFiles().FirstOrDefault(), false);
@@ -498,7 +516,7 @@ public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeE
             NodeEditorConfig.LoadConfig();
 
             // find and load all node libraries
-            NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.NodeLibraryPaths);
+            NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.AllNodeLibraryPaths);
 
             // reload / re-instance active graph
             SkiaView.ActiveViewport.RebuildGraphLibraryWithActiveGraph();
@@ -507,7 +525,7 @@ public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeE
     }
     public void TryLoadNewLibrariesAndReinstanceGraph()
     {
-        if (NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.NodeLibraryPaths) > 0) {
+        if (NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.AllNodeLibraryPaths) > 0) {
             SkiaView.ActiveViewport.RebuildGraphLibraryWithActiveGraph();
         }
     }
@@ -529,7 +547,7 @@ public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeE
     {
         bool bCanceled = await TrySaveUnsavedGraph();
         if (!bCanceled) {
-            NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.NodeLibraryPaths);
+            NodeLibraryUtils.FindAndLoadNodeLibraries(NodeEditorConfig.AllNodeLibraryPaths);
             SkiaView.ActiveViewport.RebuildGraphLibraryWithActiveGraph();
         }
     }
