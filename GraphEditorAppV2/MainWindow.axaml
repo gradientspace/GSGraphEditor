@@ -123,11 +123,14 @@
 								<Button Content="Output" Padding="5,0" Focusable="False" Click="SetLogFilter_Output" />
 								<Button Content="Log" Padding="5,0" Focusable="False" Click="SetLogFilter_All" />
 							</StackPanel>
-							<Button HorizontalAlignment="Right" Content="Clear" Padding="5,0" Focusable="False" Click="ClearLog_OnClick" />
+							<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="5">
+								<Button Content="Copy" Padding="5,0" Focusable="False" Click="CopyLog_OnClick" />
+								<Button Content="Clear" Padding="5,0" Focusable="False" Click="ClearLog_OnClick" />
+							</StackPanel>
 						</Panel>
 
 						<Border Background="#888888">
-							<ScrollViewer Name="LogTextAreaScrollView">
+							<ScrollViewer Name="LogTextAreaScrollView" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
 								<SelectableTextBlock Name="LogTextArea" Margin="3">
 									Welcome to the Gradientspace GSGraph Editor!
 								</SelectableTextBlock>

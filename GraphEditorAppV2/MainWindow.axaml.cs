@@ -218,7 +218,12 @@ public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeE
 		GlobalGraphOutput.Clear();
 		UpdateLogWindow();
 	}
-
+    private async void CopyLog_OnClick(object? sender, RoutedEventArgs e)
+    {
+        string curText = LogTextArea.Text ?? "";
+        if (Clipboard != null)
+            await Clipboard.SetTextAsync(curText);
+    }
 
     private string make_truncated_path(string Path, int maxLength)
     {
