@@ -121,7 +121,10 @@ public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeE
         }
 
         // initialize python
-        PythonSetup.InitializePython();
+        List<string> PyMessages = new();
+        PythonSetup.InitializePython(PyMessages);
+        foreach (string str in PyMessages)
+            GlobalGraphOutput.AppendLog(str);
 
         SkiaView.InitializeGraph();
         SkiaView.ActiveViewport.SetActiveHostAPI(
