@@ -294,6 +294,12 @@ namespace GSNodeEditor
             Vector2f Delta = (TargetWindowPos - CurWindowPos);
             ViewportTranslation += Delta;
         }
+        public void CenterOnCurrentGraph()
+        {
+            Vector2d FocusPosition = CurrentGraphView.GetGraphBounds().Center;
+            CenterAtViewportPosition((Vector2f)FocusPosition);
+        }
+
 
         public void UpdateCursor(InputDeviceState newState)
         {
@@ -646,13 +652,16 @@ namespace GSNodeEditor
             RebuildGraphView();
             layoutCache.ApplyToGraphView(CurrentGraphView);
 
-            // probably should defer this until next frame because the widgets do not actually have Views yet, so the bounds are just a guess...
+            // center on the loaded graph, or last view-center if it is saved in the graph file
             if (!bIsHotReload) {
+                Action centerAction = () => { CenterOnCurrentGraph(); };
                 Vector2d FocusPosition = CurrentGraphView.GetGraphBounds().Center;
                 if ( options.AllRestoredTags?.TryGetValue("ViewCenter", out string? ViewCenterString) ?? false ) {
-                    Vector2d.TryParse(ViewCenterString, out FocusPosition); 
+                    if ( Vector2d.TryParse(ViewCenterString, out FocusPosition) ) {
+                        centerAction = () => { CenterAtViewportPosition((Vector2f)FocusPosition); };
+                    }
                 }
-                CenterAtViewportPosition((Vector2f)FocusPosition);
+                InteractionManager.AddPendingNextFrameAction(centerAction);
             }
 
             return bRestoreOK;
