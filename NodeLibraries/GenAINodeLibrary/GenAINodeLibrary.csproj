@@ -28,7 +28,7 @@
 	<ItemGroup>
 		<BuildOutputFiles Include="$(OutDir)\GenAINodeLibrary.*" />
 	</ItemGroup> 
-    <Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\GSNodeGraphEditor\AdditionalNodeLibraries\GenAINodeLibrary" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\GSGraphEditor\AdditionalNodeLibraries\GenAINodeLibrary" SkipUnchangedFiles="true" />
   </Target>
 
 

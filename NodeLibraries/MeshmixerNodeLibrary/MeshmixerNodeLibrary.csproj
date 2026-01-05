@@ -47,7 +47,7 @@
 		<BuildOutputFiles Include="$(OutDir)\MeshmixerNodeLibrary.*" />
 		<BuildOutputFiles Include="$(OutDir)\mmapi*.*" />
 	</ItemGroup> 
-    <Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\GSNodeGraphEditor\AdditionalNodeLibraries\MeshmixerNodeLibrary" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\GSGraphEditor\AdditionalNodeLibraries\MeshmixerNodeLibrary" SkipUnchangedFiles="true" />
   </Target>
 
 
