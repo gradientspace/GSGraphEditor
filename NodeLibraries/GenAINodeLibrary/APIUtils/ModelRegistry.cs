@@ -32,6 +32,31 @@ namespace Gradientspace.GenAI
         }
 
 
+        public static EnumOptionSet GetAllTextGenModels()
+        {
+            List<ModelID> models = GetAvailableModels((ModelID modelID) => { return modelID.TypeOptions.TextOutput == true; });
+            return make_set(models);
+        }
+
+
+        public static EnumOptionSet GetAllImageGenModels()
+        {
+            List<ModelID> models = GetAvailableModels((ModelID modelID) => { return modelID.TypeOptions.ImageOutput == true; });
+            return make_set(models);
+        }
+
+        private static EnumOptionSet make_set(List<ModelID> models)
+        {
+            return new EnumOptionSet(
+                models.Count,
+                (int i) => {
+                    ModelID model = models[i];
+                    string label = $"{model.ModelName}";
+                    return new(label, i, model);
+                }
+            );
+        }
+
         public static List<ModelID> GetAvailableModels(Predicate<ModelID>? FilterFunc = null)
         {
             ModelRegistry.Initialize();

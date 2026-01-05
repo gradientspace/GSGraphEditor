@@ -36,14 +36,9 @@ namespace Gradientspace.Nodes.GenAI
             IEnumerable<PixelImage>? Images = null)
         {
             VisionPrompt prompt = new VisionPrompt() {
-                TextPrompt = TextPrompt
+                TextPrompt = TextPrompt,
+                Images = PromptUtils.MakeImagesList(Image, Images)
             };
-            if (Images == null)
-                prompt.Images = [Image];
-            else if (Image == null && Images != null)
-                prompt.Images = Images.ToArray();
-            else if (Image != null && Images != null)
-                prompt.Images = [Image, .. Images];
             return ModelUtil.RunVisionQuery_Blocking(Model, prompt, ModelQueryParams.Default);
         }
 

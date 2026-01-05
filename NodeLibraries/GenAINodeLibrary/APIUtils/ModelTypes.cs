@@ -1,4 +1,5 @@
-﻿using System;
+﻿using g3;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -13,29 +14,38 @@ namespace Gradientspace.GenAI
 
         static abstract ModelAuthInfo GetModelAuthInfo(ModelID modelID);
 
+        // TODO: replace this with a single function that returns another interface instance for doing these
+        // queries, which would allow for default implementations (cannot have static abstract / w default)
+
         static abstract Func<string, Task<string>>? GetSimpleTextQueryFunction(ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams);
         static abstract Func<VisionPrompt, Task<string>>? GetVisionQueryFunction(ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams);
+        static abstract Func<ImageGenPrompt, Task<ImageGenResult>>? GetImageGenQueryFunction(ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams);
     }
 
 
     public struct ModelType
     {
-        public bool Text { get; private set; } = false;
-        public bool Image { get; private set; } = false;
-        public ModelType() { }
-        public ModelType(bool text, bool image) { Text = text; Image = image; }
+        // inputs
+        public bool TextInput { get; private set; } = false;
+        public bool ImageInput { get; private set; } = false;
 
-        public static readonly ModelType None = new ModelType(false, false);
-        public static readonly ModelType TextModel = new ModelType(true, false);
-        public static readonly ModelType ImageModel = new ModelType(false, true);
-        public static readonly ModelType MultiModal = new ModelType(true, true);
+        // outputs
+        public bool TextOutput { get; private set; } = false;
+        public bool ImageOutput { get; private set; } = false;
+
+        public ModelType() { }
+
+        public static readonly ModelType None = new ModelType();
+        public static readonly ModelType TextModel = new ModelType() { TextInput = true, TextOutput = true };
+        public static readonly ModelType VisionModel = new ModelType() { TextInput = true, ImageInput = true, TextOutput = true};
+        public static readonly ModelType ImageGenModel = new ModelType() { TextInput = true, ImageInput = true, ImageOutput = true};
     }
 
     public struct ModelID
     {
         public string ProviderID = "";
         public string ModelName = "";
-        public ModelType Type = ModelType.None;
+        public ModelType TypeOptions = ModelType.None;
 
         public int InternalModelID = -1;
         public Type? ModelAPIType = null;

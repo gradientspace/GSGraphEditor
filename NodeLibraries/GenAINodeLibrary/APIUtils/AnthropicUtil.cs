@@ -38,7 +38,7 @@ namespace Gradientspace.GenAI
             return new ModelID() {
                 ProviderID = ProviderID,
                 ModelName = modelString,
-                Type = ModelType.TextModel,
+                TypeOptions = ModelType.TextModel,
                 InternalModelID = idx,
                 ModelAPIType = typeof(AnthropicAPIHelper)
             };
@@ -112,7 +112,7 @@ namespace Gradientspace.GenAI
                 yield return new ModelID() {
                     ProviderID = AnthropicUtil.ProviderID,
                     ModelName = AnthropicUtil.ModelNames[i],
-                    Type = ModelType.TextModel,
+                    TypeOptions = ModelType.TextModel,
                     InternalModelID = i,
                     ModelAPIType = typeof(AnthropicAPIHelper)
                 };
@@ -133,6 +133,12 @@ namespace Gradientspace.GenAI
         }
 
         public static Func<VisionPrompt, Task<string>>? GetVisionQueryFunction(
+            ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams)
+        {
+            return null;
+        }
+
+        public static Func<ImageGenPrompt, Task<ImageGenResult>>? GetImageGenQueryFunction(
             ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams)
         {
             return null;

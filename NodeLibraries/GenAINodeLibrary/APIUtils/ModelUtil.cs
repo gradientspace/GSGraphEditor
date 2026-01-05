@@ -82,6 +82,38 @@ namespace Gradientspace.GenAI
         }
 
 
+
+
+        public static async Task<ImageGenResult> RunImageGenQuery(ModelID modelID, ImageGenPrompt prompt, ModelQueryParams queryParams)
+        {
+            if (modelID.IsValid == false)
+                throw new Exception("ModelUtil.RunImageGenQuery: Invalid ModelID");
+            if (modelID.ModelAPIType == null)
+                throw new Exception($"ModelUtil.RunImageGenQuery: ModelAPIType is null for ModelID '{modelID.ProviderID}:{modelID.ModelName}'");
+
+            ModelAuthInfo authInfo = ModelUtil.FindDefaultAuthInfo(modelID);
+
+            var ImageGenQueryFunc = modelID.ModelAPIType.GetMethod("GetImageGenQueryFunction", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+            if (ImageGenQueryFunc == null)
+                throw new Exception($"ModelUtil.RunImageGenQuery: GetImageGenQueryFunction method not found for ModelAPIType '{modelID.ModelAPIType.Name}'");
+
+            var queryFunction = (Func<ImageGenPrompt, Task<ImageGenResult>>)ImageGenQueryFunc.Invoke(null, [modelID, authInfo, queryParams])!;
+            ImageGenResult result = await queryFunction(prompt);
+            return result;
+        }
+        public static ImageGenResult RunImageGenQuery_Blocking(ModelID modelID, ImageGenPrompt prompt, ModelQueryParams queryParams)
+        {
+            try {
+                Task<ImageGenResult> result = Task.Run(async () => await RunImageGenQuery(modelID, prompt, queryParams));
+                return result.Result;
+            } catch (Exception ex) {
+                return new ImageGenResult() { status = $"[ModelUtil.RunImageGenQuery_Blocking] Exception: {ex.Message}" };
+            }
+        }
+
+
+
+
         public static bool ValidateQueryInfo(
             ModelID modelID, string validProvider, IEnumerable<string> validModels,
             ModelAuthInfo authInfo, EModelAuthType validAuthType,

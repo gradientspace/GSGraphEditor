@@ -4,11 +4,6 @@ using Google.GenAI;
 using Google.GenAI.Types;
 using Gradientspace.NodeGraph;
 using Gradientspace.NodeGraph.Image;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Gradientspace.GenAI
 {
@@ -25,7 +20,7 @@ namespace Gradientspace.GenAI
             Gemini_3p0_Pro = 4
         }
 
-        public static readonly string[] ModelNames = [
+        public static readonly string[] TextModelNames = [
             "gemini-2.5-flash-lite",
             "gemini-2.5-flash",
             "gemini-2.5-pro",
@@ -33,27 +28,55 @@ namespace Gradientspace.GenAI
             "gemini-3.0-pro-preview" 
         ];
 
-
         public static string ModelToString(EGeminiTextModel model)
         {
-            return ModelNames[(int)model];
+            return TextModelNames[(int)model];
+        }
+
+
+
+
+        public enum EGeminiImageGenModel
+        {
+            Gemini_2p5_FlashImage = 0,   // NanoBanana
+            Gemini_3p0_ProImage = 1      // NanoBanana Pro
+        }
+        internal const int ImageGenOffset = 1000;    // for InternalModelID
+
+        public static readonly string[] ImageGenModelNames = [
+            "gemini-2.5-flash-image",
+            "gemini-3-pro-image-preview"
+        ];
+
+        public static string ModelToString(EGeminiImageGenModel model)
+        {
+            return ImageGenModelNames[(int)model];
         }
 
 
         public static ModelID FindModelID(string modelString)
         {
             modelString = modelString.ToLower().Trim();
-            int idx = Array.IndexOf(ModelNames, modelString);
-            if (idx == -1)
-                return ModelID.Invalid;
 
-            return new ModelID() {
-                ProviderID = ProviderID,
-                ModelName = modelString,
-                Type = ModelType.TextModel,
-                InternalModelID = idx,
-                ModelAPIType = typeof(GeminiAPIHelper)
-            };
+            int textIdx = Array.IndexOf(TextModelNames, modelString);
+            if ( textIdx >= 0 ) {
+                return new ModelID() {
+                    ProviderID = ProviderID, ModelName = modelString,
+                    TypeOptions = ModelType.VisionModel,
+                    InternalModelID = textIdx, ModelAPIType = typeof(GeminiAPIHelper)
+                };
+            }
+
+            int imageGenIdx = Array.IndexOf(ImageGenModelNames, modelString);
+            if (imageGenIdx >= 0) {
+                return new ModelID() {
+                    ProviderID = ProviderID, ModelName = modelString,
+                    TypeOptions = ModelType.ImageGenModel,
+                    InternalModelID = (ImageGenOffset+imageGenIdx), ModelAPIType = typeof(GeminiAPIHelper)
+                };
+            }
+
+            return ModelID.Invalid;
         }
 
 
@@ -61,7 +84,7 @@ namespace Gradientspace.GenAI
             ModelID useModel, ModelAuthInfo authInfo, ModelQueryParams queryParams)
         {
             try {
-                ModelUtil.ValidateQueryInfo(useModel, ProviderID, ModelNames, authInfo, EModelAuthType.APIKey, true);
+                ModelUtil.ValidateQueryInfo(useModel, ProviderID, TextModelNames, authInfo, EModelAuthType.APIKey, true);
             } catch (Exception ex) {
                 return $"[GeminiUtil.SimpleTextQuery] invalid query - {ex.Message}";
             }
@@ -89,7 +112,7 @@ namespace Gradientspace.GenAI
             ModelID useModel, ModelAuthInfo authInfo, ModelQueryParams queryParams)
         {
             try {
-                ModelUtil.ValidateQueryInfo(useModel, ProviderID, ModelNames, authInfo, EModelAuthType.APIKey, true);
+                ModelUtil.ValidateQueryInfo(useModel, ProviderID, TextModelNames, authInfo, EModelAuthType.APIKey, true);
             } catch (Exception ex) {
                 return $"[GeminiUtil.VisionQuery] invalid query - {ex.Message}";
             }
@@ -130,6 +153,61 @@ namespace Gradientspace.GenAI
             return resultText;
         }
 
+
+
+
+        public static async Task<ImageGenResult> ImageGenQuery(ImageGenPrompt prompt, 
+            ModelID useModel, ModelAuthInfo authInfo, ModelQueryParams queryParams)
+        {
+            try {
+                ModelUtil.ValidateQueryInfo(useModel, ProviderID, ImageGenModelNames, authInfo, EModelAuthType.APIKey, true);
+            } catch (Exception ex) {
+                return new ImageGenResult() { status = $"[GeminiUtil.ImageGenQuery] invalid query - {ex.Message}" };
+            }
+
+            var client = new Client(apiKey: authInfo.AuthToken);
+            string modelString = useModel.ModelName;
+
+            GenerateContentResponse? response = null;
+            try {
+                List<Content> contentsList = new();
+
+                var textPart = new Part { Text = prompt.TextPrompt };
+                contentsList.Add(new Content() { Role = "user", Parts = [ textPart ] } );
+
+                foreach (PixelImage img in prompt.Images ?? []) {
+					byte[] imageBytes = ImageUtil.PixelImageToMimeData(img, out string mimeType);
+                    var imagePart = new Part {
+                        InlineData = new Blob {
+                            MimeType = mimeType,
+                            Data = imageBytes
+                        }
+                    };
+                    contentsList.Add(new Content() { Role = "user", Parts = [imagePart] });
+                }
+
+                response = await client.Models.GenerateContentAsync(
+                    model: modelString,
+                    contents: contentsList);
+                if (response == null)
+                    throw new Exception("Gemini API returned null message...");
+            } catch (Exception ex) {
+                return new ImageGenResult() { status = $"[GeminiUtil.ImageGenQuery] Gemini API threw exception:  {ex.Message}" };
+            }
+
+            Part? Part = response.Candidates?[0].Content?.Parts?[0] ?? null;
+            Blob? InlineData = Part?.InlineData;
+            try {
+                PixelImage img = ImageUtil.ImageBytesToPixelImage(InlineData!.Data!);
+                if (img != null)
+                    return new ImageGenResult() { Images = [img] };
+            } catch { }
+
+            return new ImageGenResult() { status = $"[GeminiUtil.ImageGenQuery] unexpected or missing image data" };
+        }
+
+
+
     }
 
 
@@ -140,12 +218,21 @@ namespace Gradientspace.GenAI
 
         public static IEnumerable<ModelID> EnumerateModels()
         {
-            for ( int i = 0; i < GeminiUtil.ModelNames.Length; ++i ) {
+            for ( int i = 0; i < GeminiUtil.TextModelNames.Length; ++i ) {
                 yield return new ModelID() {
                     ProviderID = GeminiUtil.ProviderID,
-                    ModelName = GeminiUtil.ModelNames[i],
-                    Type = ModelType.TextModel,
+                    ModelName = GeminiUtil.TextModelNames[i],
+                    TypeOptions = ModelType.VisionModel,
                     InternalModelID = i,
+                    ModelAPIType = typeof(GeminiAPIHelper)
+                };
+            }
+            for (int i = 0; i < GeminiUtil.ImageGenModelNames.Length; ++i) {
+                yield return new ModelID() {
+                    ProviderID = GeminiUtil.ProviderID,
+                    ModelName = GeminiUtil.ImageGenModelNames[i],
+                    TypeOptions = ModelType.ImageGenModel,
+                    InternalModelID = GeminiUtil.ImageGenOffset + i,
                     ModelAPIType = typeof(GeminiAPIHelper)
                 };
             }
@@ -168,6 +255,12 @@ namespace Gradientspace.GenAI
             ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams)
         {
             return (VisionPrompt prompt) => GeminiUtil.VisionQuery(prompt, modelID, authInfo, queryParams);
+        }
+
+        public static Func<ImageGenPrompt, Task<ImageGenResult>>? GetImageGenQueryFunction(
+            ModelID modelID, ModelAuthInfo authInfo, ModelQueryParams queryParams)
+        {
+            return (ImageGenPrompt prompt) => GeminiUtil.ImageGenQuery(prompt, modelID, authInfo, queryParams);
         }
     }
 }

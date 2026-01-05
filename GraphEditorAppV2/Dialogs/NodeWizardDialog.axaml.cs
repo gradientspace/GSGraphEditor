@@ -83,7 +83,7 @@ namespace GraphEditorAppV2
             TickTimer.Tick += Timer_Tick;
 
             // set up model-picker dropdown
-            AvailableModels = ModelRegistry.GetAvailableModels( (ModelID m) => { return m.Type.Text == true; } );
+            AvailableModels = ModelRegistry.GetAvailableModels( (ModelID m) => { return m.TypeOptions.TextInput == true && m.TypeOptions.TextOutput == true; } );
             int select_index = (AvailableModels.Count > 0) ? 0 : -1;
             string LastActiveModel = NodeEditorConfig.LastNodeWizardModel;
             foreach ( ModelID model in AvailableModels ) {
