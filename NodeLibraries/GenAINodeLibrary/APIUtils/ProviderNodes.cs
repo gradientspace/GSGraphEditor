@@ -20,6 +20,7 @@ namespace Gradientspace.Nodes.GenAI
     public class SelectModelNode : NodeBase
     {
         public override string GetDefaultNodeName() { return "Select Model"; }
+        public override string? GetNodeNamespace() { return "GenerativeAI"; }
 
         public const string ModelOutputName = "Model";
         public const string ModelsInputName = "Models";
