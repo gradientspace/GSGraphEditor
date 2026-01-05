@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\DerivativeCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
+    <ProjectReference Include="..\..\..\GSNodeGraphCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
     <ProjectReference Include="..\..\..\geometry3Sharp\geometry3Sharp.csproj" />
   </ItemGroup>
 
@@ -35,7 +35,7 @@
 			<BuildOutputFiles Include="$(OutDir)\mujoco.dll" />
 			<BuildOutputFiles Include="$(OutDir)\simulate.exe" />
 		</ItemGroup>
-		<Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\DerivativeEditor\AdditionalNodeLibraries\MujocoNodeLibrary" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\GSNodeGraphEditor\AdditionalNodeLibraries\MujocoNodeLibrary" SkipUnchangedFiles="true" />
 	</Target>
 
 

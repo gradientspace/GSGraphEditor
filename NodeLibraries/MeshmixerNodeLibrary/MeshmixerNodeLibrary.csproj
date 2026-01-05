@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\DerivativeCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
-    <ProjectReference Include="..\..\..\DerivativeEngine\GSNodeGraph\GSNodeGraph.csproj" />
+    <ProjectReference Include="..\..\..\GSNodeGraphCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
+    <ProjectReference Include="..\..\..\GSNodeGraphEngine\GSNodeGraph\GSNodeGraph.csproj" />
     <ProjectReference Include="..\..\..\geometry3Sharp\geometry3Sharp.csproj" />
   </ItemGroup>
 
@@ -47,7 +47,7 @@
 		<BuildOutputFiles Include="$(OutDir)\MeshmixerNodeLibrary.*" />
 		<BuildOutputFiles Include="$(OutDir)\mmapi*.*" />
 	</ItemGroup> 
-    <Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\DerivativeEditor\AdditionalNodeLibraries\MeshmixerNodeLibrary" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\GSNodeGraphEditor\AdditionalNodeLibraries\MeshmixerNodeLibrary" SkipUnchangedFiles="true" />
   </Target>
 
 

@@ -18,14 +18,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DerivativeCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
-    <ProjectReference Include="..\..\DerivativeEngine\GSNodeGraphCodeNodesLibrary\GSNodeGraphCodeNodesLibrary.csproj" />
-    <ProjectReference Include="..\..\DerivativeEngine\GSNodeGraphCoreLibrary\GSNodeGraphCoreLibrary.csproj" />
-    <ProjectReference Include="..\..\DerivativeEngine\GSNodeGraphGeometryLibrary\GSNodeGraphGeometryLibrary.csproj" />
-    <ProjectReference Include="..\..\DerivativeEngine\GSNodeGraphImageLibrary\GSNodeGraphImageLibrary.csproj" />
-    <ProjectReference Include="..\..\DerivativeEngine\GSNodeGraph\GSNodeGraph.csproj" />
-    <ProjectReference Include="..\..\DerivativeEngine\GSPythonNodesLibrary\GSPythonNodesLibrary.csproj" />
-    <ProjectReference Include="..\..\DerivativeEngine\GSPythonUtils\GSPythonUtils.csproj" />
+    <ProjectReference Include="..\..\GSNodeGraphCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
+    <ProjectReference Include="..\..\GSNodeGraphEngine\GSNodeGraphCodeNodesLibrary\GSNodeGraphCodeNodesLibrary.csproj" />
+    <ProjectReference Include="..\..\GSNodeGraphEngine\GSNodeGraphCoreLibrary\GSNodeGraphCoreLibrary.csproj" />
+    <ProjectReference Include="..\..\GSNodeGraphEngine\GSNodeGraphGeometryLibrary\GSNodeGraphGeometryLibrary.csproj" />
+    <ProjectReference Include="..\..\GSNodeGraphEngine\GSNodeGraphImageLibrary\GSNodeGraphImageLibrary.csproj" />
+    <ProjectReference Include="..\..\GSNodeGraphEngine\GSNodeGraph\GSNodeGraph.csproj" />
+    <ProjectReference Include="..\..\GSNodeGraphEngine\GSPythonNodesLibrary\GSPythonNodesLibrary.csproj" />
+    <ProjectReference Include="..\..\GSNodeGraphEngine\GSPythonUtils\GSPythonUtils.csproj" />
     <ProjectReference Include="..\..\geometry3Sharp\geometry3Sharp.csproj" />
     <ProjectReference Include="..\GSUI\GSUI.csproj" />
   </ItemGroup>

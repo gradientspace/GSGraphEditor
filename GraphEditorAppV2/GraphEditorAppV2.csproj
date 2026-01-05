@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DerivativeEngine\GSNodeGraph\GSNodeGraph.csproj" />
+    <ProjectReference Include="..\..\GSNodeGraphEngine\GSNodeGraph\GSNodeGraph.csproj" />
     <ProjectReference Include="..\..\geometry3Sharp\geometry3Sharp.csproj" />
     <ProjectReference Include="..\GSNodeEditor\GSNodeEditor.csproj" />
     <ProjectReference Include="..\NodeLibraries\GenAINodeLibrary\GenAINodeLibrary.csproj" />

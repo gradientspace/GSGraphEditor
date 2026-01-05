@@ -16,9 +16,9 @@
 
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\DerivativeCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
-    <ProjectReference Include="..\..\..\DerivativeEngine\GSNodeGraphImageLibrary\GSNodeGraphImageLibrary.csproj" />
-    <ProjectReference Include="..\..\..\DerivativeEngine\GSNodeGraph\GSNodeGraph.csproj" />
+    <ProjectReference Include="..\..\..\GSNodeGraphCore\GSNodeGraphCore\GSNodeGraphCore.csproj" />
+    <ProjectReference Include="..\..\..\GSNodeGraphEngine\GSNodeGraphImageLibrary\GSNodeGraphImageLibrary.csproj" />
+    <ProjectReference Include="..\..\..\GSNodeGraphEngine\GSNodeGraph\GSNodeGraph.csproj" />
     <ProjectReference Include="..\..\..\geometry3Sharp\geometry3Sharp.csproj" />
   </ItemGroup>
 
@@ -28,7 +28,7 @@
 	<ItemGroup>
 		<BuildOutputFiles Include="$(OutDir)\GenAINodeLibrary.*" />
 	</ItemGroup> 
-    <Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\DerivativeEditor\AdditionalNodeLibraries\GenAINodeLibrary" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(BuildOutputFiles)" DestinationFolder="$(SolutionDir)\GSNodeGraphEditor\AdditionalNodeLibraries\GenAINodeLibrary" SkipUnchangedFiles="true" />
   </Target>
 
 
