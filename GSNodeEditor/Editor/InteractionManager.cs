@@ -21,10 +21,7 @@ namespace GSNodeEditor
 		Widget? ActivePopupDialog = null;
 		SimpleWidgetSource ActivePopupMenuWidgetSet;
 
-        Action? PendingNextFrameAction {
-            get;
-            set;
-        } = null;
+        List<Action> PendingNextFrameActions = new();
 
         InputBehaviorSet InteractionBehaviors = new InputBehaviorSet();
         InputBehaviorCollectionSet ViewportInteractionSets = new InputBehaviorCollectionSet();
@@ -283,7 +280,7 @@ namespace GSNodeEditor
                 ConnectionEndPosition = deviceState.CurrentPosition;
                 NodeAndPin? FromNodeCopy = ActiveDrawConnectionFrom;     // required so that lambda doesn't access class value later
                 if (ActiveDrawConnectionToHover == null)
-                    PendingNextFrameAction = () => { BeginShowNewNodePopupMenu(FromNodeCopy); };
+                    PendingNextFrameActions.Add( () => { BeginShowNewNodePopupMenu(FromNodeCopy); } );
 
                 CleanupActivePinCapture();
             }
@@ -306,7 +303,7 @@ namespace GSNodeEditor
                 ConnectionEndPosition = deviceState.CurrentPosition;
                 NodeAndPin? FromNodeCopy = ActiveDrawConnectionFrom;     // required so that lambda doesn't access class value later
                 if (ActiveDrawConnectionToHover == null)
-                    PendingNextFrameAction = () => { BeginShowNewNodePopupMenu(FromNodeCopy); };
+                    PendingNextFrameActions.Add( () => { BeginShowNewNodePopupMenu(FromNodeCopy); } );
                 CleanupActivePinCapture();
             }
         }
@@ -552,12 +549,19 @@ namespace GSNodeEditor
 		}
 
 
+        public void AddPendingNextFrameAction(Action action)
+        {
+            PendingNextFrameActions.Add(action);
+        }
+
         public void ProcessNextFrameActions()
         {
-			if (interactionState == EInteractionState.NoInteraction && PendingNextFrameAction != null)
+			if (interactionState == EInteractionState.NoInteraction)
 			{
-				PendingNextFrameAction();
-				PendingNextFrameAction = null;
+                Action[] actions = PendingNextFrameActions.ToArray();
+                PendingNextFrameActions.Clear();
+                foreach (Action action in actions)
+                    action();
 			}
 		}
 
@@ -616,7 +620,7 @@ namespace GSNodeEditor
         protected void OnNewNodePopupItemSelected(NodeType nodeType, Vector2f Location, NodeAndPin? FromNode)
         {
             if (nodeType != null) {
-                PendingNextFrameAction = () => { AppendNewNodeAtLocation(nodeType, Location, FromNode); };
+                PendingNextFrameActions.Add( () => { AppendNewNodeAtLocation(nodeType, Location, FromNode); } );
             }
             DismissActivePopupDialogs();
         }
@@ -624,7 +628,7 @@ namespace GSNodeEditor
 
         protected void OnGetSetVariableSelected(VariablesTracker.VariableInfo varInfo, bool bSet, Vector2f Location, NodeAndPin? FromNode)
         {
-            PendingNextFrameAction = () => {
+            PendingNextFrameActions.Add(() => {
                 Type useNodeType = (bSet) ? typeof(SetGlobalVariableNode) : typeof(GetGlobalVariableNode);
                 NodeWidget? NewWidget = AppendNewNodeAtLocation(
                     new NodeType(useNodeType), Location, FromNode,
@@ -633,13 +637,13 @@ namespace GSNodeEditor
                             varNode.Initialize(varInfo.Name, varInfo.DataType, true);
 					});
 
-            };
+            });
             DismissActivePopupDialogs();
         }
 
         protected void OnNewVariableSelected(Vector2f Location, NodeAndPin? FromNode)
         {
-			PendingNextFrameAction = () => {
+            PendingNextFrameActions.Add(() => {
                 Type useNodeType = typeof(CreateGlobalVariableNode);
 				NodeWidget? NewWidget = AppendNewNodeAtLocation(
 					new NodeType(useNodeType), Location, FromNode,
@@ -648,7 +652,7 @@ namespace GSNodeEditor
                             varNode.Initialize(FromNode.Pin.DataType.CSType);
 					});
 
-			};
+			});
             DismissActivePopupDialogs();
 		}
 
@@ -659,8 +663,8 @@ namespace GSNodeEditor
 
             string pinName = FromNode.Pin.GetPinName();
             string InitialName = GraphViewport.GraphAnalysis.Variables.MakeUniqueVariableName(pinName);
-            
-            PendingNextFrameAction = () => {
+
+            PendingNextFrameActions.Add(() => {
                 Type useNodeType = typeof(CreateAliasNode);
                 NodeWidget? NewWidget = AppendNewNodeAtLocation(
                     new NodeType(useNodeType), Location, FromNode,
@@ -670,13 +674,13 @@ namespace GSNodeEditor
                     });
                 
 
-            };
+            });
             DismissActivePopupDialogs();
         }
 
         protected void OnGetAliasSelected(VariablesTracker.VariableInfo varInfo, Vector2f Location, NodeAndPin? FromNode)
         {
-            PendingNextFrameAction = () => {
+            PendingNextFrameActions.Add(() => {
                 Type useNodeType = typeof(GetAliasNode);
                 NodeWidget? NewWidget = AppendNewNodeAtLocation(
                     new NodeType(useNodeType), Location, FromNode,
@@ -685,7 +689,7 @@ namespace GSNodeEditor
                             varNode.Initialize(varInfo.DataType, varInfo.Name);
                     });
 
-            };
+            });
             DismissActivePopupDialogs();
         }
 
@@ -693,7 +697,7 @@ namespace GSNodeEditor
         {
             if (FromNode == null) return;      // shouldn't be possible
 
-            PendingNextFrameAction = () => {
+            PendingNextFrameActions.Add(() => {
                 Type useNodeType = typeof(RerouteNode);
                 NodeWidget? NewWidget = AppendNewNodeAtLocation(
                     new NodeType(useNodeType), Location, FromNode,
@@ -702,21 +706,21 @@ namespace GSNodeEditor
                             rerouteNode.Initialize(FromNode.Pin.DataType.CSType);
                     });
 
-            };
+            });
             DismissActivePopupDialogs();
         }
 
 
         protected void OnNewFunctionCallSelected(Vector2f Location, NodeAndPin? FromNode, FunctionDefinitionNode funcNode)
         {
-            PendingNextFrameAction = () => {
+            PendingNextFrameActions.Add(() => {
                 NodeWidget? NewWidget = AppendNewNodeAtLocation(
                     new(typeof(FunctionCallNode)), Location, FromNode,
                     (INodeInfo nodeInfo) => {
                         if (nodeInfo.Node is FunctionCallNode callNode)
                             callNode.LinkToFunction(funcNode);
                     });
-            };
+            });
             DismissActivePopupDialogs();
         }
 
@@ -811,11 +815,11 @@ namespace GSNodeEditor
                 || GraphViewport.SelectionManager.CheckSelectionRequirement(0, 1);
 
             if (bClickHitNode && bIsMaxOneNodeSelected)
-				PendingNextFrameAction = () => { BeginShowNodeContextMenu( (hitResult.HitWidget as NodeWidget)! ); };
+				PendingNextFrameActions.Add(() => { BeginShowNodeContextMenu((hitResult.HitWidget as NodeWidget)!); });
             else if (hitConnection != null && bIsMaxOneWireSelected)
-                PendingNextFrameAction = () => { BeginShowWireContextMenu(hitConnection!); };
+                PendingNextFrameActions.Add(() => { BeginShowWireContextMenu(hitConnection!); });
             else
-                PendingNextFrameAction = () => { BeginShowNewNodePopupMenu(null); };
+                PendingNextFrameActions.Add(() => { BeginShowNewNodePopupMenu(null); });
         }
 
 
