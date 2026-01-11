@@ -19,10 +19,10 @@ namespace GSNodeEditor
         public INodeGraph GetGraph() { return SourceGraph!; }
 
         protected List<NodeWidget> Nodes;
-        protected List<NodeWidget> HighlightNodes;
 
         protected List<ConnectionView> DataConnections;
         protected List<ConnectionView> SequenceConnections;
+        protected object ConnectionsLock = new object();    // need  to prevent changing Lists above during draw calls
 
         SimpleWidgetSource ActiveWidgetSet;
 
@@ -46,7 +46,6 @@ namespace GSNodeEditor
         public NodeGraphView()
         {
             Nodes = new List<NodeWidget>();
-            HighlightNodes = new List<NodeWidget>();
 
             DataConnections = new List<ConnectionView>();
             SequenceConnections = new List<ConnectionView>();
@@ -223,7 +222,12 @@ namespace GSNodeEditor
             OnNodeWidgetModified?.Invoke(this, widget);
         }
 
-        public ConnectionView? AddConnection(IConnectionInfo connectionInfo)
+        public ConnectionView? AddConnection(IConnectionInfo connectionInfo) { 
+            lock(ConnectionsLock) {
+                return AddConnectionInternal(connectionInfo);
+            }
+        }
+        protected ConnectionView? AddConnectionInternal(IConnectionInfo connectionInfo)
         {
             ConnectionView NewConnection = new ConnectionView();
             bool bConnectionOK = NewConnection.InitializeFromConnection(connectionInfo, this);
@@ -281,8 +285,13 @@ namespace GSNodeEditor
 				SequenceConnections.Find(c => c.ConnectionID == ConnectionID);
 		}
 
-
-		public bool RemoveConnection(IConnectionInfo connectionInfo)
+        public bool RemoveConnection(IConnectionInfo connectionInfo)
+        {
+            lock (ConnectionsLock) {
+                return RemoveConnectionInternal(connectionInfo);
+            }
+        }
+        public bool RemoveConnectionInternal(IConnectionInfo connectionInfo)
         {
             List<ConnectionView> UseList = (connectionInfo.ConnectionType == EConnectionType.Data) ? DataConnections : SequenceConnections;
             int FoundIndex = UseList.FindIndex(c => c.ConnectionInfo == connectionInfo);
@@ -391,29 +400,33 @@ namespace GSNodeEditor
 
         public void UpdateLayout()
         {
-            int DrawOrderIndex = 1;
-            foreach (ConnectionView Connection in DataConnections) {
-                Connection.UpdateLayout(ConnectionTangentLen);
-                Connection.DrawOrderIndex = DrawOrderIndex++;
-            }
-			foreach (ConnectionView Connection in SequenceConnections) { 
-                Connection.UpdateLayout(ConnectionTangentLen);
-                Connection.DrawOrderIndex = DrawOrderIndex++;
+            lock (ConnectionsLock) {
+                int DrawOrderIndex = 1;
+                foreach (ConnectionView Connection in DataConnections) {
+                    Connection.UpdateLayout(ConnectionTangentLen);
+                    Connection.DrawOrderIndex = DrawOrderIndex++;
+                }
+                foreach (ConnectionView Connection in SequenceConnections) {
+                    Connection.UpdateLayout(ConnectionTangentLen);
+                    Connection.DrawOrderIndex = DrawOrderIndex++;
+                }
             }
         }
 
         public void Draw(SKCanvas Canvas)
         {
-            foreach (ConnectionView Connection in DataConnections) {
-                if ( Connection.ConnectionState == EConnectionState.OK) { 
-                    DrawConnection(Canvas, Connection, DataConnectionCurvePaint);
-                } else { 
-					DrawConnection(Canvas, Connection, DataConnectionErrorCurvePaint);
-                    DrawConnectionError(Canvas, Connection);
-				}
-			}
-            foreach (ConnectionView Connection in SequenceConnections)
-                DrawConnection(Canvas, Connection, SequenceConnectionCurvePaint);
+            lock (ConnectionsLock) {
+                foreach (ConnectionView Connection in DataConnections) {
+                    if (Connection.ConnectionState == EConnectionState.OK) {
+                        DrawConnection(Canvas, Connection, DataConnectionCurvePaint);
+                    } else {
+                        DrawConnection(Canvas, Connection, DataConnectionErrorCurvePaint);
+                        DrawConnectionError(Canvas, Connection);
+                    }
+                }
+                foreach (ConnectionView Connection in SequenceConnections)
+                    DrawConnection(Canvas, Connection, SequenceConnectionCurvePaint);
+            }
         }
 
         protected void DrawConnection(SKCanvas Canvas, ConnectionView Connection, SKPaint UsePaint)
