@@ -195,12 +195,16 @@ namespace Gradientspace.GenAI
                 return new ImageGenResult() { status = $"[GeminiUtil.ImageGenQuery] Gemini API threw exception:  {ex.Message}" };
             }
 
-            Part? Part = response.Candidates?[0].Content?.Parts?[0] ?? null;
-            Blob? InlineData = Part?.InlineData;
             try {
-                PixelImage img = ImageUtil.ImageBytesToPixelImage(InlineData!.Data!);
-                if (img != null)
-                    return new ImageGenResult() { Images = [img] };
+                foreach (Candidate candidate in response.Candidates ?? []) {
+                    foreach (Part part in response.Candidates?[0].Content?.Parts ?? []) {
+                        if (part.InlineData != null) {
+                            PixelImage img = ImageUtil.ImageBytesToPixelImage(part.InlineData.Data!);
+                            if (img != null)
+                                return new ImageGenResult() { Images = [img] };
+                        }
+                    }
+                }
             } catch { }
 
             return new ImageGenResult() { status = $"[GeminiUtil.ImageGenQuery] unexpected or missing image data" };
