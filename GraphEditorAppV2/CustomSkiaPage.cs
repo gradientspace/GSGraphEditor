@@ -169,8 +169,9 @@ namespace GraphEditorAppV2
 
 			RawDeviceState.CtrlButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Control));
 			RawDeviceState.ShiftButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+            RawDeviceState.CommandButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Meta));
 
-			if (bHaveDownEvent) {
+            if (bHaveDownEvent) {
 				GraphView.OnPointerDown(RawDeviceState);
 				e.Handled = true;
 			}
@@ -216,8 +217,9 @@ namespace GraphEditorAppV2
 
 			RawDeviceState.CtrlButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Control));
 			RawDeviceState.ShiftButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+            RawDeviceState.CommandButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Meta));
 
-			if (bHaveUpEvent) {
+            if (bHaveUpEvent) {
 				GraphView.OnPointerUp(RawDeviceState);
 				e.Handled = true;
 			}
@@ -244,8 +246,9 @@ namespace GraphEditorAppV2
 			RawDeviceState.CtrlButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Control));
 			RawDeviceState.ShiftButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Shift));
 			RawDeviceState.AltButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Alt));
+            RawDeviceState.CommandButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Meta));
 
-			GraphView.UpdateCursor(RawDeviceState);
+            GraphView.UpdateCursor(RawDeviceState);
 
 			e.Handled = true;
 			base.OnPointerMoved(e);
@@ -262,8 +265,9 @@ namespace GraphEditorAppV2
 			RawDeviceState.CtrlButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Control));
 			RawDeviceState.ShiftButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Shift));
 			RawDeviceState.AltButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Alt));
+            RawDeviceState.CommandButton.SetDown(e.KeyModifiers.HasFlag(KeyModifiers.Meta));
 
-			RawDeviceState.WheelDelta = (float)e.Delta.Y;
+            RawDeviceState.WheelDelta = (float)e.Delta.Y;
 			GraphView.OnWheel(RawDeviceState);
 			RawDeviceState.WheelDelta = 0;
 
@@ -295,9 +299,11 @@ namespace GraphEditorAppV2
 				RawDeviceState.ShiftButton.SetPressed();
 			}  else if (e.Key == Key.LeftAlt) {
 				RawDeviceState.AltButton.SetPressed();
-			}
+            } else if (e.Key == Key.LWin) {
+                RawDeviceState.CommandButton.SetPressed();
+            }
 
-			KeyState keyState = ConvertToKeyState(e.Key, ToKeyString(e), RawDeviceState);
+            KeyState keyState = ConvertToKeyState(e.Key, ToKeyString(e), RawDeviceState);
 			//Debug.WriteLine($"[OnKeyDown] {keyState}");
 
 			if (keyState.IsKnownKey)
@@ -310,13 +316,15 @@ namespace GraphEditorAppV2
 		{
 			if (e.Key == Key.LeftCtrl) {
 				RawDeviceState.CtrlButton.SetReleased();
-			}  else if (e.Key == Key.LeftShift) {
+			} else if (e.Key == Key.LeftShift) {
 				RawDeviceState.ShiftButton.SetReleased();
-			}  else if (e.Key == Key.LeftAlt) {
+			} else if (e.Key == Key.LeftAlt) {
 				RawDeviceState.AltButton.SetReleased();
-			}
+			} else if (e.Key == Key.LWin) {
+                RawDeviceState.CommandButton.SetReleased();
+            }
 
-			KeyState keyState = ConvertToKeyState(e.Key, ToKeyString(e), RawDeviceState);
+            KeyState keyState = ConvertToKeyState(e.Key, ToKeyString(e), RawDeviceState);
 			//Debug.WriteLine($"[OnKeyUp] {keyState}");
 
 			if (keyState.IsKnownKey)
@@ -371,8 +379,9 @@ namespace GraphEditorAppV2
 				case Key.LeftShift: keyState = KeyState.Shift; break;
 				case Key.LeftAlt: keyState = KeyState.Alt; break;
 				case Key.LeftCtrl: keyState = KeyState.Ctrl; break;
+                case Key.LWin: keyState = KeyState.Command; break;
 
-				case Key.Left: keyState = KeyState.LeftArrow; break;
+                case Key.Left: keyState = KeyState.LeftArrow; break;
 				case Key.Right: keyState = KeyState.RightArrow; break;
 				case Key.Up: keyState = KeyState.UpArrow; break;
 				case Key.Down: keyState = KeyState.DownArrow; break;
@@ -382,7 +391,8 @@ namespace GraphEditorAppV2
                 default:
 				{
 					char Character = (keyString != null) ? keyString[0] : '\0';
-					if (Char.IsControl(Character) == false)
+                    Character = Char.ToUpperInvariant(Character);
+                    if (Char.IsControl(Character) == false)
 					{
 						keyState.KeyType = KeyType.CharacterKey;
 						keyState.KeyName = KeyNames.Unnamed;

@@ -27,6 +27,7 @@ namespace Gradientspace.UI
         Shift,
         Ctrl,
         Alt,
+        Command,
         Delete,
         Backspace,
         Enter,
@@ -48,6 +49,7 @@ namespace Gradientspace.UI
         public bool bCtrlDown = false;
         public bool bShiftDown = false;
         public bool bAltDown = false;
+        public bool bCommandDown = false;
 
         public KeyState() { }
         public KeyState(KeyType keyType, KeyNames keyName, char character = ' ') {
@@ -77,7 +79,7 @@ namespace Gradientspace.UI
         public bool IsFunctionalKey {  get { return KeyType == KeyType.FunctionalKey; } }
         public bool IsCharacterKey { get { return KeyType == KeyType.CharacterKey; } }
         public bool IsModifierKey { 
-            get { return KeyName == KeyNames.Alt || KeyName == KeyNames.Ctrl || KeyName == KeyNames.Shift; } 
+            get { return KeyName == KeyNames.Alt || KeyName == KeyNames.Ctrl || KeyName == KeyNames.Shift || KeyName == KeyNames.Command; } 
         }
 
         public static KeyState Unknown = new KeyState(KeyType.UnknownKey, KeyNames.Unnamed);
@@ -85,6 +87,7 @@ namespace Gradientspace.UI
         public static KeyState Shift = new KeyState(KeyType.FunctionalKey, KeyNames.Shift);
         public static KeyState Ctrl = new KeyState(KeyType.FunctionalKey, KeyNames.Ctrl);
         public static KeyState Alt = new KeyState(KeyType.FunctionalKey, KeyNames.Alt);
+        public static KeyState Command = new KeyState(KeyType.FunctionalKey, KeyNames.Command);
         public static KeyState Delete = new KeyState(KeyType.FunctionalKey, KeyNames.Delete);
         public static KeyState Backspace = new KeyState(KeyType.FunctionalKey, KeyNames.Backspace);
         public static KeyState Enter = new KeyState(KeyType.FunctionalKey, KeyNames.Enter);
@@ -112,6 +115,7 @@ namespace Gradientspace.UI
             bAltDown = deviceState.AltButton.bDown;
             bCtrlDown = deviceState.CtrlButton.bDown;
             bShiftDown = deviceState.ShiftButton.bDown;
+            bCommandDown = deviceState.CommandButton.bDown;
         }
 
 
@@ -155,6 +159,7 @@ namespace Gradientspace.UI
         public bool bCtrlDown = false;
         public bool bShiftDown = false;
         public bool bAltDown = false;
+        public bool bCommandDown = false;
 
         public int NumKeys = 0;
         public KeySequence3 KeySequence = new KeySequence3();
@@ -192,6 +197,26 @@ namespace Gradientspace.UI
             return NumKeys == 3 
                 && ((KeySequence[0].KeyName == modifierKey1 && KeySequence[1].KeyName == modifierKey2) || (KeySequence[0].KeyName == modifierKey2 && KeySequence[1].KeyName == modifierKey1))
                 && KeySequence[2].Character == Character;
+        }
+
+        public readonly bool IsSystemHotkey(char Character, bool bWantShift = false)
+        {
+            int NeedNumKeys = 2 + (bWantShift ? 1 : 0);
+            if (NumKeys != NeedNumKeys) return false;
+
+            int CtrlIdx = 0;
+            if (bWantShift) {
+                if (KeySequence[0].KeyName == KeyNames.Shift)
+                    CtrlIdx = 1;
+                else if (KeySequence[1].KeyName == KeyNames.Shift)
+                    CtrlIdx = 0;
+                else
+                    return false;
+            }
+
+            if (KeySequence[CtrlIdx].KeyName != KeyNames.Ctrl && KeySequence[CtrlIdx].KeyName != KeyNames.Command)
+                return false;
+            return KeySequence[NeedNumKeys-1].Character == Character;
         }
 
         public readonly bool ContainsNonModifierKeys {
@@ -276,6 +301,7 @@ namespace Gradientspace.UI
             chord.bShiftDown = ActivePressedKeys[0].bShiftDown;
             chord.bCtrlDown = ActivePressedKeys[0].bCtrlDown;
             chord.bAltDown = ActivePressedKeys[0].bAltDown;
+            chord.bCommandDown  = ActivePressedKeys[0].bCommandDown;
             for ( int i = 0; i < Math.Min(3, ActivePressedKeys.Count); ++i )
             {
                 chord.KeySequence[i] = ActivePressedKeys[i];

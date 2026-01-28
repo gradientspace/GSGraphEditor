@@ -37,6 +37,13 @@ namespace Gradientspace.UI
         public InputButtonState CtrlButton = InputButtonState.None;
         public InputButtonState AltButton = InputButtonState.None;
         public InputButtonState ShiftButton = InputButtonState.None;
+        public InputButtonState CommandButton = InputButtonState.None;
+
+        // [TODO] how to do this?
+        //public InputButtonState PlatformCtrlButton {
+        //    get { return IsOSX ? CommandButton : CtrlButton; }
+        //}
+
 
         public Vector2f CurrentPosition = Vector2f.Zero;
 

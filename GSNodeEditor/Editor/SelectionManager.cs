@@ -243,7 +243,8 @@ namespace GSNodeEditor
 
         public bool OnKeyChordUpdated(in KeyChord ActiveChord)
         {
-            if (ActiveChord.IsSingleSpecialKey(KeyNames.Delete))
+            bool bIsDeleteKey = (ActiveChord.IsSingleSpecialKey(KeyNames.Delete) || ActiveChord.IsSingleSpecialKey(KeyNames.Backspace));
+            if (bIsDeleteKey)
             {
                 if (HasNodeSelection) {
                     List<NodeWidget> widgets = FindSelectedNodeWidgets();

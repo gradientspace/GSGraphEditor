@@ -418,21 +418,9 @@ namespace GSNodeEditor
 
         public bool OnKeyChordUpdated(in KeyChord ActiveChord)
         {
-            bool bIsSave = ActiveChord.IsChord2(KeyNames.Ctrl, 'S');
+            bool bIsSave = ActiveChord.IsSystemHotkey('S');
 
-            if (ActiveChord.IsSingleSpecialKey(KeyNames.Delete) || ActiveChord.IsSingleSpecialKey(KeyNames.Backspace))
-            {
-                if ( SelectionManager.HasSelection ) {
-                    List<NodeWidget> widgets = SelectionManager.FindSelectedNodeWidgets();
-                    ExecuteGraphEdit((NodeGraphEditor Editor) => {
-                        foreach ( NodeWidget widget in widgets)
-                            Editor.RemoveNode(widget);
-                    });
-                    return true;
-                }
-                return false;
-            }
-            else if (ActiveChord.IsChord3(KeyNames.Ctrl, KeyNames.Shift, 'S') || (bIsSave && CurrentGraphFilePath.Length == 0))
+            if (ActiveChord.IsSystemHotkey('S', bWantShift:true) || (bIsSave && CurrentGraphFilePath.Length == 0))
             {
                 TrySaveAs();
                 return true;
@@ -441,27 +429,27 @@ namespace GSNodeEditor
             {
                 TrySave();
 			}
-            else if (ActiveChord.IsChord2(KeyNames.Ctrl, 'O'))
+            else if (ActiveChord.IsSystemHotkey('O'))
             {
                 TryOpen();
                 return true;
             }
-            else if (ActiveChord.IsChord2(KeyNames.Ctrl, 'Z'))
+            else if (ActiveChord.IsSystemHotkey('Z'))
             {
                 History.TryStepBackward();
                 return true;
             }
-            else if (ActiveChord.IsChord2(KeyNames.Ctrl, 'Y'))
+            else if (ActiveChord.IsSystemHotkey('Y') || ActiveChord.IsSystemHotkey('Z', true))
             {
                 History.TryStepForward();
                 return true;
             } 
-            else if (ActiveChord.IsChord2(KeyNames.Ctrl, 'C')) 
+            else if (ActiveChord.IsSystemHotkey('C')) 
             {
                 CopySelectionToClipboard();
                 return true;
             }
-            else if (ActiveChord.IsChord2(KeyNames.Ctrl, 'V')) 
+            else if (ActiveChord.IsSystemHotkey('V')) 
             {
                 PasteFromClipboard();
                 return true;
