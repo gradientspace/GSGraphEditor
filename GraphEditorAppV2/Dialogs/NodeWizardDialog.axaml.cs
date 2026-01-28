@@ -26,7 +26,7 @@ namespace GraphEditorAppV2
         required public NodeGraphViewport GraphViewport { get; set; }
 
         NodeWizard? CurWizard = null;
-        DispatcherTimer TickTimer = null;
+        DispatcherTimer TickTimer;
         int AnimatedBulletCount = 0;
 
         static string LastPrompt = "compute the first N elements of the fibonacci sequence";

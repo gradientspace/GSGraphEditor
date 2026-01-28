@@ -14,23 +14,31 @@ namespace GSNodeEditor
 
         void SetWindowTitle( string NewTitle );
 
-        //! Filter should be formatted like so: "Text Files (*.txt)|*.txt|All files (*.*)|*.*";
-        //! Extension should not not include a dot: "txt"
-        bool ShowBlockingSaveAsDialog(
-            string InitialFilename,
-            string Extension,
-            string Filter,
-            string? InitialFolder,
-            out string SelectedFilename);
+
+        public struct FileDialogResult
+        {
+            public bool bSuccess = false;
+            public bool bCanceled = false;
+            public string SelectedPath = "";
+            public FileDialogResult() { }
+        }
+
 
         //! Filter should be formatted like so: "Text Files (*.txt)|*.txt|All files (*.*)|*.*";
         //! Extension should not not include a dot: "txt"
-        bool ShowBlockingOpenFileDialog(
+        Task<FileDialogResult> ShowSaveAsDialogAsync(
+            string InitialFilename,
+            string Extension,
+            string Filter,
+            string? InitialFolder);
+
+        //! Filter should be formatted like so: "Text Files (*.txt)|*.txt|All files (*.*)|*.*";
+        //! Extension should not not include a dot: "txt"
+        Task<FileDialogResult> ShowOpenFileDialogAsync(
             string Extension,
             string Filter,
             string? InitialFilename,
-            string? InitialFolder,
-            out string SelectedFilename);
+            string? InitialFolder);
 
         void SetSystemClipboardText(string NewText);
         string? GetSystemClipboardText();

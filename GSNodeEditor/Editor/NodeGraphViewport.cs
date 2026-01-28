@@ -422,16 +422,16 @@ namespace GSNodeEditor
 
             if (ActiveChord.IsSystemHotkey('S', bWantShift:true) || (bIsSave && CurrentGraphFilePath.Length == 0))
             {
-                TrySaveAs();
+                _ = TrySaveAs();
                 return true;
             }
             else if (bIsSave)
             {
-                TrySave();
+                _ = TrySave();
 			}
             else if (ActiveChord.IsSystemHotkey('O'))
             {
-                TryOpen();
+                _ = TryOpen();
                 return true;
             }
             else if (ActiveChord.IsSystemHotkey('Z'))
@@ -487,21 +487,22 @@ namespace GSNodeEditor
 		//static bool ShowCompactMode = false;
 
 		// IGraphEditorActions interface method
-		public bool TrySaveAs()
+		public async Task<bool> TrySaveAs()
         {
             string configfile = NodeEditorConfig.UserConfigFilePath;
+            if (HostAPI == null) return false;
 
 			string UseDirectory = NodeEditorConfig.GetActiveSaveLoadPath();
 			string UseFilename = (CurrentGraphFilePath.Length == 0) ? DefaultFileName : Path.GetFileName(CurrentGraphFilePath)!;
             if ( UseFilename.EndsWith(".gg") == false )
                 UseFilename = System.IO.Path.ChangeExtension(UseFilename, "gg");
 
-			if (HostAPI != null && HostAPI.ShowBlockingSaveAsDialog(UseFilename, DefaultExtension, "", UseDirectory, out string SelectedFilename))
-			{
+            EditorHostAPI.FileDialogResult Result = await HostAPI.ShowSaveAsDialogAsync(UseFilename, DefaultExtension, "", UseDirectory);
+            if ( Result.bSuccess ) { 
 				// should check if file exists and prompt to replace?
-				SaveGraphToFile(SelectedFilename, EnableAutoSaveBackups);
+				SaveGraphToFile(Result.SelectedPath, EnableAutoSaveBackups);
 				CurrentGraphIsSaved = true;
-				UpdateCurrentFilePath(SelectedFilename);
+				UpdateCurrentFilePath(Result.SelectedPath);
                 return true;
 			}
 			return false;
@@ -523,10 +524,10 @@ namespace GSNodeEditor
 		}
 
 		// IGraphEditorActions interface method
-		public bool TrySave()
+		public async Task<bool> TrySave()
         {
             if (CanSaveCurrentGraph == false)
-                return TrySaveAs();
+                return await TrySaveAs();
 
 			SaveGraphToFile(CurrentGraphFilePath, EnableAutoSaveBackups);
 			CurrentGraphIsSaved = true;
@@ -535,23 +536,28 @@ namespace GSNodeEditor
 		}
 
 		// IGraphEditorActions interface method
-		public bool TryOpen()
+		public async Task<bool> TryOpen()
         {
+            if (HostAPI == null) return false;
+
             string InitialPath = NodeEditorConfig.GetActiveSaveLoadPath();
-			if (HostAPI != null && HostAPI.ShowBlockingOpenFileDialog(DefaultExtension, DefaultFileFilter, DefaultFileName, InitialPath, out string SelectedFilename))
-			{
-                if (OpenGraphFile(SelectedFilename))
+            EditorHostAPI.FileDialogResult Result = await HostAPI.ShowOpenFileDialogAsync(DefaultExtension, DefaultFileFilter, DefaultFileName, InitialPath);
+            if (Result.bSuccess) { 
+                if (OpenGraphFile(Result.SelectedPath))
                     return true;
-			}
+            }
 			return false;
 		}
 
         // IGraphEditorActions interface method
-        public bool TryImport()
+        public async Task<bool> TryImport()
         {
+            if (HostAPI == null) return false;
+
             string InitialPath = NodeEditorConfig.GetActiveSaveLoadPath();
-            if (HostAPI != null && HostAPI.ShowBlockingOpenFileDialog(DefaultExtension, DefaultFileFilter, DefaultFileName, InitialPath, out string SelectedFilename)) {
-                if (ImportGraphFromFile(SelectedFilename))
+            EditorHostAPI.FileDialogResult Result = await HostAPI.ShowOpenFileDialogAsync(DefaultExtension, DefaultFileFilter, DefaultFileName, InitialPath);
+            if (Result.bSuccess) {
+                if (ImportGraphFromFile(Result.SelectedPath))
                     return true;
             }
             return false;

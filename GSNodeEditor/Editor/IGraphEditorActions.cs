@@ -10,8 +10,12 @@ namespace GSNodeEditor
 	public interface IGraphEditorActions
 	{
 		public bool TryNewExecutionGraph();
-		public bool TrySave();
-		public bool TrySaveAs();
-		public bool TryOpen();
-	}
+
+        // these have to return a task because they may spawn a filesystem dialog
+        // and blocking on them can hang the UI thread in some UI frameworks...
+        public Task<bool> TrySave();
+        public Task<bool> TrySaveAs();
+        public Task<bool> TryOpen();
+        public Task<bool> TryImport();
+    }
 }

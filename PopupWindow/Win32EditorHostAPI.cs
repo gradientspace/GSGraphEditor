@@ -2,17 +2,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-
-using Vanara.PInvoke;
-using static Vanara.PInvoke.User32;
-using static Vanara.PInvoke.Kernel32;
-using static Vanara.PInvoke.Gdi32;
-using static Vanara.PInvoke.ComDlg32;
-using Vanara.InteropServices;
-using System.Runtime.InteropServices;
 using Vanara.Extensions;
+using Vanara.InteropServices;
+using Vanara.PInvoke;
+using static GSNodeEditor.EditorHostAPI;
+using static Vanara.PInvoke.ComDlg32;
+using static Vanara.PInvoke.Gdi32;
+using static Vanara.PInvoke.Kernel32;
+using static Vanara.PInvoke.User32;
 
 
 
@@ -38,7 +38,22 @@ namespace PopupWindow
         }
 
 
-        public bool ShowBlockingSaveAsDialog(string InitialFilename, string Extension, string Filter, string? InitialFolder, out string SelectedFilename)
+        // task wrapper around blocking dialog (possibly will hang app...need to test this)
+        public Task<FileDialogResult> ShowSaveAsDialogAsync(
+            string InitialFilename,
+            string Extension,
+            string Filter,
+            string? InitialFolder)
+        {
+            bool bOK = ShowBlockingSaveAsDialog(InitialFilename, Extension, Filter, InitialFolder, out string SelectedFilename);
+            FileDialogResult result = new() {
+                bSuccess = bOK,
+                bCanceled = !bOK,
+                SelectedPath = SelectedFilename
+            };
+            return Task.FromResult(result);
+        }
+        private bool ShowBlockingSaveAsDialog(string InitialFilename, string Extension, string Filter, string? InitialFolder, out string SelectedFilename)
         {
             SelectedFilename = "";
 
@@ -78,7 +93,22 @@ namespace PopupWindow
             return bSelected && SelectedFilename.Length > 0;
         }
 
-        public bool ShowBlockingOpenFileDialog(string Extension, string Filter, string? InitialFilename, string? InitialFolder, out string SelectedFilename)
+        // task wrapper around blocking dialog (possibly will hang app...need to test this)
+        public Task<FileDialogResult> ShowOpenFileDialogAsync(
+            string Extension,
+            string Filter,
+            string? InitialFilename,
+            string? InitialFolder)
+        {
+            bool bOK = ShowBlockingOpenFileDialog(Extension, Filter, InitialFilename, InitialFolder, out string SelectedFilename);
+            FileDialogResult result = new() {
+                bSuccess = bOK,
+                bCanceled = !bOK,
+                SelectedPath = SelectedFilename
+            };
+            return Task.FromResult(result);
+        }
+        private bool ShowBlockingOpenFileDialog(string Extension, string Filter, string? InitialFilename, string? InitialFolder, out string SelectedFilename)
         {
             SelectedFilename = "";
 

@@ -320,10 +320,10 @@ public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeE
                 dialog.HideSaveButton();
             await dialog.ShowDialog(this);
             if (dialog.Selected == SaveCurrentDialog.ESelectedOptions.Save) {
-                if (SkiaView.ActiveViewport.TrySave() == false)
+                if (await SkiaView.ActiveViewport.TrySave() == false)
                     bCancelOp = true;
             } else if (dialog.Selected == SaveCurrentDialog.ESelectedOptions.SaveAs) {
-                if (SkiaView.ActiveViewport.TrySaveAs() == false)
+                if (await SkiaView.ActiveViewport.TrySaveAs() == false)
                     bCancelOp = true;
             } else if (dialog.Selected == SaveCurrentDialog.ESelectedOptions.Cancel) { 
                 bCancelOp = true;
@@ -350,25 +350,25 @@ public partial class MainWindow : Window, SourceCodeEditingSystem.IExternalCodeE
 	{
         bool bCanceled = await TrySaveUnsavedGraph();
         if (!bCanceled) {
-            if (SkiaView.ActiveViewport.TryOpen())
+            if (await SkiaView.ActiveViewport.TryOpen())
                 UpdateRecentFilesMenu();
             SkiaView.Focus(NavigationMethod.Pointer);
         }
     }
-    private void Import_OnClick(object? sender, RoutedEventArgs e)
+    private async void Import_OnClick(object? sender, RoutedEventArgs e)
     {
-        SkiaView.ActiveViewport.TryImport();
+        await SkiaView.ActiveViewport.TryImport();
         SkiaView.Focus(NavigationMethod.Pointer);
     }
-    private void Save_OnClick(object? sender, RoutedEventArgs e)
+    private async void Save_OnClick(object? sender, RoutedEventArgs e)
 	{
-		if (SkiaView.ActiveViewport.TrySave())
+		if (await SkiaView.ActiveViewport.TrySave())
 			UpdateRecentFilesMenu();
 		SkiaView.Focus(NavigationMethod.Pointer);
 	}
-	private void SaveAs_OnClick(object? sender, RoutedEventArgs e)
+	private async void SaveAs_OnClick(object? sender, RoutedEventArgs e)
 	{
-		if (SkiaView.ActiveViewport.TrySaveAs())
+		if (await SkiaView.ActiveViewport.TrySaveAs())
 			UpdateRecentFilesMenu();
 		SkiaView.Focus(NavigationMethod.Pointer);
 	}

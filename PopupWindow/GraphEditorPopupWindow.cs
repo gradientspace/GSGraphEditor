@@ -407,7 +407,7 @@ namespace PopupWindow
                                 // handle as ctrl+v hotkey
                                 string? PastedText = Win32WindowUtils.GetClipboardText();
                                 if (PastedText != null)
-                                    SystemKeyboardRouter.Instance.SetCurrentSystemClipboardText(PastedText);
+                                    SystemKeyboardRouter.Instance.SetCurrentClipboardText(PastedText);
                             }
 
                             if (keyState.IsKnownKey)

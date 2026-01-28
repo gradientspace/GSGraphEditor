@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static GSNodeEditor.EditorHostAPI;
 
 namespace GraphEditorAppV2
 {
@@ -36,16 +37,15 @@ namespace GraphEditorAppV2
 			AppMainWindow.Title = NewTitle;
 		}
 
-		//! Filter should be formatted like so: "Text Files (*.txt)|*.txt|All files (*.*)|*.*";
-		//! Extension should not not include a dot: "txt"
-		public bool ShowBlockingSaveAsDialog(
+        //! Filter should be formatted like so: "Text Files (*.txt)|*.txt|All files (*.*)|*.*";
+        //! Extension should not not include a dot: "txt"
+        public async Task<FileDialogResult> ShowSaveAsDialogAsync(
 			string InitialFilename,
 			string Extension,
 			string Filter,
-			string? InitialFolder,
-			out string SelectedFilename)
+			string? InitialFolder)
 		{
-			SelectedFilename = "";
+            FileDialogResult Result = new();
 			TopLevel? topLevel = TopLevel.GetTopLevel(AppMainWindow) ?? throw new NullReferenceException();
 
 			List<FilePickerFileType> FileTypes = new List<FilePickerFileType>() {
@@ -57,40 +57,39 @@ namespace GraphEditorAppV2
 			IStorageFolder? initialFolder = null;
 			if (InitialFolder != null)
 			{
-				Task<IStorageFolder?> foundFolder = topLevel.StorageProvider.TryGetFolderFromPathAsync(InitialFolder);
-				foundFolder.Wait();
-				initialFolder = foundFolder.Result;
+                initialFolder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(InitialFolder);
 			}
 
-			Task<IStorageFile?> files = topLevel.StorageProvider.SaveFilePickerAsync(
+			IStorageFile? files = await topLevel.StorageProvider.SaveFilePickerAsync(
 				new FilePickerSaveOptions() {
 					DefaultExtension = Extension,
 					FileTypeChoices = FileTypes,
 					SuggestedFileName = InitialFilename,
 					SuggestedStartLocation = initialFolder
 				});
-			files.Wait();
 
-			if (files.Result == null)
-				return false;
-			string? localPath = files.Result.TryGetLocalPath();
-			if (localPath == null)
-				return false;
-			SelectedFilename = localPath;
-			return true;
+            if (files == null) {
+                Result.bCanceled = true;
+                return Result;
+            }
+			string? localPath = files.TryGetLocalPath();
+            if (localPath == null)
+                return Result;
+            Result.SelectedPath = localPath;
+            Result.bSuccess = true;
+            return Result;
 		}
 
-		//! Filter should be formatted like so: "Text Files (*.txt)|*.txt|All files (*.*)|*.*";
-		//! Extension should not not include a dot: "txt"
-		public bool ShowBlockingOpenFileDialog(
+        //! Filter should be formatted like so: "Text Files (*.txt)|*.txt|All files (*.*)|*.*";
+        //! Extension should not not include a dot: "txt"
+        public async Task<FileDialogResult> ShowOpenFileDialogAsync(
 			string Extension,
 			string Filter,
 			string? InitialFilename,
-			string? InitialFolder,
-			out string SelectedFilename)
+			string? InitialFolder)
 		{
-			SelectedFilename = "";
-			TopLevel? topLevel = TopLevel.GetTopLevel(AppMainWindow) ?? throw new NullReferenceException();
+            FileDialogResult Result = new(); 
+            TopLevel? topLevel = TopLevel.GetTopLevel(AppMainWindow) ?? throw new NullReferenceException();
 
 			List<FilePickerFileType> FileTypes = new List<FilePickerFileType>() {
                 new FilePickerFileType("Node Graphs") { Patterns = new[] { "*.gg" } },
@@ -101,27 +100,27 @@ namespace GraphEditorAppV2
 			IStorageFolder? initialFolder = null;
 			if (InitialFolder != null)
 			{
-				Task<IStorageFolder?> foundFolder = topLevel.StorageProvider.TryGetFolderFromPathAsync(InitialFolder);
-				foundFolder.Wait();
-				initialFolder = foundFolder.Result;
+				initialFolder = await topLevel.StorageProvider.TryGetFolderFromPathAsync(InitialFolder);
 			}
 
-			Task<IReadOnlyList<IStorageFile>> files = topLevel.StorageProvider.OpenFilePickerAsync(
+			IReadOnlyList<IStorageFile> files = await topLevel.StorageProvider.OpenFilePickerAsync(
 				new FilePickerOpenOptions() {
 					FileTypeFilter = FileTypes,
 					SuggestedFileName = InitialFilename,
 					AllowMultiple = false,
 					SuggestedStartLocation = initialFolder
 				});
-			files.Wait();
 
-			if (files.Result.Count == 0)
-				return false;
-			string? localPath = files.Result[0].TryGetLocalPath();
-			if (localPath == null)
-				return false;
-			SelectedFilename = localPath;
-			return true;
+			if (files.Count == 0) {
+                Result.bCanceled = true;
+                return Result;
+            }
+			string? localPath = files[0].TryGetLocalPath();
+			if (localPath == null) 
+                return Result;
+            Result.SelectedPath = localPath;
+            Result.bSuccess = true;
+            return Result;
 		}
 
 
