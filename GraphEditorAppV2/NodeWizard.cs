@@ -53,6 +53,9 @@ namespace GraphEditorAppV2
 
                 If necessary, additional local private static functions can be added to the NodeClass and called by 
                 the primary static function. 
+
+                If you are asked to process images, the input and output of the function should be an RGBA byte[] buffer.
+                Use the SkiaSharp library if possible to accellerate the processing.
             ";
 
             string user_prompt = NodeFunctionPrompt;

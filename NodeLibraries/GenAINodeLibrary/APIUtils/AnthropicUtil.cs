@@ -14,13 +14,13 @@ namespace Gradientspace.GenAI
         {
             Haiku_4p5 = 0,
             Sonnet_4p5 = 1,
-            Opus_4p5 = 2
+            Opus_4p6 = 2
         }
 
         public static readonly string[] ModelNames = [
             "claude-haiku-4-5",
             "claude-sonnet-4-5",
-            "claude-opus-4-5"
+            "claude-opus-4-6"
         ];
 
         public static string ModelToString(EClaudeModel model)
